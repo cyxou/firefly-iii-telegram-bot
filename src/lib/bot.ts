@@ -1,65 +1,124 @@
-import { Composer, Markup, Scenes, session, Telegraf } from 'telegraf'
-import config from '../config'
-import { botCommand, scene } from './constants'
+import debug from 'debug'
+import {
+  Context,
+  Composer,
+  Markup,
+  Scenes,
+  session,
+  Telegraf
+} from 'telegraf'
 
+import config from '../config'
+import {
+  command,
+  commandDescription,
+  keyboardButton as kb,
+  mainKeyboard,
+  scene,
+  text as t
+} from './constants'
 import addTransactionScene from './scenes/add-ransaction'
+import botSettingsScene from './scenes/bot-settings'
 import classificationScene from './scenes/classificationScene'
-import addTransactionWizard from './wizard/add-transaction'
+import { getUserStorage } from './storage'
+
+const log = debug(`bot:bot`)
 
 const token = config.botToken
-
-
 
 // Handler factories
 const { enter, leave } = Scenes.Stage
 
 const bot = new Telegraf<any>(token)
 
-const sceneStage = new Scenes.Stage<Scenes.SceneContext>(
+const stage = new Scenes.Stage<Scenes.SceneContext>(
   [
     addTransactionScene,
+    botSettingsScene,
     classificationScene,
   ]
-  // ], { ttl: 20 }
+  //, { ttl: 30 }
+  // { default: scene.ADD_TRANSACTION_SCENE }
 )
 
-// const wizardStage = new Scenes.Stage<Scenes.WizardContext>(
-  // [ addTransactionWizard ],
-  // // { default: 'add-transaction-wizard'}
-// )
-//
-// Example of middleware
-// bot.use(async (ctx, next) => {
-//   console.time(`Processing update ${ctx.update.update_id}`)
-//   await next() // runs next middleware
-//   // runs after next middleware finishes
-//   console.timeEnd(`Processing update ${ctx.update.update_id}`)
-// })
+
+// bot.use(requireSettingsToBeSetMiddleware())
 bot.use(session())
-bot.use(sceneStage.middleware())
-// bot.use(wizardStage.middleware())
-bot.command(botCommand.ADD_TRANSACTION, (ctx) => ctx.scene.enter(scene.ADD_TRANSACTION_SCENE))
-// bot.command(botCommand.ADD_TRANSACTION, (ctx) => ctx.scene.enter('ADD_TRANSACTION_WIZARD'))
-// bot.command('classification', (ctx) => ctx.scene.enter('classificationScene'))
-bot.on('message', ctx => {
-  try {
-    return ctx.reply('Try /addTransaction', Markup
-      .keyboard([
-        ['🔀 Транзакции', '💳 Счета'], // Row1 with 2 buttons
-        ['🏷️ Классификация', ' 📈 Отчеты'], // Row2 with 2 buttons
-        ['⚙️ Настройки бота' ] // Row3 with 3 buttons
-      ])
-      .oneTime()
-      .resize()
-    )
-    // console.log('ctx.message: ', ctx.message.text)
-    // const amount = parseFloat(ctx.message.text)
-    // console.log('amount: ', amount)
-    // if (!isNaN(amount)) ctx.scene.enter('add-transaction-wizard')
-    // else ctx.reply('Try /echo or /greeter')
-  } catch (err) {
-    console.error(err)
-  }
-})
+bot.use(stage.middleware())
+
+bot.start(startHandler)
+bot.help(helpHandler)
+
+bot.command(command.SETTINGS, settingsCommandHandler)
+// bot.command(command.ADD_TRANSACTION, addTransactionCommandHandler)
+
+bot.hears(kb.ACCOUNTS, ctx => ctx.reply('OK'))
+bot.hears(kb.TRANSACTIONS, ctx => ctx.reply('OK'))
+bot.hears(kb.REPORTS, ctx => ctx.reply('OK'))
+bot.hears(kb.CLASSIFICATION, ctx => ctx.reply('OK'))
+bot.hears(kb.SETTINGS, ctx => ctx.scene.enter(scene.BOT_SETTINGS_SCENE))
+bot.on('text', textHandler)
 
 export default bot
+
+async function startHandler(ctx: any) {
+  log('start: %O', ctx.message)
+  await setBotCommands(ctx)
+  return ctx.replyWithMarkdown(t.welcome, mainKeyboard)
+}
+
+function helpHandler(ctx: any) {
+  log('help: %O', ctx.message)
+  return ctx.replyWithMarkdown(t.help, mainKeyboard)
+}
+
+function settingsCommandHandler(ctx: any) {
+  ctx.scene.enter(scene.BOT_SETTINGS_SCENE, { userId: ctx.message.from.id })
+}
+
+function addTransactionCommandHandler(ctx: any) {
+  ctx.scene.enter(scene.ADD_TRANSACTION_SCENE, { userId: ctx.message.from.id })
+}
+
+function textHandler (ctx: any) {
+  ctx.scene.enter(scene.ADD_TRANSACTION_SCENE, { userId: ctx.message.from.id })
+}
+
+function requireSettingsToBeSetMiddleware() {
+  return async (ctx: any, next: () => Promise<void>) => {
+    log('ctx: %O', ctx)
+    try {
+      // We allow only the commands routes to enter if Firefly URL or Firefly
+      // Token are not set
+      const whiteList = [ kb.SETTINGS, ...Object.values(command) ]
+      const isCallbackQuery = !!ctx.callbackQuery
+
+      if (isCallbackQuery || whiteList.includes(ctx.update?.message?.text)
+        || ctx.scene?.session?.inputFor) return next()
+
+      const storage = getUserStorage(ctx.message!.from.id)
+      const fireflyUrl = storage.get('FIREFLY_URL')
+      const authToken = storage.get('FIREFLY_ACCESS_TOKEN')
+
+      if (fireflyUrl === 'N/A' || authToken === 'N/A') {
+        return await ctx.replyWithMarkdown(t.addUrlAndAccessToken)
+      }
+    } catch (err) {
+      console.error('Error occurred in requireSettingsToBeSetMiddleware: ', err)
+    }
+  }
+}
+
+function setBotCommands(ctx: Context) {
+  log('Setting bot commands...')
+  const myCommands: {command: string, description: string}[] = []
+  for (const [key, val] of Object.entries(commandDescription)) {
+    myCommands.push({
+      command: key,
+      description: val
+    })
+  }
+  // log('myCommands: %O', myCommands)
+
+  return ctx.setMyCommands(myCommands)
+}

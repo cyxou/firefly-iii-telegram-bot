@@ -1,19 +1,32 @@
 import axios from 'axios'
 import dayjs from 'dayjs'
+import debug from 'debug'
 import querystring from 'querystring'
 
 import config from '../config'
+import { getDataFromUserStorage } from './storage'
 
-class Firefly {
+const log = debug(`bot:Firefly`)
 
-  constructor(fireflyUrl: string, authToken: string) {
-    axios.defaults.baseURL = `${fireflyUrl}/api/v1/`
-    axios.defaults.headers.common.Authorization = `Bearer ${authToken}`
+export default class Firefly {
+
+  static async getSystemInfo(userId: number) {
+    const config = getAxiosConfigForUser(userId)
+    try {
+      const res = await axios.get('/about', config)
+      log('about data: %O', res.data.data)
+      return res.data.data
+    } catch (err) {
+      console.log('Error occurred getting system info: ', err)
+      return null
+    }
+
   }
 
-  async getBudgets() {
+  static async getBudgets(userId: number) {
+    const config = getAxiosConfigForUser(userId)
     try {
-      const res = await axios.get('/budgets')
+      const res = await axios.get('/budgets', config)
       console.log('budgets: ', res.data.data)
       return res.data.data
     } catch (err) {
@@ -21,35 +34,40 @@ class Firefly {
     }
   }
 
-  async getAccounts(type = 'asset') {
+  static async getAccounts(type = 'asset', userId: number) {
+    const config = getAxiosConfigForUser(userId)
+    log('Axios config: %O', config)
     try {
-      const res = await axios.get(`/accounts?type=${type}`)
+      const res = await axios.get(`/accounts?type=${type}`, config)
       return res.data.data
     } catch (err) {
       console.log('Error occurred getting accounts: ', err)
     }
   }
 
-  async getCategories() {
+  static async getCategories(userId: number) {
+    const config = getAxiosConfigForUser(userId)
     try {
-      const res = await axios.get('/categories')
+      const res = await axios.get('/categories', config)
       return res.data.data
     } catch (err) {
       console.log('Error occurred getting categories: ', err)
     }
   }
 
-  async createTransaction(transaction: ITransaction) {
+  static async createTransaction(transaction: ITransaction, userId: number) {
+    console.log('transaction: ', transaction)
+    const config = getAxiosConfigForUser(userId)
     try {
       const {
         amount,
-        description = 'Трата на категорию',
+        description = 'Расход по категории',
         categoryName,
         budget,
         sourceId,
         sourceName,
-        destinationId,
-        destinationName
+        // destinationId,
+        // destinationName
       } = transaction
 
       const t: ITransactionPayload = {
@@ -61,8 +79,8 @@ class Firefly {
         budget_name: budget,
         source_id: sourceId,
         source_name: sourceName,
-        destination_id: destinationId || 0,
-        destination_name: destinationName
+        // destination_id: destinationId || 0,
+        // destination_name: destinationName
       }
 
       // Get rid of empty or nulluble values
@@ -71,20 +89,23 @@ class Firefly {
       }
 
       const payload = { transactions: [t] }
-      return axios.post('/transactions', payload)
+      return axios.post('/transactions', payload, config)
     } catch (err) {
-      // console.error('Error occurred creating transaction: ', err)
-      console.error('Error occurred creating transaction: ')
+      console.error('Error occurred creating transaction: ', err)
     }
   }
 
-  async listTransactions() {
+  static async listTransactions(userId: number) {
+    const config = getAxiosConfigForUser(userId)
     try {
       const start = dayjs().subtract(7, 'day').format('YYYY-MM-DD')
       const end = dayjs().format('YYYY-MM-DD')
       const type = 'withdrawal'
-      const res = await axios.get(`/transactions?${querystring.stringify({ start, end, type })}`)
-      console.log('transactions: ', res.data)
+
+      const res = await axios.get(
+        `/transactions?${querystring.stringify({ start, end, type })}`,
+        config
+      )
       return res.data
     } catch (err) {
       console.error('Error occurred getting transactions: ', err)
@@ -111,16 +132,23 @@ interface ITransactionPayload {
   amount: number
   description: string
   source_id: number | null
-  destination_id: number | null
+  // destination_id: number | null
   source_name?: string | null
-  destination_name?: string | null
+  // destination_name?: string | null
   category_name?: string | null
   category_id?: string | null
   budget_name?: string
 }
 
-export default new Firefly(config.fireflyUrl, config.authToken)
-
+function getAxiosConfigForUser(userId: number) {
+  const { fireflyUrl, fireflyAccessToken } = getDataFromUserStorage(userId)
+  return  {
+    baseURL: `${fireflyUrl}/api/v1/`,
+    headers: {
+      Authorization: `Bearer ${fireflyAccessToken}`
+    }
+  }
+}
 /**
 
 def create_transaction(self, amount, description, source_account, destination_account=None, category=None, budget=None):
