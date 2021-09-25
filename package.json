@@ -1,4 +1,17 @@
 {
+  "name": "firefly-iii-telegram-bot",
+  "description": "A Telegram bot for working with Firefly III with a speed of light",
+  "version": "0.0.1",
+  "homepage": "https://github.com/cyxou/firefly-iii-telegram-bot#readme",
+  "license" : "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cyxou/firefly-iii-telegram-bot.git"
+  },
+  "author": {
+    "name" : "Alex Sukhov",
+    "email" : "acyxou@gmail.com"
+  },
   "scripts": {
     "start": "nodemon src/index.ts",
     "lint": "eslint . --ext .ts",
