@@ -17,6 +17,13 @@ jobs:
   build_and_push:
     runs-on: ubuntu-latest
     steps:
+      - name: Set up QEMU for multiplatform builds
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+
       - uses: actions/checkout@v2
 
       - name: Put back the git branch into git (Earthly uses it for tagging)
@@ -44,7 +51,7 @@ jobs:
         run: docker login --username "$dockerhubUsername" --password "$dockerhubToken"
 
       - name: Push docker image
-        run: earthly --build-arg DOCKERHUB_REPO=$githubRepo --push +image
+        run: earthly --build-arg DOCKERHUB_REPO=$githubRepo --push +all
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v2
