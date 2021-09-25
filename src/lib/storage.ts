@@ -43,8 +43,8 @@ function bootstrapUserStorage(userId: number) {
     userStorage[userId].set('FIREFLY_URL', config.fireflyUrl)
   } else userStorage[userId].set('FIREFLY_URL', null)
 
-  if (config.fireflyPersonalAuthToken) {
-    userStorage[userId].set('FIREFLY_ACCESS_TOKEN', config.fireflyPersonalAuthToken)
+  if (config.fireflyAccessToken) {
+    userStorage[userId].set('FIREFLY_ACCESS_TOKEN', config.fireflyAccessToken)
   } else userStorage[userId].set('FIREFLY_ACCESS_TOKEN', null)
 
   userStorage[userId].set('DEFAULT_ASSET_ACCOUNT', null)
