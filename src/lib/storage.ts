@@ -41,13 +41,13 @@ function bootstrapUserStorage(userId: number) {
 
   if (config.fireflyUrl) {
     userStorage[userId].set('FIREFLY_URL', config.fireflyUrl)
-  } else userStorage[userId].set('FIREFLY_URL', 'N/A')
+  } else userStorage[userId].set('FIREFLY_URL', null)
 
   if (config.fireflyPersonalAuthToken) {
     userStorage[userId].set('FIREFLY_ACCESS_TOKEN', config.fireflyPersonalAuthToken)
-  } else userStorage[userId].set('FIREFLY_ACCESS_TOKEN', 'N/A')
+  } else userStorage[userId].set('FIREFLY_ACCESS_TOKEN', null)
 
-  userStorage[userId].set('DEFAULT_ASSET_ACCOUNT', 'N/A')
+  userStorage[userId].set('DEFAULT_ASSET_ACCOUNT', null)
 
   return userStorage[userId]
 }

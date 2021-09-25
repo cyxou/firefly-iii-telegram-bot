@@ -62,9 +62,9 @@ export const text = {
 
 Что Вы хотите изменить?
 
-*${keyboardButton.FIREFLY_URL_BUTTON}*: ${fireflyUrl}
-*${keyboardButton.FIREFLY_ACCESS_TOKEN_BUTTON}*: ${accessToken}
-*${keyboardButton.DEFAULT_ASSET_ACCOUNT_BUTTON}*: ${defaultAssetAccount}`,
+*${keyboardButton.FIREFLY_URL_BUTTON}*: ${fireflyUrl || 'N/A'}
+*${keyboardButton.FIREFLY_ACCESS_TOKEN_BUTTON}*: ${accessToken || 'N/A'}
+*${keyboardButton.DEFAULT_ASSET_ACCOUNT_BUTTON}*: ${defaultAssetAccount || 'N/A'}`,
   onlyTextMessages: '‼️ Пока я понимаю только текстовые сообщения.',
   inptuFireflyUrl: `Введите URL-адрес вашего сервера Firefly III.
 Он должен быть в таком же формате, как этот: *https://firefly.example.com*

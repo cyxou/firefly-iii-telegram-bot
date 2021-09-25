@@ -30,7 +30,7 @@ type MyContext = Scenes.SceneContext<MySceneSession>
 const scene = new Scenes.BaseScene<MyContext>(
   c.BOT_SETTINGS_SCENE,
   {
-    ttl: 20,
+    // ttl: 20,
     handlers: [],
     enterHandlers: [],
     leaveHandlers: [],
@@ -127,12 +127,21 @@ async function textHandler(ctx: any) {
         )
       }
       storage.set('FIREFLY_URL', text.replace(/\/\/$/, '').toLowerCase())
+      ctx.scene.session.inputFor = null
     }
 
     if (ctx.scene.session.inputFor === INPUT_FIREFLY_ACCESS_TOKEN) {
       log('text.length: %O', text.length)
-      // if (text.length < 500) return inputFireflyAccessTokenActionHandler(ctx)
+      if (text.length < 500) {
+        return ctx.replyWithMarkdown(`
+Введеный текст не похож на Access Token. Попробуйте еще раз, пожалуйста:`,
+          Markup.inlineKeyboard([
+            Markup.button.callback(b.CANCEL, CANCEL)
+          ])
+        )
+      }
       storage.set('FIREFLY_ACCESS_TOKEN', text)
+      ctx.scene.session.inputFor = null
     }
 
     return ctx.replyWithMarkdown(
@@ -150,6 +159,7 @@ async function inputFireflyUrlActionHandler(ctx: MyContext) {
 
   try {
     ctx.scene.session.inputFor = INPUT_FIREFLY_URL
+
     await ctx.editMessageText(t.inptuFireflyUrl, {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
@@ -244,11 +254,11 @@ async function testConnectionActionHandler(ctx: MyContext) {
     const storage = getUserStorage(userId)
     const { fireflyUrl, fireflyAccessToken } = getDataFromUserStorage(userId)
 
-    if (fireflyUrl === 'N/A') {
+    if (!fireflyUrl) {
       return ctx.answerCbQuery(`Сперва укажите ${b.FIREFLY_URL_BUTTON}`)
     }
 
-    if (fireflyAccessToken === 'N/A') {
+    if (!fireflyAccessToken) {
       return ctx.answerCbQuery(`Сперва укажите ${b.FIREFLY_ACCESS_TOKEN_BUTTON}`)
     }
 

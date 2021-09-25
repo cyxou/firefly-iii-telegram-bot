@@ -20,7 +20,7 @@ import {
 import addTransactionScene from './scenes/add-ransaction'
 import botSettingsScene from './scenes/bot-settings'
 import classificationScene from './scenes/classificationScene'
-import { getUserStorage } from './storage'
+import { getDataFromUserStorage } from './storage'
 
 const log = debug(`bot:bot`)
 
@@ -41,8 +41,7 @@ const stage = new Scenes.Stage<Scenes.SceneContext>(
   // { default: scene.ADD_TRANSACTION_SCENE }
 )
 
-
-// bot.use(requireSettingsToBeSetMiddleware())
+bot.use(requireSettingsToBeSetMiddleware())
 bot.use(session())
 bot.use(stage.middleware())
 
@@ -86,7 +85,8 @@ function textHandler (ctx: any) {
 
 function requireSettingsToBeSetMiddleware() {
   return async (ctx: any, next: () => Promise<void>) => {
-    log('ctx: %O', ctx)
+    log('Entered the requireSettingsToBeSetMiddleware middleware')
+    // log('ctx: %O', ctx)
     try {
       // We allow only the commands routes to enter if Firefly URL or Firefly
       // Token are not set
@@ -96,13 +96,14 @@ function requireSettingsToBeSetMiddleware() {
       if (isCallbackQuery || whiteList.includes(ctx.update?.message?.text)
         || ctx.scene?.session?.inputFor) return next()
 
-      const storage = getUserStorage(ctx.message!.from.id)
-      const fireflyUrl = storage.get('FIREFLY_URL')
-      const authToken = storage.get('FIREFLY_ACCESS_TOKEN')
+      const userId = ctx.message!.from.id
+      const { fireflyAccessToken, fireflyUrl } = getDataFromUserStorage(userId)
 
-      if (fireflyUrl === 'N/A' || authToken === 'N/A') {
+      if (!fireflyUrl || !fireflyAccessToken) {
         return await ctx.replyWithMarkdown(t.addUrlAndAccessToken)
       }
+
+      return next()
     } catch (err) {
       console.error('Error occurred in requireSettingsToBeSetMiddleware: ', err)
     }

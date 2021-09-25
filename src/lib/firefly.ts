@@ -56,7 +56,7 @@ export default class Firefly {
   }
 
   static async createTransaction(transaction: ITransaction, userId: number) {
-    console.log('transaction: ', transaction)
+    log('createTransaction: %O, %O', transaction, userId)
     const config = getAxiosConfigForUser(userId)
     try {
       const {
@@ -66,8 +66,8 @@ export default class Firefly {
         budget,
         sourceId,
         sourceName,
-        // destinationId,
-        // destinationName
+        destinationId,
+        destinationName
       } = transaction
 
       const t: ITransactionPayload = {
@@ -77,11 +77,11 @@ export default class Firefly {
         amount,
         category_name: categoryName,
         budget_name: budget,
-        source_id: sourceId,
-        source_name: sourceName,
-        // destination_id: destinationId || 0,
-        // destination_name: destinationName
       }
+      if (sourceId) t.source_id = sourceId
+      if (sourceName) t.source_name = sourceName
+      if (destinationId) t.destination_id = destinationId
+      if (destinationName) t.destination_name = destinationName
 
       // Get rid of empty or nulluble values
       for (const key of Object.keys(t)) {
@@ -89,9 +89,24 @@ export default class Firefly {
       }
 
       const payload = { transactions: [t] }
-      return axios.post('/transactions', payload, config)
+      const res = await axios.post('/transactions', payload, config)
+      log('res.data: %O', res.data)
+      return res.data.data
     } catch (err) {
       console.error('Error occurred creating transaction: ', err)
+    }
+  }
+
+  static async deleteTransaction(transactionId: number | string, userId: number) {
+    const config = getAxiosConfigForUser(userId)
+    try {
+      const res = await axios.delete(
+        `/transactions/${transactionId}`,
+        config
+      )
+      return res.data
+    } catch (err) {
+      console.error('Error occurred deleting transaction: ', err)
     }
   }
 
@@ -118,9 +133,9 @@ export interface ITransaction {
   amount: number,
   description?: string,
   categoryName?: string,
-  sourceId: number,
+  sourceName: string,
+  sourceId?: number,
   budget?: string,
-  sourceName?: string,
   destinationId?: number
   destinationName?: string
 }
@@ -131,10 +146,10 @@ interface ITransactionPayload {
   date: string
   amount: number
   description: string
-  source_id: number | null
-  // destination_id: number | null
+  source_id?: number | null
+  destination_id?: number | null
   source_name?: string | null
-  // destination_name?: string | null
+  destination_name?: string | null
   category_name?: string | null
   category_id?: string | null
   budget_name?: string
