@@ -20,7 +20,8 @@ build:
     SAVE ARTIFACT dist /dist AS LOCAL ./dist
 
 image:
+    ARG DOCKERHUB_REPO
     COPY +build/dist ./dist
     COPY +deps/node_modules_prod ./node_modules
     ENTRYPOINT ["node", "dist/index.js"]
-    SAVE IMAGE --push cyxou/firefly-iii-telegram-bot:latest
+    SAVE IMAGE --push $DOCKERHUB_REPO:latest
