@@ -1,22 +1,25 @@
 {
   "scripts": {
     "start": "nodemon src/index.ts",
-    "lint": "eslint ./src/**/*.ts",
+    "lint": "eslint . --ext .ts",
+    "fix": "eslint . --ext .ts --fix",
     "build": "tsc"
   },
   "devDependencies": {
+    "@types/debug": "4.1.7",
     "@types/node": "16.7.2",
+    "@typescript-eslint/eslint-plugin": "4.31.2",
+    "@typescript-eslint/parser": "4.31.2",
+    "eslint": "7.32.0",
     "nodemon": "2.0.12",
     "ts-node": "10.2.1",
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@types/debug": "4.1.7",
     "axios": "0.21.1",
     "dayjs": "1.10.6",
     "debug": "4.3.2",
     "dotenv": "10.0.0",
-    "eslint": "7.32.0",
     "telegraf": "4.4.1"
   }
 }
