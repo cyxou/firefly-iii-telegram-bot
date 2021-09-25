@@ -4,8 +4,7 @@ WORKDIR /home/node/app
 all:
     BUILD \
         --platform=linux/amd64 \
-        --platform=linux/arm64 \
-        --platform=linux/arm/v7 \
+        --platform=linux/arm \
         +image
 
 deps:
