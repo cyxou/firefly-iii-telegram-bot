@@ -68,7 +68,7 @@ function settingsText(userId: number) {
   } = getDataFromUserStorage(userId)
 
   // Grab only first 4 and last 4 chars of the token
-  const accessToken = fireflyAccessToken.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
+  const accessToken = fireflyAccessToken?.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
   return t.whatDoYouWantToChange(fireflyUrl, accessToken, defaultAssetAccount)
 }
 
