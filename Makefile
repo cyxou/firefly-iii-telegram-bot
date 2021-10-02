@@ -7,5 +7,8 @@ build:
 docker-build:
 	docker build -t cyxou/firefly-iii-telegram-bot
 
+push-arm-image:
+	earthly --platform=linux/arm --push +image
+
 start:
 	docker run --name firefly-iii-telegram-bot --rm -it --env-file .env cyxou/firefly-iii-telegram-bot:latest
