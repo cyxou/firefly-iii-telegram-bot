@@ -2,12 +2,14 @@ import debug from 'debug'
 import dayjs from 'dayjs'
 import { Scenes, Markup, Types, Context } from 'telegraf'
 
+import { MyContext } from '../bot'
+import { requireSettings } from '../middlewares'
 import firefly, { ITransaction } from '../firefly'
 import { getToken } from '../auth'
-import { scene as c, keyboardButton as b, text as t } from '../constants'
+import { scene as c, keyboardButton as b, text as t, command } from '../constants'
 import { getUserStorage, getDataFromUserStorage } from '../storage'
 
-const log = debug(`bot:${c.BOT_SETTINGS_SCENE}`)
+const rootLog = debug(`bot:scene:${c.BOT_SETTINGS_SCENE}`)
 
 const { enter, leave } = Scenes.Stage
 
@@ -17,15 +19,6 @@ const INPUT_FIREFLY_URL            = 'INPUT_FIREFLY_URL'
 const INPUT_FIREFLY_ACCESS_TOKEN   = 'INPUT_FIREFLY_ACCESS_TOKEN'
 const SELECT_DEFAULT_ASSET_ACCOUNT = 'SELECT_DEFAULT_ASSET_ACCOUNT'
 const TEST_CONNECTION              = 'TEST_CONNECTION'
-
-interface MySceneSession extends Scenes.SceneSessionData {
-  // Will be available under `ctx.scene.session.inputFor`
-  inputFor?: string,
-  userId?: number,
-  match?: any
-}
-
-type MyContext = Scenes.SceneContext<MySceneSession>
 
 const scene = new Scenes.BaseScene<MyContext>(
   c.BOT_SETTINGS_SCENE,
@@ -37,6 +30,9 @@ const scene = new Scenes.BaseScene<MyContext>(
   }
 )
 
+// Middlewares
+scene.use(requireSettings())
+
 scene.enter(sceneEnterHandler)
 scene.leave((ctx) => console.log('Exiting scene....'))
 scene.action(DONE, doneActionHandler)
@@ -47,10 +43,6 @@ scene.action(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountActionHandle
 scene.action(TEST_CONNECTION, testConnectionActionHandler)
 scene.action(/^!defaultAccount=(.+)$/, defaultAccountActionHandler)
 scene.on('text', textHandler)
-// scene.use((ctx: any, next: () => Promise<void>) => {
-//   log('SEXYYYY: %O', ctx)
-//   return next()
-// })
 
 // scene.on('callback_query', async (ctx, next) => {
 //   log('callback_query - ALOHA')
@@ -92,21 +84,27 @@ function settingsInlineKeyboard(userId: number) {
 }
 
 function sceneEnterHandler(ctx: MyContext) {
-  const userId = ctx.scene.session.userId!
+  const log = rootLog.extend('sceneEnterHandler')
+  log('ctx: %O', ctx)
+  const { userId } = ctx
+  log('userId: %O', userId)
   return ctx.replyWithMarkdown(
     settingsText(userId),
     settingsInlineKeyboard(userId) as any
   )
 }
 
-async function doneActionHandler(ctx: Scenes.SceneContext) {
+async function doneActionHandler(ctx: MyContext) {
   await ctx.deleteMessage()
   return ctx.scene.leave()
 }
 
-async function textHandler(ctx: any) {
+async function textHandler(ctx: MyContext) {
+  const log = rootLog.extend('textHandler')
+  log('Entered textHandler command action...')
   try {
-    const userId = ctx.scene.session.userId!
+    // log('ctx: %O', ctx)
+    const { userId } = ctx
     const storage = getUserStorage(userId)
     const { text } = ctx.message
     log('User entered text: %s', text)
@@ -155,7 +153,8 @@ async function textHandler(ctx: any) {
 }
 
 async function inputFireflyUrlActionHandler(ctx: MyContext) {
-  log(`Entred the ${INPUT_FIREFLY_URL} action handler`)
+  const log = rootLog.extend('inputFireflyUrlActionHandler')
+  log(`Entered the ${INPUT_FIREFLY_URL} action handler`)
 
   try {
     ctx.scene.session.inputFor = INPUT_FIREFLY_URL
@@ -172,8 +171,8 @@ async function inputFireflyUrlActionHandler(ctx: MyContext) {
 }
 
 async function inputFireflyAccessTokenActionHandler(ctx: MyContext) {
-  log(`Entred the ${INPUT_FIREFLY_ACCESS_TOKEN} action handler`)
-
+  const log = rootLog.extend('inputFireflyAccessTokenActionHandler')
+  log(`Entered the ${INPUT_FIREFLY_ACCESS_TOKEN} action handler`)
   try {
     ctx.scene.session.inputFor = INPUT_FIREFLY_ACCESS_TOKEN
     return ctx.editMessageText(t.inputFireflyAccessToken, {
@@ -187,12 +186,12 @@ async function inputFireflyAccessTokenActionHandler(ctx: MyContext) {
   }
 }
 
-async function selectDefaultAssetAccountActionHandler(ctx: any) {
+async function selectDefaultAssetAccountActionHandler(ctx: MyContext) {
+  const log = rootLog.extend('selectDefaultAssetAccountActionHandler')
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} action handler`)
-
   try {
-    const userId = ctx.scene.session.userId
-    // log('userId: %s', userId)
+    const { userId } = ctx
+    log('userId: %s', userId)
     const { fireflyAccessToken } = getDataFromUserStorage(userId)
 
     const accounts = await firefly.getAccounts('asset', userId)
@@ -215,11 +214,11 @@ async function selectDefaultAssetAccountActionHandler(ctx: any) {
   }
 }
 
-async function defaultAccountActionHandler(ctx: any) {
+async function defaultAccountActionHandler(ctx: MyContext) {
+  const log = rootLog.extend('defaultAccountActionHandler')
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} command handler`)
-
   try {
-    const userId = ctx.scene.session.userId!
+    const { userId } = ctx
     const storage = getUserStorage(userId)
     const accountName = ctx.match[1]
 
@@ -229,7 +228,7 @@ async function defaultAccountActionHandler(ctx: any) {
 
     return ctx.editMessageText(
       settingsText(userId),
-      settingsInlineKeyboard(userId)
+      settingsInlineKeyboard(userId) as any
     )
   } catch (err) {
     console.error(err)
@@ -237,6 +236,7 @@ async function defaultAccountActionHandler(ctx: any) {
 }
 
 async function cancelActionHandler(ctx: MyContext) {
+  const log = rootLog.extend('cancelActionHandler')
   try {
     log('Cancelling...: ')
     await ctx.deleteMessage()
@@ -247,10 +247,10 @@ async function cancelActionHandler(ctx: MyContext) {
 }
 
 async function testConnectionActionHandler(ctx: MyContext) {
+  const log = rootLog.extend('testConnectionActionHandler')
   log('Entered testConnectionActionHandler action handler')
-
   try {
-    const userId = ctx.scene.session.userId!
+    const { userId } = ctx
     const storage = getUserStorage(userId)
     const { fireflyUrl, fireflyAccessToken } = getDataFromUserStorage(userId)
 

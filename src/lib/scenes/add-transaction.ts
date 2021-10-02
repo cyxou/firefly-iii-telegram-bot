@@ -2,17 +2,18 @@ import dayjs from 'dayjs'
 import debug from 'debug'
 import { Scenes, Markup } from 'telegraf'
 
+import { MyContext } from '../bot'
+import { requireSettings } from '../middlewares'
 import firefly, { ITransaction } from '../firefly'
 import { getDataFromUserStorage } from '../storage'
 import {
   scene as c,
   text as t,
   mainKeyboard,
-  keyboardButton as kb,
-  keyboardToScenesMap as k2sMap
+  keyboardButton as kb
 } from '../constants'
 
-const log = debug(`bot:${c.ADD_TRANSACTION_SCENE}`)
+const rootLog = debug(`bot:scene:${c.ADD_TRANSACTION_SCENE}`)
 
 const { enter, leave } = Scenes.Stage
 
@@ -21,15 +22,18 @@ const CHOOSE_ACCOUNT     = 'CHOOSE_ACCOUNT'
 const CANCEL             = 'CANCEL'
 const EDIT_TRANSACTION   = 'EDIT_TRANSACTION'
 
-interface MySceneSession extends Scenes.SceneSessionData {
-  // Will be available under `ctx.scene.session.transaction`
-  userId?: number,
-  transaction?: ITransaction
-}
+// interface MySceneSession extends Scenes.SceneSessionData {
+//   // Will be available under `ctx.scene.session.transaction`
+//   userId?: number,
+//   transaction?: ITransaction
+// }
 
-type MyContext = Scenes.SceneContext<MySceneSession>
+// type MyContext = Scenes.SceneContext<MySceneSession>
 
 const scene = new Scenes.BaseScene<MyContext>(c.ADD_TRANSACTION_SCENE)
+
+// Middlewares
+scene.use(requireSettings())
 
 scene.enter(textHandler)
 scene.leave((ctx) => console.log('Exiting scene....'))
@@ -41,6 +45,7 @@ scene.action(/^!category=(.+)$/, categoryActionHandler)
 scene.on('text', textHandler)
 
 scene.on('callback_query', async ( ctx, next ) => {
+  const log = rootLog.extend('callback_query')
   log('Entered callback_query handler')
   await ctx.answerCbQuery()
   return next()
@@ -49,6 +54,7 @@ scene.on('callback_query', async ( ctx, next ) => {
 export default scene
 
 async function sceneEnterHandler(ctx: Scenes.SceneContext) {
+  const log = rootLog.extend('sceneEnterHandler')
   log('ctx.message: ', ctx.message)
   return ctx.reply(
     'Введите сумму транзакции, либо несколько значений через пробел',
@@ -56,28 +62,24 @@ async function sceneEnterHandler(ctx: Scenes.SceneContext) {
   )
 }
 
-async function textHandler (ctx: any) {
+async function textHandler(ctx: MyContext) {
+  const log = rootLog.extend('textHandler')
   log('Entered text handler')
-
   try {
-    // Since this is the default scene, we need to watch out for the keyboard
-    // commands a users clicks on:
-    handleBotActionsFromKeyboard(ctx)
-
-    const userId = ctx.message.from.id
+    const { userId } = ctx
     const text = ctx.message.text
     log('ctx.message.text: %O', text)
 
-    const validInput = /^(?<amountOnly>\d{1,}(:[.,]\d+)?)$|(?<description>.+)\s(?<amount>\d{1,}(:[.,]\d+)?)$/gi
+    const validInput = /^(?<amountOnly>\d{1,}(?:[.,]\d+)?)$|(?<description>.+)\s(?<amount>\d{1,}(?:[.,]\d+)?)$/gi
     const match = validInput.exec(text)
     log('match: %O', match)
 
     if (!match) return ctx.reply(`
-Я пока такое не понимаю! 🤖
-Введите сумму транзакции (это должно быть число 😉):`)
+🤖Я пока такое не понимаю!
+Введите сумму транзакции это должно быть число 😉):`)
 
     let amount: string | number = match.groups!.amount || match.groups!.amountOnly
-    amount = parseFloat(amount.replace(',', ''))
+    amount = parseFloat(amount.replace(',', '.'))
     const description = match.groups!.description
     log('amount: ', amount)
     log('description: ', description)
@@ -94,12 +96,10 @@ async function textHandler (ctx: any) {
     if (description) {
       const t = await createExpressTransaction(userId, amount, description, defaultAssetAccount)
       // log('t: %O', t)
-      return ctx.replyWithHTML(formatTransactionMessage(t), {
-        ...Markup.inlineKeyboard([
-          Markup.button.callback(kb.MODIFY_DATE, EDIT_TRANSACTION),
-          Markup.button.callback(kb.DELETE, `!deleteTransactionId=${t.id}`),
-        ], { columns: 2})
-      })
+      return ctx.replyWithHTML(
+        formatTransactionMessage(t),
+        formatTransactionKeyboard(t) as any
+      )
     }
 
     ctx.scene.session.transaction = {
@@ -109,8 +109,8 @@ async function textHandler (ctx: any) {
       // destinationId: expenseAccount.id
     }
 
-    const keyboard = await createCategoriesKeyboard(userId)
-    return ctx.reply(`В какую категорию добавить ${ctx.message.text}?`, keyboard)
+    const categories = await createCategoriesKeyboard(userId)
+    return ctx.reply(`В какую категорию добавить ${ctx.message.text}?`, categories)
   } catch (err) {
     console.error('Error occurred handling text message: ', err)
     return ctx.reply(err.message)
@@ -118,6 +118,7 @@ async function textHandler (ctx: any) {
 }
 
 async function categoryActionHandler(ctx: any) {
+  const log = rootLog.extend('categoryActionHandler')
   log('Entered the categoryActionHandler action hanlder')
 
   try {
@@ -125,19 +126,16 @@ async function categoryActionHandler(ctx: any) {
     ctx.scene.session.transaction!.categoryName = categoryName
 
     const formatedDate = dayjs().format('DD MMM YYYY г.')
-    const { userId } = ctx.scene.session
+    const { userId } = ctx
     const { transaction } = ctx.scene.session
 
-    const tr = await firefly.createTransaction(transaction, userId)
+    const res = await firefly.createTransaction(transaction, userId)
+    const t = res.attributes.transactions[0]
 
     await ctx.editMessageText(
-      `Добавлено *${ctx.scene.session.transaction!.amount}* в категорию расходов: *${categoryName}*\n${formatedDate}`, {
-      parse_mode: 'Markdown',
-      ...Markup.inlineKeyboard([
-        Markup.button.callback(kb.MODIFY_DATE, EDIT_TRANSACTION),
-        Markup.button.callback(kb.DELETE, `!deleteTransactionId=${tr.id}`),
-      ], { columns: 2})
-    })
+      formatTransactionMessage(t),
+      formatTransactionKeyboard(t) as any
+    )
 
     return ctx.answerCbQuery('Транзакция создана!')
   } catch (err) {
@@ -147,7 +145,8 @@ async function categoryActionHandler(ctx: any) {
   }
 }
 
-async function cancelActionHandler (ctx: Scenes.SceneContext) {
+async function cancelActionHandler(ctx: MyContext) {
+  const log = rootLog.extend('cancelActionHandler')
   try {
     log('Cancelling...: ')
     await ctx.deleteMessage()
@@ -157,7 +156,8 @@ async function cancelActionHandler (ctx: Scenes.SceneContext) {
   }
 }
 
-function editTransactionHandler (ctx: Scenes.SceneContext) {
+function editTransactionHandler(ctx: MyContext) {
+  const log = rootLog.extend('editTransactionHandler')
   try {
     log('@TODO Edit transaction...: ')
     // add note to transaction with telegram message Id
@@ -169,10 +169,10 @@ function editTransactionHandler (ctx: Scenes.SceneContext) {
 }
 
 async function deleteTransactionActionHandler(ctx: any) {
+  const log = rootLog.extend('deleteTransactionActionHandler')
   log('Entered deleteTransactionActionHandler action handler')
-
   try {
-    const { userId } = ctx.scene.session
+    const { userId } = ctx
     const trId = ctx.match[1]
 
     if (trId) await firefly.deleteTransaction(trId, userId)
@@ -185,18 +185,8 @@ async function deleteTransactionActionHandler(ctx: any) {
   }
 }
 
-function handleBotActionsFromKeyboard(ctx: any) {
-  log('Entered handleBotActionsFromKeyboard function')
-  const text = ctx.message.text
-  const scene = k2sMap.get(text)
-
-  if (scene) {
-    log('Moving to scene: ', k2sMap.get(text))
-    ctx.scene.enter(scene)
-  }
-}
-
 async function createExpressTransaction(userId: number, amount: number, description: string, account: string): Promise<ICreatedTransaction> {
+  const log = rootLog.extend('createExpressTransaction')
   try {
     const res = await firefly.createTransaction({
       amount,
@@ -205,18 +195,10 @@ async function createExpressTransaction(userId: number, amount: number, descript
     }, userId)
 
     log('res: %O', res)
-    log('res.attributes.transaction: %O', res.attributes.transactions)
     const t = res.attributes.transactions[0]
+    log('t: %O', t)
 
-    return {
-      id: res.id,
-      amount: parseFloat(t.amount),
-      date: t.date,
-      type: t.type,
-      currencySymbol: t.currency_symbol,
-      description: t.description,
-      category: t.category_name,
-    }
+    return t
   } catch (err) {
     console.error('Error occurred creating express transaction: ', err)
     return Promise.reject(err)
@@ -224,16 +206,22 @@ async function createExpressTransaction(userId: number, amount: number, descript
 }
 
 function formatTransactionMessage(t: ICreatedTransaction) {
-//   return `
-// Добавлено *${t.description}* *${t.amount}* *${t.currencySymbol}* в категорию *${t.category}*\n${dayjs(t.date).format('DD MMM YYYY г.')}`
-  return `${dayjs(t.date).format('DD MMM YYYY г.')}
-<pre>
-| Tables   |      Are      |  Cool |  Cool |  Cool |
-|----------|:-------------:|------:|------:|------:|
-| col 1 is |  left-aligned | $1600 | $1600 | $1600 |
-| col 2 is |    centered   |   $12 |   $12 |   $12 |
-| col 3 is | right-aligned |    $1 |    $1 |    $1 |
-</pre>`
+  const log = rootLog.extend('formatTransactionMessage')
+  log('t: %O', t)
+  const date = dayjs(t.date).format('DD MMM YYYY г.')
+  return `
+Добавлено ${t.description === 'N/A' ? '' : '*' + t.description + '* '}*${parseFloat(t.amount)}* *${t.currency_symbol}*${t.category_name ? ' в категорию *' + t.category_name + '*' : ''}
+${date}`
+}
+
+function formatTransactionKeyboard(t: ICreatedTransaction) {
+  return {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([
+      Markup.button.callback(kb.MODIFY_DATE, EDIT_TRANSACTION),
+      Markup.button.callback(kb.DELETE, `!deleteTransactionId=${t.transaction_journal_id}`),
+    ], { columns: 2})
+  }
 }
 
 async function createCategoriesKeyboard(userId: number) {
@@ -256,11 +244,11 @@ async function createCategoriesKeyboard(userId: number) {
 }
 
 type ICreatedTransaction = {
-  id: number,
+  transaction_journal_id: string,
   type: string,
-  amount: number,
+  amount: string,
   date: string,
-  currencySymbol: string,
+  currency_symbol: string,
   description: string,
-  category: string
+  category_name: string
 }

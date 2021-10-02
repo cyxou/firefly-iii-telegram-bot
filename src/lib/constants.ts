@@ -13,8 +13,8 @@ export const commandDescription = {
 }
 
 export const scene = {
-  ADD_TRANSACTION_SCENE: 'ADD_TRANSACTION_SCENE',
-  BOT_SETTINGS_SCENE: 'BOT_SETTINGS_SCENE',
+  ADD_TRANSACTION_SCENE: 'ADD_TRANSACTION',
+  BOT_SETTINGS_SCENE: 'BOT_SETTINGS',
 }
 
 export const keyboardButton = {
@@ -33,8 +33,13 @@ export const keyboardButton = {
   TRANSACTIONS:                 '🔀 Транзакции',
 }
 
-export const keyboardToScenesMap = new Map([
-  [keyboardButton.SETTINGS, scene.BOT_SETTINGS_SCENE]
+export const textToSceneMap = new Map([
+  // Settings
+  [keyboardButton.SETTINGS, scene.BOT_SETTINGS_SCENE],
+  [command.SETTINGS, scene.BOT_SETTINGS_SCENE]
+  // TODO Transactions
+  // TODO Reports
+  // TODO Accounts
 ])
 
 export const mainKeyboard = {

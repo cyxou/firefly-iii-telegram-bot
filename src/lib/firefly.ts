@@ -3,7 +3,6 @@ import dayjs from 'dayjs'
 import debug from 'debug'
 import querystring from 'querystring'
 
-import config from '../config'
 import { getDataFromUserStorage } from './storage'
 
 const log = debug(`bot:Firefly`)
@@ -11,8 +10,8 @@ const log = debug(`bot:Firefly`)
 export default class Firefly {
 
   static async getSystemInfo(userId: number) {
-    const config = getAxiosConfigForUser(userId)
     try {
+      const config = getAxiosConfigForUser(userId)
       const res = await axios.get('/about', config)
       log('about data: %O', res.data.data)
       return res.data.data
@@ -20,12 +19,11 @@ export default class Firefly {
       console.log('Error occurred getting system info: ', err)
       return null
     }
-
   }
 
   static async getBudgets(userId: number) {
-    const config = getAxiosConfigForUser(userId)
     try {
+      const config = getAxiosConfigForUser(userId)
       const res = await axios.get('/budgets', config)
       console.log('budgets: ', res.data.data)
       return res.data.data
@@ -35,9 +33,8 @@ export default class Firefly {
   }
 
   static async getAccounts(type = 'asset', userId: number) {
-    const config = getAxiosConfigForUser(userId)
-    log('Axios config: %O', config)
     try {
+      const config = getAxiosConfigForUser(userId)
       const res = await axios.get(`/accounts?type=${type}`, config)
       return res.data.data
     } catch (err) {
@@ -46,8 +43,8 @@ export default class Firefly {
   }
 
   static async getCategories(userId: number) {
-    const config = getAxiosConfigForUser(userId)
     try {
+      const config = getAxiosConfigForUser(userId)
       const res = await axios.get('/categories', config)
       return res.data.data
     } catch (err) {
@@ -57,11 +54,11 @@ export default class Firefly {
 
   static async createTransaction(transaction: ITransaction, userId: number) {
     log('createTransaction: %O, %O', transaction, userId)
-    const config = getAxiosConfigForUser(userId)
     try {
+      const config = getAxiosConfigForUser(userId)
       const {
         amount,
-        description = 'Расход по категории',
+        description = 'N/A',
         categoryName,
         budget,
         sourceId,
@@ -98,12 +95,9 @@ export default class Firefly {
   }
 
   static async deleteTransaction(transactionId: number | string, userId: number) {
-    const config = getAxiosConfigForUser(userId)
     try {
-      const res = await axios.delete(
-        `/transactions/${transactionId}`,
-        config
-      )
+      const config = getAxiosConfigForUser(userId)
+      const res = await axios.delete(`/transactions/${transactionId}`, config)
       return res.data
     } catch (err) {
       console.error('Error occurred deleting transaction: ', err)
@@ -111,8 +105,8 @@ export default class Firefly {
   }
 
   static async listTransactions(userId: number) {
-    const config = getAxiosConfigForUser(userId)
     try {
+      const config = getAxiosConfigForUser(userId)
       const start = dayjs().subtract(7, 'day').format('YYYY-MM-DD')
       const end = dayjs().format('YYYY-MM-DD')
       const type = 'withdrawal'
@@ -127,7 +121,6 @@ export default class Firefly {
     }
   }
 }
-
 
 export interface ITransaction {
   amount: number,
@@ -156,41 +149,25 @@ interface ITransactionPayload {
 }
 
 function getAxiosConfigForUser(userId: number) {
-  const { fireflyUrl, fireflyAccessToken } = getDataFromUserStorage(userId)
-  return  {
-    baseURL: `${fireflyUrl}/api/v1/`,
-    headers: {
-      Authorization: `Bearer ${fireflyAccessToken}`
+  try {
+    const { fireflyUrl, fireflyAccessToken } = getDataFromUserStorage(userId)
+
+    if (!fireflyUrl || !fireflyAccessToken) {
+      throw new Error('Firefly URL or Firefly Access Token is not set hence a valid Axios config can not be created')
     }
+
+    const config = {
+      baseURL: `${fireflyUrl}/api/v1/`,
+      headers: {
+        Authorization: `Bearer ${fireflyAccessToken}`
+      }
+    }
+
+    log('Axios config: %O', config)
+
+    return config
+  } catch (err) {
+    console.error('Error occurred generating Axios config: ', err)
+    throw err
   }
 }
-/**
-
-def create_transaction(self, amount, description, source_account, destination_account=None, category=None, budget=None):
-        now = datetime.datetime.now()
-        payload = {
-            "transactions": [{
-                "type": "withdrawal",
-                "description": description,
-                "date": now.strftime("%Y-%m-%d"),
-                "amount": amount,
-                "budget_name": budget,
-                "category_name": category,
-            }]
-        }
-        if source_account.isnumeric():
-            payload["transactions"][0]["source_id"] = source_account
-        else:
-            payload["transactions"][0]["source_name"] = source_account
-
-        if destination_account:
-            if destination_account.isnumeric():
-                payload["transactions"][0]["destination_id"] = destination_account
-            else:
-                payload["transactions"][0]["destination_name"] = destination_account
-        else:
-            payload["transactions"][0]["destination_name"] = description
-
-        return self._post(endpoint="transactions", payload=payload)
-
-*/

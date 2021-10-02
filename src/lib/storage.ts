@@ -1,19 +1,21 @@
 import config from '../config'
+import debug from 'debug'
+
+const rootLog = debug(`bot:storage`)
 
 type KEYS =
   'FIREFLY_URL'
   | 'FIREFLY_ACCESS_TOKEN'
   | 'DEFAULT_ASSET_ACCOUNT'
-type Storage = Map<KEYS, any>
+type StorageMap = Map<KEYS, any>
 type UserStorage = {
-  [key: number]: Storage
+  [key: number]: StorageMap
 }
 
 const userStorage: UserStorage = { }
 
 export function getUserStorage(userId: number) {
-  if (!userStorage[userId]) bootstrapUserStorage(userId)
-  return userStorage[userId]
+  return userStorage[userId] || bootstrapUserStorage(userId)
 }
 
 type UserStorageValues = {
@@ -23,10 +25,16 @@ type UserStorageValues = {
 }
 
 export function getDataFromUserStorage(userId: number): UserStorageValues {
+  const log = rootLog.extend('getDataFromUserStorage')
+  log('userId: %O', userId)
   const storage = getUserStorage(userId)
+  log('storage: %O', storage)
   const fireflyUrl = storage.get('FIREFLY_URL')
+  log('fireflyUrl: %O', fireflyUrl)
   const fireflyAccessToken = storage.get('FIREFLY_ACCESS_TOKEN')
+  log('fireflyAccessToken: %O', fireflyAccessToken)
   const defaultAssetAccount = storage.get('DEFAULT_ASSET_ACCOUNT')
+  log('defaultAssetAccount: %O', defaultAssetAccount)
 
   return {
     fireflyUrl,
@@ -36,18 +44,21 @@ export function getDataFromUserStorage(userId: number): UserStorageValues {
 }
 
 function bootstrapUserStorage(userId: number) {
-  const storage: Storage = new Map()
-  userStorage[userId] = storage
+  const log = rootLog.extend('bootstrapUserStorage')
+  log('userId: %O', userId)
+  const map: StorageMap = new Map()
 
   if (config.fireflyUrl) {
-    userStorage[userId].set('FIREFLY_URL', config.fireflyUrl)
-  } else userStorage[userId].set('FIREFLY_URL', null)
+    map.set('FIREFLY_URL', config.fireflyUrl)
+  } else map.set('FIREFLY_URL', null)
 
   if (config.fireflyAccessToken) {
-    userStorage[userId].set('FIREFLY_ACCESS_TOKEN', config.fireflyAccessToken)
-  } else userStorage[userId].set('FIREFLY_ACCESS_TOKEN', null)
+    map.set('FIREFLY_ACCESS_TOKEN', config.fireflyAccessToken)
+  } else map.set('FIREFLY_ACCESS_TOKEN', null)
 
-  userStorage[userId].set('DEFAULT_ASSET_ACCOUNT', null)
+  map.set('DEFAULT_ASSET_ACCOUNT', null)
 
+  userStorage[userId] = map
+  log('userStorage[userId]: %O', userStorage[userId])
   return userStorage[userId]
 }

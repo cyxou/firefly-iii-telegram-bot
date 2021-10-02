@@ -17,7 +17,8 @@ import {
   scene,
   text as t
 } from './constants'
-import addTransactionScene from './scenes/add-ransaction'
+import addTransactionScene from './scenes/add-transaction'
+import { setUserIdToSceneSession } from './middlewares'
 import botSettingsScene from './scenes/bot-settings'
 import classificationScene from './scenes/classificationScene'
 import { getDataFromUserStorage } from './storage'
@@ -31,18 +32,39 @@ const { enter, leave } = Scenes.Stage
 
 const bot = new Telegraf<any>(token)
 
-const stage = new Scenes.Stage<Scenes.SceneContext>(
+export interface MySceneSession extends Scenes.SceneSessionData {
+  // Will be available under `ctx.scene.session.*
+  inputFor: string | null,
+  transaction: any
+}
+
+// interface MySession extends Scenes.SceneSession<MySceneSession> {
+//   // will be available under `ctx.session.mySessionProp`
+//   userId: number,
+// }
+
+export interface MyContext extends Context {
+  message: any,
+  match: any,
+  userId: number,
+  // declare session type
+  // session: MySession
+  // declare scene type
+  scene: Scenes.SceneContextScene<MyContext, MySceneSession>
+}
+
+const stage = new Scenes.Stage<MyContext>(
   [
     addTransactionScene,
     botSettingsScene,
-    classificationScene,
+    // classificationScene,
   ]
   //, { ttl: 30 }
   // { default: scene.ADD_TRANSACTION_SCENE }
 )
 
-bot.use(requireSettingsToBeSetMiddleware())
 bot.use(session())
+bot.use(setUserIdToSceneSession())
 bot.use(stage.middleware())
 
 bot.start(startHandler)
@@ -57,6 +79,9 @@ bot.hears(kb.REPORTS, ctx => ctx.reply('OK'))
 bot.hears(kb.CLASSIFICATION, ctx => ctx.reply('OK'))
 bot.hears(kb.SETTINGS, ctx => ctx.scene.enter(scene.BOT_SETTINGS_SCENE))
 bot.on('text', textHandler)
+bot.catch((err) => {
+	console.error('Error in bot:', err);
+})
 
 export default bot
 
@@ -81,33 +106,6 @@ function addTransactionCommandHandler(ctx: any) {
 
 function textHandler (ctx: any) {
   ctx.scene.enter(scene.ADD_TRANSACTION_SCENE, { userId: ctx.message.from.id })
-}
-
-function requireSettingsToBeSetMiddleware() {
-  return async (ctx: any, next: () => Promise<void>) => {
-    log('Entered the requireSettingsToBeSetMiddleware middleware')
-    // log('ctx: %O', ctx)
-    try {
-      // We allow only the commands routes to enter if Firefly URL or Firefly
-      // Token are not set
-      const whiteList = [ kb.SETTINGS, ...Object.values(command) ]
-      const isCallbackQuery = !!ctx.callbackQuery
-
-      if (isCallbackQuery || whiteList.includes(ctx.update?.message?.text)
-        || ctx.scene?.session?.inputFor) return next()
-
-      const userId = ctx.message!.from.id
-      const { fireflyAccessToken, fireflyUrl } = getDataFromUserStorage(userId)
-
-      if (!fireflyUrl || !fireflyAccessToken) {
-        return await ctx.replyWithMarkdown(t.addUrlAndAccessToken)
-      }
-
-      return next()
-    } catch (err) {
-      console.error('Error occurred in requireSettingsToBeSetMiddleware: ', err)
-    }
-  }
 }
 
 function setBotCommands(ctx: Context) {
