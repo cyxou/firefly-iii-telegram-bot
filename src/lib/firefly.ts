@@ -3,7 +3,7 @@ import dayjs from 'dayjs'
 import debug from 'debug'
 import querystring from 'querystring'
 
-import { getDataFromUserStorage } from './storage'
+import { getUserStorage } from './storage'
 
 const log = debug(`bot:Firefly`)
 
@@ -122,7 +122,7 @@ export default class Firefly {
   }
 }
 
-export interface ITransaction {
+export type ITransaction = {
   amount: number,
   description?: string,
   categoryName?: string,
@@ -131,6 +131,16 @@ export interface ITransaction {
   budget?: string,
   destinationId?: number
   destinationName?: string
+}
+
+export type ICreatedTransaction = {
+  transaction_journal_id: string,
+  type: string,
+  amount: string,
+  date: string,
+  currency_symbol: string,
+  description: string,
+  category_name: string
 }
 
 interface ITransactionPayload {
@@ -150,7 +160,7 @@ interface ITransactionPayload {
 
 function getAxiosConfigForUser(userId: number) {
   try {
-    const { fireflyUrl, fireflyAccessToken } = getDataFromUserStorage(userId)
+    const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
 
     if (!fireflyUrl || !fireflyAccessToken) {
       throw new Error('Firefly URL or Firefly Access Token is not set hence a valid Axios config can not be created')

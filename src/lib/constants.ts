@@ -1,9 +1,9 @@
-import { Markup } from 'telegraf'
+import { Keyboard } from 'grammy'
 
 export const command = {
-  START: '/start',
-  SETTINGS: '/settings',
-  HELP: '/help',
+  START: 'start',
+  SETTINGS: 'settings',
+  HELP: 'help',
 }
 
 export const commandDescription = {
@@ -33,22 +33,19 @@ export const keyboardButton = {
   TRANSACTIONS:                 '🔀 Транзакции',
 }
 
-export const textToSceneMap = new Map([
-  // Settings
-  [keyboardButton.SETTINGS, scene.BOT_SETTINGS_SCENE],
-  [command.SETTINGS, scene.BOT_SETTINGS_SCENE]
-  // TODO Transactions
-  // TODO Reports
-  // TODO Accounts
-])
+// export const textToSceneMap = new Map([
+//   // Settings
+//   [keyboardButton.SETTINGS, scene.BOT_SETTINGS_SCENE],
+//   [command.SETTINGS, scene.BOT_SETTINGS_SCENE]
+//   // TODO Transactions
+//   // TODO Reports
+//   // TODO Accounts
+// ])
 
-export const mainKeyboard = {
-  ...Markup.keyboard([
-    [ keyboardButton.TRANSACTIONS, keyboardButton.ACCOUNTS ],
-    [ keyboardButton.CLASSIFICATION, keyboardButton.REPORTS ],
-    [ keyboardButton.SETTINGS ]
-  ]).oneTime().resize()
-}
+export const mainKeyboard = new Keyboard()
+  .text(keyboardButton.TRANSACTIONS).text(keyboardButton.ACCOUNTS).row()
+  .text(keyboardButton.CLASSIFICATION).text(keyboardButton.REPORTS).row()
+  .text(keyboardButton.SETTINGS)
 
 export const text = {
   welcome: `👋 Привет! Это бот для быстрого создания транзакций в Firefly III.
@@ -63,7 +60,7 @@ export const text = {
 В этом случае будет создана транзакция списания со счета по умолчанию в размере "35" с названием "Кафе".
 
 ✨ Для гибкой настройки создания транзакций, рекомендуется настроить *Правила* в соответствующем разделе Firefly.`,
-  whatDoYouWantToChange: (fireflyUrl: string, accessToken: string, defaultAssetAccount: string) => `🔧 *Настройки*
+  whatDoYouWantToChange: (fireflyUrl: string, accessToken: string, defaultAssetAccount: string): string => `🔧 *Настройки*
 
 Что Вы хотите изменить?
 
@@ -79,5 +76,10 @@ export const text = {
 *Параметры → Профиль → OAuth → Создать новый токен*.`,
   selectDefaultAssetAccount: `Выберите счет, с которого будут списываться деньги по умолчанию.
 Если его не задать, то бот всегда будет предлагать выбрать счет при создании транзакции.  `,
-  addUrlAndAccessToken: `Для работы с ботом необходимо указать *${keyboardButton.FIREFLY_URL_BUTTON}* и *${keyboardButton.FIREFLY_ACCESS_TOKEN_BUTTON}* в разделе *${keyboardButton.SETTINGS}* бота`
+  addUrlAndAccessToken: `Для работы с ботом необходимо указать *${keyboardButton.FIREFLY_URL_BUTTON}* и *${keyboardButton.FIREFLY_ACCESS_TOKEN_BUTTON}* в разделе *${keyboardButton.SETTINGS}* бота`,
+  dontUnderstand: `🤖Я пока такое не понимаю!
+Введите сумму транзакции, это должно быть число! 😉`,
+  badAccessToken: `Введеный текст не похож на Access Token. Попробуйте еще раз, пожалуйста:`,
+  badUrl: `Введеный текст не похож на URL. Проверьте, возможно опечатались.
+Введите URL адрес вашего сервера Firefly III, например https://firefly.example.com:`,
 }
