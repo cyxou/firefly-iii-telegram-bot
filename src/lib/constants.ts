@@ -1,20 +1,15 @@
 import { Keyboard } from 'grammy'
 
 export const command = {
-  START: 'start',
+  START:    'start',
   SETTINGS: 'settings',
-  HELP: 'help',
+  HELP:     'help',
 }
 
 export const commandDescription = {
-  [command.START]: 'Старт (приветственное сообщение)',
+  [command.START]:    'Старт (приветственное сообщение)',
   [command.SETTINGS]: 'Настройки',
-  [command.HELP]: 'Помощь'
-}
-
-export const scene = {
-  ADD_TRANSACTION_SCENE: 'ADD_TRANSACTION',
-  BOT_SETTINGS_SCENE: 'BOT_SETTINGS',
+  [command.HELP]:     'Помощь'
 }
 
 export const keyboardButton = {
@@ -32,15 +27,6 @@ export const keyboardButton = {
   TEST_CONNECTION:              '🔌 Проверка соединения',
   TRANSACTIONS:                 '🔀 Транзакции',
 }
-
-// export const textToSceneMap = new Map([
-//   // Settings
-//   [keyboardButton.SETTINGS, scene.BOT_SETTINGS_SCENE],
-//   [command.SETTINGS, scene.BOT_SETTINGS_SCENE]
-//   // TODO Transactions
-//   // TODO Reports
-//   // TODO Accounts
-// ])
 
 export const mainKeyboard = new Keyboard()
   .text(keyboardButton.TRANSACTIONS).text(keyboardButton.ACCOUNTS).row()

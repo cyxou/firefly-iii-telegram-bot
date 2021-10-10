@@ -9,11 +9,9 @@ dotenv.config();
 
 import config from './config'
 import {
-  command,
   commandDescription,
   keyboardButton as b,
   mainKeyboard,
-  scene,
   text as t
 } from './lib/constants'
 import { requireSettings } from './lib/middlewares'

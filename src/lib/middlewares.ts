@@ -1,8 +1,6 @@
 import debug from 'debug'
 
 import {
-  // textToSceneMap as t2s,
-  scene as c,
   keyboardButton as b,
   text as t,
   command
@@ -54,18 +52,4 @@ export function requireSettings() {
       console.error('Error occurred in requireSettings: ', err)
     }
   }
-}
-
-function handleBotActionsFromKeyboard(ctx: MyContext) {
-  const log = rootLog.extend('handleBotActionsFromKeyboard')
-  log('Entered handleBotActionsFromKeyboard function')
-  log('ctx: %O', ctx)
-  const text = ctx.msg!.text || ''
-  // const scene = t2s.get(text)
-  // log('scene: %O', scene)
-
-  // if (scene) {
-    // log('Moving to scene: ', t2s.get(text))
-    // ctx.scene.enter(scene)
-  // }
 }
