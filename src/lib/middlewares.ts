@@ -7,6 +7,7 @@ import {
 } from './constants'
 import { getUserStorage } from './storage'
 import type { MyContext } from '../types/MyContext'
+// import { Route } from '../index'
 
 const rootLog = debug(`bot:mdlwr`)
 
@@ -30,7 +31,7 @@ export function requireSettings() {
       // We need to watch out for the keyboard commands a users clicks on:
       if (whiteList.includes(text)) return next()
 
-      if (isCallbackQuery || ctx.session.settingsStep !== 'idle') {
+      if (isCallbackQuery || ctx.session.step !== 'IDLE') {
         log('Exiting the middleware...')
         return next()
       }

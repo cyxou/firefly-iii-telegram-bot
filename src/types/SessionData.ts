@@ -1,7 +1,11 @@
-import { ITransaction } from '../lib/firefly'
+import { ITransaction, ICategory } from '../lib/firefly'
+// import { Route } from '../index'
+import { Route as SettingsRoute } from '../composers/settings'
+import { Route as ClassificationRoute } from '../composers/categories'
 
 export interface SessionData {
-  settingsStep: 'idle' | 'fireflyUrl' | 'fireflyAccessToken'
-  transactionsStep: 'idle',
+  step: 'IDLE' | ClassificationRoute | SettingsRoute
   transaction: ITransaction
+  category: any
+  newCategories: string[]
 }

@@ -7,6 +7,12 @@ import type { MyContext } from '../types/MyContext'
 import { keyboardButton as b, text as t, command } from '../lib/constants'
 import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
+// import { Route as IndexRoute } from '../index'
+
+export enum Route {
+  FIREFLY_URL          = 'SETTINGS|FIREFLY_URL',
+  FIREFLY_ACCESS_TOKEN = 'SETTINGS|FIREFLY_ACCESS_TOKEN'
+}
 
 const rootLog = debug(`bot:composer:settings`)
 
@@ -18,7 +24,7 @@ const SELECT_DEFAULT_ASSET_ACCOUNT = 'SELECT_DEFAULT_ASSET_ACCOUNT'
 const TEST_CONNECTION              = 'TEST_CONNECTION'
 
 const bot = new Composer<MyContext>()
-const router = new Router<MyContext>((ctx) => ctx.session.settingsStep)
+const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 bot.command(command.SETTINGS, settingsCommandHandler)
 bot.hears(b.SETTINGS, settingsCommandHandler)
@@ -30,10 +36,11 @@ bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCallbackQueryHandler)
 bot.callbackQuery(DONE, doneCallbackQueryHandler)
 bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
 
-router.route('idle', ( ctx, next ) => next())
-router.route('fireflyUrl', fireflyUrlRouteHandler)
-router.route('fireflyAccessToken', fireflyAccessTokenRouteHandler)
-router.otherwise(ctx => ctx.reply('otherwise'))
+// Local routes and handlers
+router.route('IDLE', ( ctx, next ) => next())
+router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
+router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
+// router.otherwise(ctx => ctx.reply('otherwise'))
 bot.use(router)
 
 export default bot
@@ -76,7 +83,7 @@ function settingsCommandHandler(ctx: MyContext) {
 }
 
 async function doneCallbackQueryHandler(ctx: MyContext) {
-  ctx.session.settingsStep = 'idle'
+  ctx.session.step = 'IDLE'
   return ctx.deleteMessage()
 }
 
@@ -99,7 +106,7 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
     }
 
     storage.fireflyAccessToken = text
-    ctx.session.settingsStep = 'idle'
+    ctx.session.step = 'IDLE'
 
     return ctx.reply(
       settingsText(userId),
@@ -130,7 +137,7 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
     }
 
     storage.fireflyUrl = text
-    ctx.session.settingsStep = 'idle'
+    ctx.session.step = 'IDLE'
 
     return ctx.reply(
       settingsText(userId),
@@ -147,7 +154,7 @@ async function inputFireflyUrlCallbackQueryHandler(ctx: MyContext) {
   log(`Entered the ${INPUT_FIREFLY_URL} action handler`)
 
   try {
-    ctx.session.settingsStep = 'fireflyUrl'
+    ctx.session.step = Route.FIREFLY_URL
 
     await ctx.editMessageText(t.inptuFireflyUrl, {
       parse_mode: 'Markdown',
@@ -162,7 +169,7 @@ async function inputFireflyAccessTokenCallbackQueryHandler(ctx: MyContext) {
   const log = rootLog.extend('inputFireflyAccessTokenCallbackQueryHandler')
   log(`Entered the ${INPUT_FIREFLY_ACCESS_TOKEN} action handler`)
   try {
-    ctx.session.settingsStep = 'fireflyAccessToken'
+    ctx.session.step = Route.FIREFLY_ACCESS_TOKEN
     return ctx.editMessageText(t.inputFireflyAccessToken, {
       parse_mode: 'Markdown',
       reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
@@ -228,7 +235,9 @@ async function cancelCallbackQueryHandler(ctx: MyContext) {
     log('Cancelling...: ')
     const userId = ctx.from!.id
     log('userId: %O', userId)
-    ctx.session.settingsStep = 'idle'
+
+    ctx.session.step = 'IDLE'
+
     await ctx.deleteMessage()
     return ctx.reply(
       settingsText(userId),

@@ -9,7 +9,7 @@ import firefly, { ICreatedTransaction } from '../lib/firefly'
 import { getUserStorage } from '../lib/storage'
 import {
   text as t,
-  keyboardButton as kb
+  keyboardButton as b
 } from '../lib/constants'
 
 const rootLog = debug(`bot:composer:addTransaction`)
@@ -24,7 +24,7 @@ bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
 bot.callbackQuery(EDIT_TRANSACTION, editTransactionHandler)
 bot.callbackQuery(/^!deleteTransactionId=(.+)$/, deleteTransactionActionHandler)
 bot.callbackQuery(/^!category=(.+)$/, categoryCallbackQueryHandler)
-const router = new Router<MyContext>((ctx) => ctx.session.transactionsStep)
+const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 router.route('idle', ctx => ctx.reply('transaction idle'))
 
@@ -117,7 +117,6 @@ async function cancelCallbackQueryHandler(ctx: MyContext) {
     log('Cancelling...: ')
     const userId = ctx.from!.id
     log('userId: %O', userId)
-    ctx.session.transactionsStep = 'idle'
     await ctx.deleteMessage()
   } catch (err) {
     console.error(err)
@@ -184,8 +183,8 @@ ${date}`
 
 function formatTransactionKeyboard(t: ICreatedTransaction) {
   const inlineKeyboard = new InlineKeyboard()
-    .text(kb.MODIFY_DATE, EDIT_TRANSACTION)
-    .text(kb.DELETE, `!deleteTransactionId=${t.transaction_journal_id}`)
+    .text(b.MODIFY_DATE, EDIT_TRANSACTION)
+    .text(b.DELETE, `!deleteTransactionId=${t.transaction_journal_id}`)
 
   return {
     parse_mode: 'Markdown' as ParseMode,
@@ -201,7 +200,7 @@ async function createCategoriesKeyboard(userId: number) {
       c.attributes.name, `!category=${c.attributes.name}`).row()
     )
 
-    keyboard.text(kb.CANCEL, CANCEL)
+    keyboard.text(b.CANCEL, CANCEL)
 
     return { reply_markup: keyboard }
   } catch (err) {

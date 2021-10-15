@@ -15,12 +15,18 @@ import {
   text as t
 } from './lib/constants'
 import { requireSettings } from './lib/middlewares'
+import { ITransaction, ICategory } from './lib/firefly'
+
 import settings from './composers/settings'
 import addTransaction from './composers/add-transaction'
-import { ITransaction } from './lib/firefly'
+import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
 import type { SessionData } from './types/SessionData'
+
+export const Route = {
+  idle: 'IDLE'
+}
 
 const rootLog = debug(`bot:root`)
 
@@ -30,9 +36,10 @@ const bot = new Bot<MyContext>(config.botToken)
 bot.use(
   session({
     initial: (): SessionData => ({
-      settingsStep: 'idle',
-      transactionsStep: 'idle',
-      transaction: {} as ITransaction
+      step: 'IDLE',
+      transaction: {} as ITransaction,
+      category: {} as ICategory,
+      newCategories: []
     }),
   })
 )
@@ -42,12 +49,12 @@ bot.command('help', helpHandler)
 bot.hears(b.ACCOUNTS, ctx => ctx.reply('OK'))
 bot.hears(b.TRANSACTIONS, ctx => ctx.reply('OK'))
 bot.hears(b.REPORTS, ctx => ctx.reply('OK'))
-bot.hears(b.CLASSIFICATION, ctx => ctx.reply('OK'))
 
 // Our custom middlewares
 bot.use(requireSettings())
 
 bot.use(settings)
+bot.use(categories)
 bot.use(addTransaction)
 
 bot.start()

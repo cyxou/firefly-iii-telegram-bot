@@ -13,7 +13,7 @@
     "email": "acyxou@gmail.com"
   },
   "scripts": {
-    "start": "nodemon src/index.ts",
+    "start": "DEBUG=bot:* nodemon src/index.ts",
     "lint": "eslint . --ext .ts",
     "fix": "eslint . --ext .ts --fix",
     "build": "tsc"

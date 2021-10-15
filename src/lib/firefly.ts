@@ -5,55 +5,110 @@ import querystring from 'querystring'
 
 import { getUserStorage } from './storage'
 
-const log = debug(`bot:Firefly`)
+const rootLog = debug(`bot:Firefly`)
 
 export default class Firefly {
 
   static async getSystemInfo(userId: number) {
+    const log = rootLog.extend('getSystemInfo')
     try {
       const config = getAxiosConfigForUser(userId)
       const res = await axios.get('/about', config)
       log('about data: %O', res.data.data)
       return res.data.data
     } catch (err) {
-      console.log('Error occurred getting system info: ', err)
+      console.error('Error occurred getting system info: ', err)
       return null
     }
   }
 
   static async getBudgets(userId: number) {
+    const log = rootLog.extend('getBudgets')
     try {
       const config = getAxiosConfigForUser(userId)
       const res = await axios.get('/budgets', config)
-      console.log('budgets: ', res.data.data)
+      log('budgets: ', res.data.data)
       return res.data.data
     } catch (err) {
-      console.log('Error occurred getting budgets: ', err)
+      console.error('Error occurred getting budgets: ', err)
     }
   }
 
   static async getAccounts(type = 'asset', userId: number) {
+    const log = rootLog.extend('getAccounts')
     try {
       const config = getAxiosConfigForUser(userId)
       const res = await axios.get(`/accounts?type=${type}`, config)
+      log('accounts: %O', res.data.data)
       return res.data.data
     } catch (err) {
-      console.log('Error occurred getting accounts: ', err)
+      console.error('Error occurred getting accounts: ', err)
     }
   }
 
   static async getCategories(userId: number) {
+    const log = rootLog.extend('getCategories')
     try {
       const config = getAxiosConfigForUser(userId)
       const res = await axios.get('/categories', config)
+      log('categories: %O', res.data.data)
       return res.data.data
     } catch (err) {
-      console.log('Error occurred getting categories: ', err)
+      console.error('Error occurred getting categories: ', err)
+    }
+  }
+
+  static async getCategory(categoryId: string, userId: number) {
+    const log = rootLog.extend('getCategory')
+    try {
+      const config = getAxiosConfigForUser(userId)
+      const res = await axios.get(`/categories/${categoryId}`, config)
+      log('category: %O', res.data.data)
+      return res.data.data
+    } catch (err) {
+      console.error('Error occurred getting category: ', err)
+    }
+  }
+
+  static async createCategory(category: ICategory, userId: number, ) {
+    const log = rootLog.extend('createCategory')
+    try {
+      const config = getAxiosConfigForUser(userId)
+      const res = await axios.post('/categories', category, config)
+      log('category: %O', res.data.data)
+      return res.data.data
+    } catch (err) {
+      console.error('Error occurred creating a category: ', err)
+    }
+  }
+
+  static async editCategory(categoryId: string, category: ICategory, userId: number, ) {
+    const log = rootLog.extend('editCategory')
+    try {
+      const config = getAxiosConfigForUser(userId)
+      const res = await axios.put(`/categories/${categoryId}`, category, config)
+      log('category: %O', res.data.data)
+      return res.data.data
+    } catch (err) {
+      console.error('Error occurred editing a category: ', err)
+    }
+  }
+
+  static async deleteCategory(categoryId: number | string, userId: number) {
+    const log = rootLog.extend('deleteCategory')
+    try {
+      const config = getAxiosConfigForUser(userId)
+      const res = await axios.delete(`/categories/${categoryId}`, config)
+      log('result data: %O', res.data.data)
+      return res.data
+    } catch (err) {
+      console.error('Error occurred deleting category: ', err)
     }
   }
 
   static async createTransaction(transaction: ITransaction, userId: number) {
-    log('createTransaction: %O, %O', transaction, userId)
+    const log = rootLog.extend('createTransaction')
+    log('transaction: %O', transaction)
     try {
       const config = getAxiosConfigForUser(userId)
       const {
@@ -87,7 +142,7 @@ export default class Firefly {
 
       const payload = { transactions: [t] }
       const res = await axios.post('/transactions', payload, config)
-      log('res.data: %O', res.data)
+      log('transaction: %O', res.data.data)
       return res.data.data
     } catch (err) {
       console.error('Error occurred creating transaction: ', err)
@@ -95,9 +150,11 @@ export default class Firefly {
   }
 
   static async deleteTransaction(transactionId: number | string, userId: number) {
+    const log = rootLog.extend('deleteTransaction')
     try {
       const config = getAxiosConfigForUser(userId)
       const res = await axios.delete(`/transactions/${transactionId}`, config)
+      log('result data: %O', res.data.data)
       return res.data
     } catch (err) {
       console.error('Error occurred deleting transaction: ', err)
@@ -105,6 +162,7 @@ export default class Firefly {
   }
 
   static async listTransactions(userId: number) {
+    const log = rootLog.extend('listTransactions')
     try {
       const config = getAxiosConfigForUser(userId)
       const start = dayjs().subtract(7, 'day').format('YYYY-MM-DD')
@@ -115,7 +173,8 @@ export default class Firefly {
         `/transactions?${querystring.stringify({ start, end, type })}`,
         config
       )
-      return res.data
+      log('transactions: %O', res.data.data)
+      return res.data.data
     } catch (err) {
       console.error('Error occurred getting transactions: ', err)
     }
@@ -131,6 +190,12 @@ export type ITransaction = {
   budget?: string,
   destinationId?: number
   destinationName?: string
+}
+
+export type ICategory = {
+  name: string,
+  notes?: string
+  id?: string
 }
 
 export type ICreatedTransaction = {
@@ -159,6 +224,7 @@ interface ITransactionPayload {
 }
 
 function getAxiosConfigForUser(userId: number) {
+  const log = rootLog.extend('getAxiosConfigForUser')
   try {
     const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
 
