@@ -1,4 +1,6 @@
 import debug from 'debug'
+import dayjs from 'dayjs'
+import { table, getBorderCharacters } from 'table'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 
@@ -17,10 +19,10 @@ const rootLog = debug(`bot:composer:categories`)
 const CANCEL                  = 'CANCEL_CLASSIFICATION'
 const DONE                    = 'DONE_CLASSIFICATION'
 const ADD_CATEGORIES          = 'ADD_CATEGORIES'
-const RENAME_CATEGORY         = /RENAME_CATEGORY_ID=(.+)/
-const DELETE_CATEGORY         = /DELETE_CATEGORY_ID=(.+)/
-const CATEGORY_DETAILS        = /DETAILS_CATEGORY_ID=(.+)/
-const DO_DELETE               = /!DO_DELETE_ID=(.+)/
+const RENAME_CATEGORY         = /^RENAME_CATEGORY_ID=(.+)/
+const DELETE_CATEGORY         = /^DELETE_CATEGORY_ID=(.+)/
+const CATEGORY_DETAILS        = /^DETAILS_CATEGORY_ID=(\w+)&START_DATE=(.+)/
+const DO_DELETE               = /^DO_DELETE_ID=(.+)/
 const CONFIRM_CATEGORIES_LIST = 'CONFIRM_CATEGORIES_LIST'
 const DECLINE_CATEGORIES_LIST = 'DECLINE_CATEGORIES_LIST'
 
@@ -28,13 +30,13 @@ const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 bot.hears(b.CATEGORIES, listCategoriesCommandHandler)
+bot.callbackQuery(CATEGORY_DETAILS, showCategoryDetails)
 bot.callbackQuery(ADD_CATEGORIES, addCategoriesCallbackQueryHandler)
 bot.callbackQuery(RENAME_CATEGORY, typeNewCategoryName)
 bot.callbackQuery(DELETE_CATEGORY, confirmDeletionCategoryCallbackQueryHandler)
 bot.callbackQuery(DO_DELETE, doDeleteCategoryCallbackQueryHandler)
 bot.callbackQuery(CONFIRM_CATEGORIES_LIST, confirmCategoriesCallbackQueryHandler)
 bot.callbackQuery(DECLINE_CATEGORIES_LIST, listCategoriesCommandHandler)
-bot.callbackQuery(CATEGORY_DETAILS, showCategoryDetails)
 bot.callbackQuery(DONE, doneCallbackQueryHandler)
 bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
 
@@ -79,8 +81,10 @@ async function typeNewCategoryName(ctx: MyContext) {
     await ctx.answerCallbackQuery()
 
     log('ctx.match: %O', ctx.match)
-    const categoryId = ctx.match![1]
+    const categoryId = parseInt(ctx.match![1], 10)
     log('categoryId: %O', categoryId)
+    const startDate = ctx.match![2]
+    log('startDate: %O', startDate)
 
     ctx.session.category = { id: categoryId }
     ctx.session.step = Route.RENAME_CATEGORY
@@ -88,7 +92,10 @@ async function typeNewCategoryName(ctx: MyContext) {
 
     return ctx.editMessageText(t.typeNewCategoryName, {
       parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard().text(b.CANCEL, `DETAILS_CATEGORY_ID=${categoryId}`)
+      reply_markup: new InlineKeyboard().text(
+        b.CANCEL,
+        `DETAILS_CATEGORY_ID=${categoryId}&START_DATE=${startDate}`
+      )
     })
   } catch (err) {
     log('Error: %O', err)
@@ -102,11 +109,11 @@ async function confirmDeletionCategoryCallbackQueryHandler(ctx: MyContext) {
   try {
     await ctx.answerCallbackQuery()
     log('ctx.match: %O', ctx.match)
-    const categoryId = ctx.match![1]
+    const categoryId = parseInt(ctx.match![1], 10)
     log('categoryId: %O', categoryId)
 
     const keyboard = new InlineKeyboard()
-      .text(b.YES, `!DO_DELETE_ID=${categoryId}`)
+      .text(b.YES, `DO_DELETE_ID=${categoryId}`)
       .text(b.CANCEL, `DETAILS_CATEGORY_ID=${categoryId}`)
 
     return ctx.editMessageText(t.confirmToDeleteCategory, {
@@ -125,7 +132,7 @@ async function doDeleteCategoryCallbackQueryHandler(ctx: MyContext) {
   try {
     const userId = ctx.from!.id
     log('ctx.match: %O', ctx.match)
-    const categoryId = ctx.match![1]
+    const categoryId = parseInt(ctx.match![1], 10)
     log('categoryId: %O', categoryId)
 
     await firefly.deleteCategory(categoryId, userId)
@@ -138,31 +145,6 @@ async function doDeleteCategoryCallbackQueryHandler(ctx: MyContext) {
     console.error(err)
   }
 }
-
-/*
-async function typeNewNameForChosenCategory(ctx: MyContext) {
-  const log = rootLog.extend('typeNewNameForChosenCategory')
-  log('Entered the typeNewNameForChosenCategory...')
-  try {
-    await ctx.answerCallbackQuery()
-
-    const userId = ctx.from!.id
-    log('ctx.match: %O', ctx.match)
-    const categoryId = ctx.match![1]
-    log('categoryId: %O', categoryId)
-
-    if (ctx.session.step !== Route.RENAME_CATEGORY) {
-    }
-
-    ctx.session.category = { id: categoryId }
-
-    return ctx.editMessageText(t.typeNewName, { parse_mode: 'Markdown'})
-
-  } catch (err) {
-    console.error(err)
-  }
-}
-*/
 
 function addCategoriesRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('addCategoriesRouteHandler')
@@ -270,6 +252,9 @@ async function replyWithListOfCategories(ctx: MyContext) {
     // log('categories: %O', categories)
 
     const inlineKeyboard = await createCategoriesInlineKeyboard(ctx)
+    inlineKeyboard
+      .text(b.ADD_CATEGORIES, ADD_CATEGORIES).row()
+      .text(b.DONE, DONE).row()
 
     const shouldReply = !!ctx.update.message
 
@@ -289,23 +274,25 @@ async function replyWithListOfCategories(ctx: MyContext) {
   }
 }
 
-async function createCategoriesInlineKeyboard(ctx: MyContext) {
+export async function createCategoriesInlineKeyboard(ctx: MyContext): Promise<InlineKeyboard> {
   const log = rootLog.extend('createCategoriesInlineKeyboard')
   try {
     const userId = ctx.from!.id
     const categories = await firefly.getCategories(userId)
     const keyboard = new InlineKeyboard()
+    const nowDate = dayjs().format('YYYY-MM-DD')
 
-    categories.forEach((c: any) => {
-      const callbackData = `DETAILS_CATEGORY_ID=${c.id}`
+    for (let i = 0; i < categories.length; i++) {
+      const c = categories[i]
+      const last = categories.length - 1
+      const callbackData = `DETAILS_CATEGORY_ID=${c.id}&START_DATE=${nowDate}`
       // Callback data should not exceed 64 bytes
       log('Number of bytes in the callback_data: %O', Buffer.byteLength(callbackData))
-      return keyboard.text(c.attributes.name, callbackData).row()
-    })
-
-    keyboard
-      .text(b.ADD_CATEGORIES, ADD_CATEGORIES).row()
-      .text(b.DONE, DONE).row()
+      keyboard.text(c.attributes.name, callbackData)
+      // Split categories keyboard into two columns so that every odd indexed
+      // category starts from new row as well as the last category in the list.
+      if (i % 2 !== 0 || i === last) keyboard.row()
+    }
 
     log('keyboard: %O', keyboard.inline_keyboard)
 
@@ -313,29 +300,60 @@ async function createCategoriesInlineKeyboard(ctx: MyContext) {
   } catch (err) {
     log('Error occurred: ', err)
     console.error('Error occurred creating categories inline keyboard: ', err)
+    throw err
   }
 }
 
 async function showCategoryDetails(ctx: MyContext) {
-  const log = rootLog.extend('showCategortDetails')
+  const log = rootLog.extend('showCategoryDetails')
   try {
     await ctx.answerCallbackQuery()
     const userId = ctx.from!.id
+    const categoryId = parseInt(ctx.match![1], 10)
+    const startDate = ctx.match![2]
     log('ctx.match: %O', ctx.match)
-    const categoryId = ctx.match![1]
     log('categoryId: %O', categoryId)
+    log('startDate: %O', startDate)
 
-    const category = await firefly.getCategory(categoryId, userId)
-    log('category: %O', category)
+    const start = dayjs(startDate).startOf('month') as any
+    const end = dayjs(startDate).endOf('month') as any
+    log('start: %O', start)
+    log('end: %O', end)
+
+    const categoryPromise = firefly.getCategory(categoryId, userId)
+    const categoryTransactionsPromise = firefly.getCategoryTransactions(
+      categoryId, { page: 1, start, end }, userId
+    )
+    const expenseCategoriesPromise = firefly.getInsightExpenseCategory(
+      { start, end, categories: [categoryId] }, userId
+    )
+
+    // Resolve all the promises
+    const [ category, categoryTransactions, expenseCategories ] =
+      await Promise.all([
+        categoryPromise,
+        categoryTransactionsPromise,
+        expenseCategoriesPromise
+      ])
+    // log('category: %O', category)
+    // log('categoryTransactions: %O', categoryTransactions)
+    // log('expenseCategoriesInsight: %O', expenseCategories)
     const categoryName = category.attributes.name
+    const sums = expenseCategories.map((item: any) => {
+      return { currency: item.currency_code, value: item.difference_float }
+    })
+    log('sums: %O', sums)
+    const inlineKeyboard = createSingleCategoryKeyboard(startDate, categoryId)
 
-    const inlineKeyboard = new InlineKeyboard()
-      .text(b.RENAME_CATEGORY, `RENAME_CATEGORY_ID=${categoryId}`).row()
-      .text(b.DELETE, `DELETE_CATEGORY_ID=${categoryId}`).row()
-      .text(b.CLOSE, CANCEL)
+    const text = t.categoryTransactions(
+      categoryName,
+      getMonthNameCapitalized(dayjs(startDate)),
+      formatTransactions(categoryTransactions),
+      sums
+    )
 
-    ctx.editMessageText(t.categoryDetails(categoryName), {
-      parse_mode: 'Markdown',
+    return ctx.editMessageText(text, {
+      parse_mode: 'HTML',
       reply_markup: inlineKeyboard
     })
 
@@ -343,4 +361,59 @@ async function showCategoryDetails(ctx: MyContext) {
     log('Error occurred: ', err)
     console.error('Error occurred showing category details: ', err)
   }
+}
+
+function formatTransactions(transactions: any[]) {
+  const log = rootLog.extend('formatTransactions')
+  if (transactions.length === 0) return t.noTransactions
+  log('transactions: %O', transactions[0].attributes)
+  const data = [
+    ...transactions.map(item => {
+      const tr = item.attributes.transactions[0]
+      if (!tr) return []
+      const date = dayjs(tr.date).format('DD MMM')
+      const amount = parseFloat(tr.amount).toFixed(2)
+      const currency = tr.currency_symbol
+      const desc = tr.description
+      return [ `${date}:`, desc, `${amount} ${currency}` ]
+    })
+  ].reverse()
+
+  const config = {
+    border: getBorderCharacters('void'),
+    columnDefault: {
+        paddingLeft: 0,
+        paddingRight: 1
+    },
+    drawHorizontalLine: () => false
+  }
+
+  log(table(data, config))
+  return table(data, config)
+}
+
+function createSingleCategoryKeyboard(curMonth: string, categoryId: string | number): InlineKeyboard {
+  const log = rootLog.extend('createSingleCategoryKeyboard')
+  const thisMonthName = getMonthNameCapitalized(dayjs(curMonth))
+  log('thisMonthName: %O', thisMonthName)
+
+  const prevMonth = dayjs(curMonth).subtract(1, 'month')
+  const prevMonthName = getMonthNameCapitalized(prevMonth)
+  log('prevMonthName: %O', prevMonthName)
+  const nextMonth = dayjs(curMonth).add(1, 'month')
+  const nextMonthName = getMonthNameCapitalized(nextMonth)
+  log('nextMonthName: %O', nextMonthName)
+
+  const inlineKeyboard = new InlineKeyboard()
+    .text(`<< ${prevMonthName}`, `DETAILS_CATEGORY_ID=${categoryId}&START_DATE=${prevMonth}`)
+    .text(`${nextMonthName} >>`, `DETAILS_CATEGORY_ID=${categoryId}&START_DATE=${nextMonth}`).row()
+    .text(b.RENAME_CATEGORY, `RENAME_CATEGORY_ID=${categoryId}`).row()
+    .text(b.DELETE, `DELETE_CATEGORY_ID=${categoryId}`).row()
+    .text(b.CLOSE, CANCEL)
+
+  return inlineKeyboard
+}
+
+function getMonthNameCapitalized(date: any) {
+  return dayjs(date).format('MMMM YYYY').replace(/^./, c => c.toLocaleUpperCase())
 }

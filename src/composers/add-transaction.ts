@@ -1,29 +1,39 @@
 import dayjs from 'dayjs'
 import debug from 'debug'
-import { Composer, InlineKeyboard } from 'grammy'
+import { Composer, Keyboard, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 import { ParseMode } from '@grammyjs/types'
 
 import type { MyContext } from '../types/MyContext'
-import firefly, { ICreatedTransaction } from '../lib/firefly'
+import firefly from '../lib/firefly'
+import { ICreatedTransaction } from '../lib/firefly/transactions'
 import { getUserStorage } from '../lib/storage'
 import {
   text as t,
   keyboardButton as b
 } from '../lib/constants'
+import { createCategoriesInlineKeyboard } from './categories'
 
 const rootLog = debug(`bot:composer:addTransaction`)
 
-const CHOOSE_CATEGORY  = 'CHOOSE_CATEGORY'
-const CHOOSE_ACCOUNT   = 'CHOOSE_ACCOUNT'
-const CANCEL           = 'CANCEL_TRANSACTIONS'
-const EDIT_TRANSACTION = 'EDIT_TRANSACTION'
+const SELECT_CATEGORY    = /^ADD_TO_CATEGORY_ID=(.+)/
+const SELECT_ACCOUNT     = /^ADD_TO_ACCOUNT_ID=(.+)/
+const CHOOSE_CATEGORY    = 'CHOOSE_CATEGORY'
+const CHOOSE_ACCOUNT     = 'CHOOSE_ACCOUNT'
+const CANCEL             = 'CANCEL_TRANSACTIONS'
+const EDIT_TRANSACTION   = 'EDIT_TRANSACTION'
+const DELETE_TRANSACTION = /^DELETE_TRANSACTION_ID=(.+)/
+const CREATE_TRANSFER    = /^CREATE_TRANSFER_AMOUNT=(.+)/
+const CREATE_DEPOSIT     = /^CREATE_DEPOSIT_AMOUNT=(.+)/
 
 const bot = new Composer<MyContext>()
 bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
 bot.callbackQuery(EDIT_TRANSACTION, editTransactionHandler)
-bot.callbackQuery(/^!deleteTransactionId=(.+)$/, deleteTransactionActionHandler)
-bot.callbackQuery(/^!category=(.+)$/, categoryCallbackQueryHandler)
+bot.callbackQuery(CREATE_TRANSFER, createTransferTransaction)
+bot.callbackQuery(CREATE_DEPOSIT, createDepositTransaction)
+bot.callbackQuery(DELETE_TRANSACTION, deleteTransactionActionHandler)
+bot.callbackQuery(SELECT_CATEGORY, categoryCallbackQueryHandler)
+bot.callbackQuery(SELECT_ACCOUNT, accountCallbackQueryHandler)
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 router.route('idle', ctx => ctx.reply('transaction idle'))
@@ -62,23 +72,32 @@ async function textHandler(ctx: MyContext) {
     // If description is not null, than we'll add transaction in a fast mode
     // without asking a user any additional info
     if (description) {
-      const t = await createFastTransaction(userId, amount, description, defaultAssetAccount)
+      const tr = await createFastTransaction(userId, amount, description, defaultAssetAccount)
       return ctx.reply(
-        formatTransactionMessage(t),
-        formatTransactionKeyboard(t)
+        t.withdrawalAddedMessage(tr),
+        formatTransactionKeyboard(tr)
       )
     }
 
     ctx.session.transaction = {
+      type: 'withdrawal',
       amount,
-      categoryName: '',
-      sourceName: defaultAssetAccount
+      categoryId: '',
       // destinationId: expenseAccount.id
     }
 
-    const categories = await createCategoriesKeyboard(userId)
-    return ctx.reply(`В какую категорию добавить ${text}?`, categories)
+    const keyboard = await createCategoriesKeyboard(userId)
+    keyboard
+      .text(b.TO_DEPOSITS, `CREATE_DEPOSIT_AMOUNT=${amount}`)
+      .text(b.TO_TRANSFERS, `CREATE_TRANSFER_AMOUNT=${amount}`).row()
+      .text(b.CANCEL, CANCEL)
+
+    return ctx.reply(t.inWhatCategoryToAdd(text), {
+      parse_mode: 'Markdown',
+      reply_markup:  keyboard
+    })
   } catch (err) {
+    log('Error: %O', err)
     console.error('Error occurred handling text message: ', err)
     return ctx.reply(err.message)
   }
@@ -89,18 +108,51 @@ async function categoryCallbackQueryHandler(ctx: MyContext) {
   log('Entered the categoryCallbackQueryHandler callback hanlder')
 
   try {
-    const categoryName = ctx.match![1]
-    ctx.session.transaction.categoryName = categoryName
+    const categoryId = ctx.match![1]
+    ctx.session.transaction.categoryId = categoryId
 
     const userId = ctx.from!.id
     const { transaction } = ctx.session
 
     const res = await firefly.createTransaction(transaction, userId)
-    const t = res.attributes.transactions[0]
+    const tr = res.attributes.transactions[0]
 
     await ctx.editMessageText(
-      formatTransactionMessage(t),
-      formatTransactionKeyboard(t)
+      t.withdrawalAddedMessage(tr),
+      formatTransactionKeyboard(tr)
+    )
+
+    return ctx.answerCallbackQuery({ text: 'Транзакция создана!' })
+  } catch (err) {
+    await ctx.answerCallbackQuery({ text: 'Произошла ошибка!' })
+    console.error('Error occurred in category action handler: ', err)
+    return ctx.editMessageText(`❗😰 Произошла ошибка при создании транзакции: ${err.message}`)
+  }
+}
+
+async function accountCallbackQueryHandler(ctx: MyContext) {
+  const log = rootLog.extend('accountCallbackQueryHandler')
+  log('Entered the accountCallbackQueryHandler callback hanlder')
+
+  try {
+    const accountId = ctx.match![1]
+    const userId = ctx.from!.id
+    const { defaultAssetAccount } = getUserStorage(userId)
+    const { transaction } = ctx.session
+    transaction.type = 'deposit'
+    transaction.sourceName = defaultAssetAccount
+    transaction.destinationId = accountId
+    // FUCK
+    // transaction.sourceId = 64
+
+    log('transaction: %O', transaction)
+
+    const res = await firefly.createTransaction(transaction, userId)
+    const tr = res.attributes.transactions[0]
+
+    await ctx.editMessageText(
+      t.depositAddedMessage(tr),
+      formatTransactionKeyboard(tr)
     )
 
     return ctx.answerCallbackQuery({ text: 'Транзакция создана!' })
@@ -156,6 +208,7 @@ async function createFastTransaction(userId: number, amount: number, description
   const log = rootLog.extend('createFastTransaction')
   try {
     const res = await firefly.createTransaction({
+      type: 'withdrawal',
       amount,
       description,
       sourceName: account
@@ -172,19 +225,10 @@ async function createFastTransaction(userId: number, amount: number, description
   }
 }
 
-function formatTransactionMessage(t: ICreatedTransaction) {
-  const log = rootLog.extend('formatTransactionMessage')
-  log('t: %O', t)
-  const date = dayjs(t.date).format('DD MMM YYYY г.')
-  return `
-Добавлено ${t.description === 'N/A' ? '' : '*' + t.description + '* '}*${parseFloat(t.amount)}* *${t.currency_symbol}*${t.category_name ? ' в категорию *' + t.category_name + '*' : ''}
-${date}`
-}
-
 function formatTransactionKeyboard(t: ICreatedTransaction) {
   const inlineKeyboard = new InlineKeyboard()
     .text(b.MODIFY_DATE, EDIT_TRANSACTION)
-    .text(b.DELETE, `!deleteTransactionId=${t.transaction_journal_id}`)
+    .text(b.DELETE, `DELETE_TRANSACTION_ID=${t.transaction_journal_id}`)
 
   return {
     parse_mode: 'Markdown' as ParseMode,
@@ -193,17 +237,88 @@ function formatTransactionKeyboard(t: ICreatedTransaction) {
 }
 
 async function createCategoriesKeyboard(userId: number) {
+  const log = rootLog.extend('createCategoriesKeyboard')
   try {
     const categories = await firefly.getCategories(userId)
+    log('categories: %O', categories)
     const keyboard = new InlineKeyboard()
-    categories.forEach((c: any) => keyboard.text(
-      c.attributes.name, `!category=${c.attributes.name}`).row()
-    )
 
-    keyboard.text(b.CANCEL, CANCEL)
+    for (let i = 0; i < categories.length; i++) {
+      const c = categories[i]
+      const last = categories.length - 1
+      keyboard.text(c.attributes.name, `ADD_TO_CATEGORY_ID=${c.id}`)
+      // Split categories keyboard into two columns so that every odd indexed
+      // category starts from new row as well as the last category in the list.
+      if (i % 2 !== 0 || i === last) keyboard.row()
+    }
 
-    return { reply_markup: keyboard }
+    return keyboard
   } catch (err) {
+    log('Error: %O', err)
+    console.error('Error occurred creating categories keyboard: ', err)
+    throw err
+  }
+}
+
+async function createDepositTransaction(ctx: MyContext) {
+  const log = rootLog.extend('createDepositTransaction')
+  try {
+    const amount = ctx.match![1]
+    log('ctx.session: %O', ctx.session)
+
+    const userId = ctx.from!.id
+
+    const accountsKeyboard = await createAccountsKeyboard(userId)
+    accountsKeyboard.text(b.CANCEL, CANCEL)
+
+    return ctx.editMessageText(t.inWhatAccountToAdd(amount), {
+      parse_mode: 'Markdown',
+      reply_markup: accountsKeyboard
+    })
+
+  } catch (err) {
+    log('Error: %O', err)
+    console.error('Error occured creating deposit transaction: ', err)
+    throw err
+  }
+}
+
+async function createTransferTransaction(ctx: MyContext) {
+  const log = rootLog.extend('createTransferTransaction')
+  try {
+
+  } catch (err) {
+    log('Error: %O', err)
+    console.error('Error occured creating transfer transaction: ', err)
+    throw err
+  }
+}
+
+
+async function createAccountsKeyboard(userId: number) {
+  const log = rootLog.extend('createAccountsKeyboard')
+  try {
+    const accounts = await firefly.getAccounts('asset', userId)
+    log('accounts: %O', accounts)
+    const keyboard = new InlineKeyboard()
+
+    for (let i = 0; i < accounts.length; i++) {
+      const c = accounts[i]
+      const last = accounts.length - 1
+      const name = c.attributes.name
+      const currencySymbol = c.attributes.currency_symbol
+      keyboard.text(
+        `${name}${name.includes(currencySymbol) ? '' : ` (${currencySymbol})`}`,
+        `ADD_TO_ACCOUNT_ID=${c.id}`
+      )
+      // Split accounts keyboard into two columns so that every odd indexed
+      // category starts from new row as well as the last account in the list.
+      if (i % 2 !== 0 || i === last) keyboard.row()
+    }
+
+    return keyboard
+  } catch (err) {
+    log('Error: %O', err)
     console.error('Error occurred creating categories keyboard: ', err)
     throw err
   }

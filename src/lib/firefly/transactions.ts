@@ -15,6 +15,17 @@ export default {
 
 type TransactionType = 'withdrawal' | 'deposit' | 'transfer'
 
+
+async function createWithdrawalTransaction(transaction: ITransaction, userId: number) {
+
+}
+async function createDepositTransaction(transaction: ITransaction, userId: number) {
+
+}
+async function createTransferTransaction(transaction: ITransaction, userId: number) {
+
+}
+
 async function createTransaction(transaction: ITransaction, userId: number) {
   const log = rootLog.extend('createTransaction')
   log('transaction: %O', transaction)

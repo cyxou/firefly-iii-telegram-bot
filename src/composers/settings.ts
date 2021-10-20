@@ -218,7 +218,7 @@ async function defaultAccountCallbackQueryHandler(ctx: MyContext) {
 
     storage.defaultAssetAccount = accountName
 
-    await ctx.answerCallbackQuery({text: 'Счет по умолчанию установлен!'})
+    await ctx.answerCallbackQuery({text: t.defaultAssetAccountSet})
 
     return ctx.editMessageText(
       settingsText(userId),
@@ -258,28 +258,28 @@ async function testConnectionCallbackQueryHandler(ctx: MyContext) {
 
     if (!fireflyUrl) {
       return ctx.answerCallbackQuery({
-        text: `Сперва укажите ${b.FIREFLY_URL_BUTTON}`,
+        text: t.specifySmthFirst(b.FIREFLY_URL_BUTTON),
         show_alert: true
       })
     }
 
     if (!fireflyAccessToken) {
       return ctx.answerCallbackQuery({
-        text: `Сперва укажите ${b.FIREFLY_ACCESS_TOKEN_BUTTON}`,
+        text: t.specifySmthFirst(b.FIREFLY_ACCESS_TOKEN_BUTTON),
         show_alert: true
       })
     }
 
-    const sysInfo = await firefly.getSystemInfo(userId)
-    log('Firefly system info: %O', sysInfo)
+    const userInfo = await firefly.getUserInfo(userId)
+    log('Firefly user info: %O', userInfo)
 
-    if (!sysInfo) return ctx.answerCallbackQuery({
-      text: 'Соединение НЕ установлено!',
+    if (!userInfo) return ctx.answerCallbackQuery({
+      text: t.connectionFailed,
       show_alert: true
     })
 
     return ctx.answerCallbackQuery({
-      text: `Соединение установлено!\nFirefly version: ${sysInfo.version}`,
+      text: t.connectionSuccess(userInfo.attributes.email),
       show_alert: true
     })
   } catch (err) {
