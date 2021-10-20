@@ -1,4 +1,5 @@
-import { ITransaction, ICategory } from '../lib/firefly'
+import { ITransaction } from '../lib/firefly/transactions'
+import { ICategory } from '../lib/firefly/categories'
 // import { Route } from '../index'
 import { Route as SettingsRoute } from '../composers/settings'
 import { Route as ClassificationRoute } from '../composers/categories'

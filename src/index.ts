@@ -15,7 +15,8 @@ import {
   text as t
 } from './lib/constants'
 import { requireSettings } from './lib/middlewares'
-import { ITransaction, ICategory } from './lib/firefly'
+import { ITransaction } from './lib/firefly/transactions'
+import { ICategory } from './lib/firefly/categories'
 
 import settings from './composers/settings'
 import addTransaction from './composers/add-transaction'
