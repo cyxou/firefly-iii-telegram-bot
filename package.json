@@ -17,7 +17,6 @@
     "lint": "eslint . --ext .ts",
     "fix": "eslint . --ext .ts --fix",
     "build": "tsc",
-    "postinstall": "npm run codegen",
     "clean:api": "rm -rf src/lib/firefly/api",
     "clean:model": "ls ./src/lib/firefly/model/ | grep -v currency-update.ts | xargs -I {} rm ./src/lib/firefly/model/{}",
     "precodegen": "npm run clean:api && npm run clean:model",
