@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import debug from 'debug'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
@@ -7,6 +8,7 @@ import type { MyContext } from '../types/MyContext'
 import { keyboardButton as b, text as t, command } from '../lib/constants'
 import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
+import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 // import { Route as IndexRoute } from '../index'
 
 export enum Route {
@@ -31,7 +33,7 @@ bot.hears(b.SETTINGS, settingsCommandHandler)
 bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
 bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
 bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
-// bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
+bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
 bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
 bot.callbackQuery(DONE, doneCbQH)
 bot.callbackQuery(CANCEL, cancelCbQH)
@@ -179,7 +181,6 @@ async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
   }
 }
 
-/*
 async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
   const log = rootLog.extend('selectDefaultAssetAccountCbQH')
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} callback query handler`)
@@ -187,7 +188,8 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
     const userId = ctx.from!.id
     log('userId: %s', userId)
 
-    const accounts = await firefly(userId).getAccounts('asset')
+    const accounts = (await firefly(userId).Accounts.listAccount(
+        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     // log('accounts: %O', accounts)
 
     const accKeyboard = new InlineKeyboard()
@@ -207,7 +209,6 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
     console.error(err)
   }
 }
-*/
 
 async function defaultAccountCbQH(ctx: MyContext) {
   const log = rootLog.extend('defaultAccountCbQH')
