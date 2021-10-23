@@ -5,10 +5,10 @@
 
 ## Development
 
-To build docker images you would need to install additional toos and packages.
+To build docker images you would need to install additional tools and packages.
  - Docker
  - Earthly
- - Some other tools for building multiplatform docker images.
+ - Some other tools for building multi platform docker images.
 
  On linux, QEMU needs to be installed manually. On Ubuntu, this can be achieved by running:
 ```shell
@@ -17,5 +17,38 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 docker stop earthly-buildkitd || true
 ```
 
+## TODO
+- [ ] Add transactions improvements (create transfers and deposits)
+- [ ] Edit transactions
+- [ ] Add English language
+- [ ] Localization based on Firefly user's preferences
+- [ ] Accounts management
+- [ ] Transactions management
+- [ ] Reports
+- [ ] Add tests
+
 [license-url]: https://www.gnu.org/licenses/agpl-3.0.html
 [stars-url]: https://github.com/cyxou/firefly-iii-telegram-bot/stargazers
+
+## Open API Code Generation
+
+### Preface
+
+This thing is used to generate typescript-axios client code for the Firefly III API
+published here: https://api-docs.firefly-iii.org
+
+There is an issue with Configuration model: the generated code has its own
+`Configuration` thing that corresponds to axios configuration. Firefly also has
+`Configuration` endpoint and corresponding models which upon code generation produce
+compiler errors due to ambiguity and to naming collision.
+In order to solve this issue, I've just ignored the Firefly Configuration API
+generation by adding the __api/configuration-api.ts__ file to
+__.openapi-generator-ignore__ file and customizing the __./src/lib/firefly/api.ts__
+file, which also had to be referenced in the __.openapi-generator-ignore__.
+
+### How to generate a client code
+
+There is a corresponding task for it in the __package.json__ file: `codegen`.
+Hence the command is `npm run codegen`. Running this command should not introduce
+any git changes unless you want to rollback or update the API specification URL
+which is hard-coded in `codegen` npm task.

@@ -28,13 +28,13 @@ const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 bot.command(command.SETTINGS, settingsCommandHandler)
 bot.hears(b.SETTINGS, settingsCommandHandler)
-bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCallbackQueryHandler)
-bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCallbackQueryHandler)
-bot.callbackQuery(TEST_CONNECTION, testConnectionCallbackQueryHandler)
-bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCallbackQueryHandler)
-bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCallbackQueryHandler)
-bot.callbackQuery(DONE, doneCallbackQueryHandler)
-bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
+bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
+bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
+bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
+// bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
+bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
+bot.callbackQuery(DONE, doneCbQH)
+bot.callbackQuery(CANCEL, cancelCbQH)
 
 // Local routes and handlers
 router.route('IDLE', ( ctx, next ) => next())
@@ -82,7 +82,7 @@ function settingsCommandHandler(ctx: MyContext) {
   )
 }
 
-async function doneCallbackQueryHandler(ctx: MyContext) {
+async function doneCbQH(ctx: MyContext) {
   ctx.session.step = 'IDLE'
   return ctx.deleteMessage()
 }
@@ -149,8 +149,8 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
   }
 }
 
-async function inputFireflyUrlCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('inputFireflyUrlCallbackQueryHandler')
+async function inputFireflyUrlCbQH(ctx: MyContext) {
+  const log = rootLog.extend('inputFireflyUrlCbQH')
   log(`Entered the ${INPUT_FIREFLY_URL} action handler`)
 
   try {
@@ -165,8 +165,8 @@ async function inputFireflyUrlCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function inputFireflyAccessTokenCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('inputFireflyAccessTokenCallbackQueryHandler')
+async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
+  const log = rootLog.extend('inputFireflyAccessTokenCbQH')
   log(`Entered the ${INPUT_FIREFLY_ACCESS_TOKEN} action handler`)
   try {
     ctx.session.step = Route.FIREFLY_ACCESS_TOKEN
@@ -179,14 +179,15 @@ async function inputFireflyAccessTokenCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function selectDefaultAssetAccountCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('selectDefaultAssetAccountCallbackQueryHandler')
+/*
+async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
+  const log = rootLog.extend('selectDefaultAssetAccountCbQH')
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} callback query handler`)
   try {
     const userId = ctx.from!.id
     log('userId: %s', userId)
 
-    const accounts = await firefly.getAccounts('asset', userId)
+    const accounts = await firefly(userId).getAccounts('asset')
     // log('accounts: %O', accounts)
 
     const accKeyboard = new InlineKeyboard()
@@ -206,9 +207,10 @@ async function selectDefaultAssetAccountCallbackQueryHandler(ctx: MyContext) {
     console.error(err)
   }
 }
+*/
 
-async function defaultAccountCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('defaultAccountCallbackQueryHandler')
+async function defaultAccountCbQH(ctx: MyContext) {
+  const log = rootLog.extend('defaultAccountCbQH')
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} query handler`)
   try {
     log('ctx: %O', ctx)
@@ -229,8 +231,8 @@ async function defaultAccountCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function cancelCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('cancelCallbackQueryHandler')
+async function cancelCbQH(ctx: MyContext) {
+  const log = rootLog.extend('cancelCbQH')
   try {
     log('Cancelling...: ')
     const userId = ctx.from!.id
@@ -248,9 +250,9 @@ async function cancelCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function testConnectionCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('testConnectionCallbackQueryHandler')
-  log('Entered testConnectionCallbackQueryHandler action handler')
+async function testConnectionCbQH(ctx: MyContext) {
+  const log = rootLog.extend('testConnectionCbQH')
+  log('Entered testConnectionCbQH action handler')
   log('ctx: %O', ctx)
   try {
     const userId  = ctx.from!.id
@@ -270,7 +272,7 @@ async function testConnectionCallbackQueryHandler(ctx: MyContext) {
       })
     }
 
-    const userInfo = await firefly.getUserInfo(userId)
+    const userInfo = (await firefly(userId).About.getCurrentUser()).data.data
     log('Firefly user info: %O', userInfo)
 
     if (!userInfo) return ctx.answerCallbackQuery({

@@ -31,14 +31,14 @@ const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 bot.hears(b.CATEGORIES, listCategoriesCommandHandler)
 bot.callbackQuery(CATEGORY_DETAILS, showCategoryDetails)
-bot.callbackQuery(ADD_CATEGORIES, addCategoriesCallbackQueryHandler)
+bot.callbackQuery(ADD_CATEGORIES, addCategoriesCbQH)
 bot.callbackQuery(RENAME_CATEGORY, typeNewCategoryName)
-bot.callbackQuery(DELETE_CATEGORY, confirmDeletionCategoryCallbackQueryHandler)
-bot.callbackQuery(DO_DELETE, doDeleteCategoryCallbackQueryHandler)
-bot.callbackQuery(CONFIRM_CATEGORIES_LIST, confirmCategoriesCallbackQueryHandler)
+bot.callbackQuery(DELETE_CATEGORY, confirmDeletionCategoryCbQH)
+bot.callbackQuery(DO_DELETE, doDeleteCategoryCbQH)
+bot.callbackQuery(CONFIRM_CATEGORIES_LIST, confirmCategoriesCbQH)
 bot.callbackQuery(DECLINE_CATEGORIES_LIST, listCategoriesCommandHandler)
-bot.callbackQuery(DONE, doneCallbackQueryHandler)
-bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
+bot.callbackQuery(DONE, doneCbQH)
+bot.callbackQuery(CANCEL, cancelCbQH)
 
 router.route(Route.ADD_CATEGORIES, addCategoriesRouteHandler)
 router.route(Route.RENAME_CATEGORY, newCategoryNameRouteHandler)
@@ -56,8 +56,8 @@ async function listCategoriesCommandHandler(ctx: MyContext) {
   }
 }
 
-async function addCategoriesCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('addCategoriesCallbackQueryHandler')
+async function addCategoriesCbQH(ctx: MyContext) {
+  const log = rootLog.extend('addCategoriesCbQH')
   log(`Entered the ${ADD_CATEGORIES} callback query handler`)
   try {
     await ctx.answerCallbackQuery()
@@ -103,9 +103,9 @@ async function typeNewCategoryName(ctx: MyContext) {
   }
 }
 
-async function confirmDeletionCategoryCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('confirmDeletionCategoryCallbackQueryHandler')
-  log('Entered the confirmDeletionCategoryCallbackQueryHandler...')
+async function confirmDeletionCategoryCbQH(ctx: MyContext) {
+  const log = rootLog.extend('confirmDeletionCategoryCbQH')
+  log('Entered the confirmDeletionCategoryCbQH...')
   try {
     await ctx.answerCallbackQuery()
     log('ctx.match: %O', ctx.match)
@@ -126,16 +126,16 @@ async function confirmDeletionCategoryCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function doDeleteCategoryCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('doDeleteCategoryCallbackQueryHandler')
-  log('Entered the doDeleteCategoryCallbackQueryHandler...')
+async function doDeleteCategoryCbQH(ctx: MyContext) {
+  const log = rootLog.extend('doDeleteCategoryCbQH')
+  log('Entered the doDeleteCategoryCbQH...')
   try {
     const userId = ctx.from!.id
     log('ctx.match: %O', ctx.match)
     const categoryId = parseInt(ctx.match![1], 10)
     log('categoryId: %O', categoryId)
 
-    await firefly.deleteCategory(categoryId, userId)
+    await firefly(userId).Categories.deleteCategory(categoryId)
     await ctx.answerCallbackQuery({ text: t.categoryDeleted })
 
     return replyWithListOfCategories(ctx)
@@ -143,6 +143,7 @@ async function doDeleteCategoryCallbackQueryHandler(ctx: MyContext) {
   } catch (err) {
     log('Error: %O', err)
     console.error(err)
+    ctx.reply('Error occurred deleting a category: ', err.message)
   }
 }
 
@@ -186,15 +187,15 @@ async function newCategoryNameRouteHandler(ctx: MyContext) {
 
     const categoryId = ctx.session.category.id
 
-    await firefly.editCategory(categoryId, { name: text }, userId)
+    await firefly(userId).Categories.updateCategory(categoryId, { name: text })
     return replyWithListOfCategories(ctx)
   } catch (err) {
     console.error(err)
   }
 }
 
-async function cancelCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('cancelCallbackQueryHandler')
+async function cancelCbQH(ctx: MyContext) {
+  const log = rootLog.extend('cancelCbQH')
   try {
     log('Cancelling...: ')
     ctx.session.step = Route.IDLE
@@ -205,9 +206,9 @@ async function cancelCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function doneCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('doneCallbackQueryHandler')
-  log('Entered the doneCallbackQueryHandler')
+async function doneCbQH(ctx: MyContext) {
+  const log = rootLog.extend('doneCbQH')
+  log('Entered the doneCbQH')
   try {
     ctx.session.step = Route.IDLE
     await ctx.answerCallbackQuery()
@@ -215,7 +216,7 @@ async function doneCallbackQueryHandler(ctx: MyContext) {
     return ctx.deleteMessage()
   } catch (err) {
     log('err: %O', err)
-    console.error('Error occurred in doneCallbackQueryHandler: ', err)
+    console.error('Error occurred in doneCbQH: ', err)
   }
 }
 
@@ -225,20 +226,20 @@ function parseCategoriesInput(input: string) {
   return splitted.filter(e => String(e).trim())
 }
 
-async function confirmCategoriesCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('confirmCategoriesCallbackQueryHandler')
+async function confirmCategoriesCbQH(ctx: MyContext) {
+  const log = rootLog.extend('confirmCategoriesCbQH')
   try {
-    log('Creating categories in Firefly: %O', ctx.session.newCategories)
+    log('Creating categories in firefly(userId): %O', ctx.session.newCategories)
     const userId = ctx.from!.id
 
     for (const category of ctx.session.newCategories) {
-      await firefly.createCategory({ name: category }, userId)
+      await firefly(userId).Categories.storeCategory({ name: category })
     }
 
     await ctx.answerCallbackQuery({ text: 'Категории созданы!' })
     return replyWithListOfCategories(ctx)
   } catch (err) {
-    console.error('Error occurred in confirmCategoriesCallbackQueryHandler: ', err)
+    console.error('Error occurred in confirmCategoriesCbQH: ', err)
   }
 }
 
@@ -247,7 +248,7 @@ async function replyWithListOfCategories(ctx: MyContext) {
   log('ctx: %O', ctx)
   try {
     const userId = ctx.from!.id
-    const categories = await firefly.getCategories(userId)
+    const categories = (await firefly(userId).Categories.listCategory()).data.data
     const categoriesNames = categories.map((c: any) => c.attributes.name)
     // log('categories: %O', categories)
 
@@ -278,7 +279,7 @@ export async function createCategoriesInlineKeyboard(ctx: MyContext): Promise<In
   const log = rootLog.extend('createCategoriesInlineKeyboard')
   try {
     const userId = ctx.from!.id
-    const categories = await firefly.getCategories(userId)
+    const categories = (await firefly(userId).Categories.listCategory()).data.data
     const keyboard = new InlineKeyboard()
     const nowDate = dayjs().format('YYYY-MM-DD')
 
@@ -320,13 +321,11 @@ async function showCategoryDetails(ctx: MyContext) {
     log('start: %O', start)
     log('end: %O', end)
 
-    const categoryPromise = firefly.getCategory(categoryId, userId)
-    const categoryTransactionsPromise = firefly.getCategoryTransactions(
-      categoryId, { page: 1, start, end }, userId
-    )
-    const expenseCategoriesPromise = firefly.getInsightExpenseCategory(
-      { start, end, categories: [categoryId] }, userId
-    )
+    const categoryPromise = firefly(userId).Categories.getCategory(categoryId)
+    const categoryTransactionsPromise = firefly(userId).Categories
+      .listTransactionByCategory(categoryId, 1, start, end)
+    const expenseCategoriesPromise = firefly(userId).Insight
+      .insightExpenseCategory(start, end, [categoryId])
 
     // Resolve all the promises
     const [ category, categoryTransactions, expenseCategories ] =
@@ -338,8 +337,8 @@ async function showCategoryDetails(ctx: MyContext) {
     // log('category: %O', category)
     // log('categoryTransactions: %O', categoryTransactions)
     // log('expenseCategoriesInsight: %O', expenseCategories)
-    const categoryName = category.attributes.name
-    const sums = expenseCategories.map((item: any) => {
+    const categoryName = category.data.data.attributes.name
+    const sums = expenseCategories.data.map((item: any) => {
       return { currency: item.currency_code, value: item.difference_float }
     })
     log('sums: %O', sums)
@@ -348,7 +347,7 @@ async function showCategoryDetails(ctx: MyContext) {
     const text = t.categoryTransactions(
       categoryName,
       getMonthNameCapitalized(dayjs(startDate)),
-      formatTransactions(categoryTransactions),
+      formatTransactions(categoryTransactions.data.data),
       sums
     )
 

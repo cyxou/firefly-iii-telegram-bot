@@ -5,14 +5,17 @@ import { Router } from "@grammyjs/router"
 import { ParseMode } from '@grammyjs/types'
 
 import type { MyContext } from '../types/MyContext'
-import firefly from '../lib/firefly'
-import { ICreatedTransaction } from '../lib/firefly/transactions'
 import { getUserStorage } from '../lib/storage'
 import {
   text as t,
   keyboardButton as b
 } from '../lib/constants'
 import { createCategoriesInlineKeyboard } from './categories'
+
+import firefly from '../lib/firefly'
+import { TransactionSplit } from '../lib/firefly/model/transaction-split'
+import { TransactionSplitStoreTypeEnum } from '../lib/firefly/model/transaction-split-store'
+import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 
 const rootLog = debug(`bot:composer:addTransaction`)
 
@@ -27,13 +30,13 @@ const CREATE_TRANSFER    = /^CREATE_TRANSFER_AMOUNT=(.+)/
 const CREATE_DEPOSIT     = /^CREATE_DEPOSIT_AMOUNT=(.+)/
 
 const bot = new Composer<MyContext>()
-bot.callbackQuery(CANCEL, cancelCallbackQueryHandler)
+bot.callbackQuery(CANCEL, cancelCbQH)
 bot.callbackQuery(EDIT_TRANSACTION, editTransactionHandler)
 bot.callbackQuery(CREATE_TRANSFER, createTransferTransaction)
 bot.callbackQuery(CREATE_DEPOSIT, createDepositTransaction)
 bot.callbackQuery(DELETE_TRANSACTION, deleteTransactionActionHandler)
-bot.callbackQuery(SELECT_CATEGORY, categoryCallbackQueryHandler)
-bot.callbackQuery(SELECT_ACCOUNT, accountCallbackQueryHandler)
+bot.callbackQuery(SELECT_CATEGORY, categoryCbQH)
+bot.callbackQuery(SELECT_ACCOUNT, createDepositTransactionCbQH)
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 router.route('idle', ctx => ctx.reply('transaction idle'))
@@ -64,7 +67,9 @@ async function textHandler(ctx: MyContext) {
 
     let { defaultAssetAccount } = getUserStorage(userId)
     if (!defaultAssetAccount) {
-      const firstAccount = (await firefly.getAccounts('asset', userId))[0]
+      const firstAccount = (await firefly(userId).Accounts.listAccount(
+        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
+      log('firstAccount: %O', firstAccount)
       defaultAssetAccount = firstAccount.attributes.name
     }
     log('defaultAssetAccount: %O', defaultAssetAccount)
@@ -103,9 +108,9 @@ async function textHandler(ctx: MyContext) {
   }
 }
 
-async function categoryCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('categoryCallbackQueryHandler')
-  log('Entered the categoryCallbackQueryHandler callback hanlder')
+async function categoryCbQH(ctx: MyContext) {
+  const log = rootLog.extend('categoryCbQH')
+  log('Entered the categoryCbQH callback hanlder')
 
   try {
     const categoryId = ctx.match![1]
@@ -114,7 +119,7 @@ async function categoryCallbackQueryHandler(ctx: MyContext) {
     const userId = ctx.from!.id
     const { transaction } = ctx.session
 
-    const res = await firefly.createTransaction(transaction, userId)
+    const res = (await firefly(userId).Transactions.storeTransaction(transaction)).data.data
     const tr = res.attributes.transactions[0]
 
     await ctx.editMessageText(
@@ -130,24 +135,30 @@ async function categoryCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function accountCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('accountCallbackQueryHandler')
-  log('Entered the accountCallbackQueryHandler callback hanlder')
+async function createDepositTransactionCbQH(ctx: MyContext) {
+  const log = rootLog.extend('createDepositTransactionCbQH')
+  log('Entered the createDepositTransactionCbQH callback hanlder')
 
   try {
     const accountId = ctx.match![1]
     const userId = ctx.from!.id
     const { defaultAssetAccount } = getUserStorage(userId)
     const { transaction } = ctx.session
-    transaction.type = 'deposit'
-    transaction.sourceName = defaultAssetAccount
-    transaction.destinationId = accountId
-    // FUCK
-    // transaction.sourceId = 64
 
     log('transaction: %O', transaction)
+    const transactionStore = {
+      transactions: [{
+        type: TransactionSplitStoreTypeEnum.Deposit,
+        date: dayjs().toISOString(),
+        amount: transaction.amount.toString(),
+        description: 'N/A',
+        source_name: defaultAssetAccount,
+        source_id: null,
+        destination_id: accountId
+      }]
+    }
 
-    const res = await firefly.createTransaction(transaction, userId)
+    const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
     const tr = res.attributes.transactions[0]
 
     await ctx.editMessageText(
@@ -163,8 +174,8 @@ async function accountCallbackQueryHandler(ctx: MyContext) {
   }
 }
 
-async function cancelCallbackQueryHandler(ctx: MyContext) {
-  const log = rootLog.extend('cancelCallbackQueryHandler')
+async function cancelCbQH(ctx: MyContext) {
+  const log = rootLog.extend('cancelCbQH')
   try {
     log('Cancelling...: ')
     const userId = ctx.from!.id
@@ -192,27 +203,33 @@ async function deleteTransactionActionHandler(ctx: MyContext) {
   log('Entered deleteTransactionActionHandler action handler')
   try {
     const userId = ctx.from!.id
-    const trId = ctx.match![1]
+    const trId = parseInt(ctx.match![1], 10)
 
-    if (trId) await firefly.deleteTransaction(trId, userId)
-    else return ctx.reply(`Could not delete this transaction: ${trId}`)
+    if (trId || !isNaN(trId)) await firefly(userId).Transactions.deleteTransaction(trId)
+    else return ctx.reply(t.couldNotDeleteTransaction(trId))
 
-    await ctx.answerCallbackQuery({ text: 'Транзакция удалена!' })
+    await ctx.answerCallbackQuery({ text: t.transactionDeleted })
     return ctx.deleteMessage()
   } catch (err) {
     console.error(err)
   }
 }
 
-async function createFastTransaction(userId: number, amount: number, description: string, account: string): Promise<ICreatedTransaction> {
+async function createFastTransaction(userId: number, amount: number, description: string, account: string): Promise<TransactionSplit> {
   const log = rootLog.extend('createFastTransaction')
   try {
-    const res = await firefly.createTransaction({
-      type: 'withdrawal',
-      amount,
-      description,
-      sourceName: account
-    }, userId)
+    const transactionStore = {
+      transactions: [{
+        type: TransactionSplitStoreTypeEnum.Withdrawal,
+        date: dayjs().toISOString(),
+        amount: amount.toString(),
+        description,
+        source_name: account,
+        source_id: null,
+        destination_id: null,
+      }]
+    }
+    const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
 
     log('res: %O', res)
     const t = res.attributes.transactions[0]
@@ -225,7 +242,7 @@ async function createFastTransaction(userId: number, amount: number, description
   }
 }
 
-function formatTransactionKeyboard(t: ICreatedTransaction) {
+function formatTransactionKeyboard(t: TransactionSplit) {
   const inlineKeyboard = new InlineKeyboard()
     .text(b.MODIFY_DATE, EDIT_TRANSACTION)
     .text(b.DELETE, `DELETE_TRANSACTION_ID=${t.transaction_journal_id}`)
@@ -239,7 +256,7 @@ function formatTransactionKeyboard(t: ICreatedTransaction) {
 async function createCategoriesKeyboard(userId: number) {
   const log = rootLog.extend('createCategoriesKeyboard')
   try {
-    const categories = await firefly.getCategories(userId)
+    const categories = (await firefly(userId).Categories.listCategory()).data.data
     log('categories: %O', categories)
     const keyboard = new InlineKeyboard()
 
@@ -298,7 +315,7 @@ async function createTransferTransaction(ctx: MyContext) {
 async function createAccountsKeyboard(userId: number) {
   const log = rootLog.extend('createAccountsKeyboard')
   try {
-    const accounts = await firefly.getAccounts('asset', userId)
+    const accounts = (await firefly(userId).Accounts.listAccount(1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     log('accounts: %O', accounts)
     const keyboard = new InlineKeyboard()
 
@@ -306,7 +323,7 @@ async function createAccountsKeyboard(userId: number) {
       const c = accounts[i]
       const last = accounts.length - 1
       const name = c.attributes.name
-      const currencySymbol = c.attributes.currency_symbol
+      const currencySymbol = c.attributes.currency_symbol || ''
       keyboard.text(
         `${name}${name.includes(currencySymbol) ? '' : ` (${currencySymbol})`}`,
         `ADD_TO_ACCOUNT_ID=${c.id}`

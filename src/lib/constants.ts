@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import { Keyboard } from 'grammy'
 
-import { ICreatedTransaction } from '../lib/firefly/transactions'
+import { TransactionSplit } from '../lib/firefly/model/transaction-split'
 
 export const command = {
   START:    'start',
@@ -88,10 +88,12 @@ export const text = {
   classificationChangeText: 'Что вы хотите настроить?',
   inWhatCategoryToAdd: (amount: string) => `В какую категорию добавить *${amount}*?`,
   inWhatAccountToAdd: (amount: string) => `На какой счет добавить *${amount}*?`,
-  withdrawalAddedMessage: (tr: ICreatedTransaction) => `
+  couldNotDeleteTransaction: (id: number) => `Не удалось удалить транзакцию по id: ${id}`,
+  transactionDeleted: 'Транзакция удалена!',
+  withdrawalAddedMessage: (tr: TransactionSplit) => `
 Добавлено ${tr.description === 'N/A' ? '' : '*' + tr.description + '* '}*${parseFloat(tr.amount)}* *${tr.currency_symbol}*${tr.category_name ? ' в категорию *' + tr.category_name + '*' : ''}
 ${dayjs(tr.date).format('DD MMM YYYY г.')}`,
-  depositAddedMessage: (tr: ICreatedTransaction) => `
+  depositAddedMessage: (tr: TransactionSplit) => `
 Добавлено ${tr.description === 'N/A' ? '' : '*' + tr.description + '* '}*${parseFloat(tr.amount)}* *${tr.currency_symbol}* на счет *${tr.destination_name}*`,
   listCategories: function (categories: string[]): string {
     if (categories.length === 0) return 'Список ваших категорий расходов пуст.'
