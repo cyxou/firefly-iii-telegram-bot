@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "2.4.12",
-    "@types/table": "6.3.2",
     "@types/debug": "4.1.7",
     "@types/node": "16.7.2",
     "@typescript-eslint/eslint-plugin": "4.31.2",
