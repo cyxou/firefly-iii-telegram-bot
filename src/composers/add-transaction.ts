@@ -6,10 +6,6 @@ import { ParseMode } from '@grammyjs/types'
 
 import type { MyContext } from '../types/MyContext'
 import { getUserStorage } from '../lib/storage'
-import {
-  text as t,
-  keyboardButton as b
-} from '../lib/constants'
 import { createCategoriesInlineKeyboard } from './categories'
 
 import firefly from '../lib/firefly'
@@ -24,7 +20,7 @@ const SELECT_ACCOUNT     = /^ADD_TO_ACCOUNT_ID=(.+)/
 const CHOOSE_CATEGORY    = 'CHOOSE_CATEGORY'
 const CHOOSE_ACCOUNT     = 'CHOOSE_ACCOUNT'
 const CANCEL             = 'CANCEL_TRANSACTIONS'
-const EDIT_TRANSACTION   = 'EDIT_TRANSACTION'
+const EDIT_TRANSACTION   = /^EDIT_TRANSACTION_ID=(.+)/
 const DELETE_TRANSACTION = /^DELETE_TRANSACTION_ID=(.+)/
 const CREATE_TRANSFER    = /^CREATE_TRANSFER_AMOUNT=(.+)/
 const CREATE_DEPOSIT     = /^CREATE_DEPOSIT_AMOUNT=(.+)/
@@ -32,6 +28,7 @@ const CREATE_DEPOSIT     = /^CREATE_DEPOSIT_AMOUNT=(.+)/
 const bot = new Composer<MyContext>()
 bot.callbackQuery(CANCEL, cancelCbQH)
 bot.callbackQuery(EDIT_TRANSACTION, editTransactionHandler)
+// bot.callbackQuery(CHANGE_TRANSACTION_DATE, editTransactionDateHandler)
 bot.callbackQuery(CREATE_TRANSFER, createTransferTransaction)
 bot.callbackQuery(CREATE_DEPOSIT, createDepositTransaction)
 bot.callbackQuery(DELETE_TRANSACTION, deleteTransactionActionHandler)
@@ -57,7 +54,9 @@ async function textHandler(ctx: MyContext) {
     const match = validInput.exec(text)
     log('match: %O', match)
 
-    if (!match) return ctx.reply(t.dontUnderstand)
+    if (!match) return ctx.reply(ctx.i18n.t('addTransaction.dontUnderstand', {
+      parse_mode: 'Markdown'
+    }))
 
     let amount: string | number = match.groups!.amount || match.groups!.amountOnly
     amount = parseFloat(amount.replace(',', '.'))
@@ -65,13 +64,7 @@ async function textHandler(ctx: MyContext) {
     log('amount: ', amount)
     log('description: ', description)
 
-    let { defaultAssetAccount } = getUserStorage(userId)
-    if (!defaultAssetAccount) {
-      const firstAccount = (await firefly(userId).Accounts.listAccount(
-        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
-      log('firstAccount: %O', firstAccount)
-      defaultAssetAccount = firstAccount.attributes.name
-    }
+    const defaultAssetAccount = await getDefaultAccount(userId)
     log('defaultAssetAccount: %O', defaultAssetAccount)
 
     // If description is not null, than we'll add transaction in a fast mode
@@ -79,8 +72,14 @@ async function textHandler(ctx: MyContext) {
     if (description) {
       const tr = await createFastTransaction(userId, amount, description, defaultAssetAccount)
       return ctx.reply(
-        t.withdrawalAddedMessage(tr),
-        formatTransactionKeyboard(tr)
+        ctx.i18n.t('addTransaction.withdrawalAddedMessage', {
+          amount: parseFloat(tr.amount),
+          description: tr.description,
+          category: tr.category_name,
+          currency: tr.currency_symbol,
+          date: dayjs(tr.date).format('DD MMM YYYY г.')
+        }),
+        formatTransactionKeyboard(ctx, tr)
       )
     }
 
@@ -93,11 +92,13 @@ async function textHandler(ctx: MyContext) {
 
     const keyboard = await createCategoriesKeyboard(userId)
     keyboard
-      .text(b.TO_DEPOSITS, `CREATE_DEPOSIT_AMOUNT=${amount}`)
-      .text(b.TO_TRANSFERS, `CREATE_TRANSFER_AMOUNT=${amount}`).row()
-      .text(b.CANCEL, CANCEL)
+      .text(ctx.i18n.t('labels.TO_DEPOSITS'), `CREATE_DEPOSIT_AMOUNT=${amount}`)
+      .text(ctx.i18n.t('labels.TO_TRANSFERS'), `CREATE_TRANSFER_AMOUNT=${amount}`).row()
+      .text(ctx.i18n.t('labels.CANCEL'), CANCEL)
 
-    return ctx.reply(t.inWhatCategoryToAdd(text), {
+    return ctx.reply(ctx.i18n.t('addTransaction.inWhatCategoryToAdd', {
+      amount: text }
+    ), {
       parse_mode: 'Markdown',
       reply_markup:  keyboard
     })
@@ -118,13 +119,38 @@ async function categoryCbQH(ctx: MyContext) {
 
     const userId = ctx.from!.id
     const { transaction } = ctx.session
+    const defaultAssetAccount = await getDefaultAccount(userId)
+    log('defaultAssetAccount: %O', defaultAssetAccount)
 
-    const res = (await firefly(userId).Transactions.storeTransaction(transaction)).data.data
+    log('transaction: %O', transaction)
+    const transactionStore = {
+      transactions: [{
+        type: TransactionSplitStoreTypeEnum.Withdrawal,
+        date: dayjs().toISOString(),
+        amount: transaction.amount.toString(),
+        description: 'N/A',
+        source_name: defaultAssetAccount,
+        source_id: null,
+        destination_id: null,
+        destination_name: null,
+        category_id: transaction.categoryId
+      }]
+    }
+    log('transactionStore: %O', transactionStore)
+
+    const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
     const tr = res.attributes.transactions[0]
+    log('Created transaction: %O', tr)
 
     await ctx.editMessageText(
-      t.withdrawalAddedMessage(tr),
-      formatTransactionKeyboard(tr)
+      ctx.i18n.t('addTransaction.withdrawalAddedMessage', {
+        amount: parseFloat(tr.amount),
+        description: tr.description,
+        category: tr.category_name,
+        currency: tr.currency_symbol,
+        date: dayjs(tr.date).format('DD MMM YYYY г.')
+      }),
+      formatTransactionKeyboard(ctx, tr)
     )
 
     return ctx.answerCallbackQuery({ text: 'Транзакция создана!' })
@@ -142,8 +168,9 @@ async function createDepositTransactionCbQH(ctx: MyContext) {
   try {
     const accountId = ctx.match![1]
     const userId = ctx.from!.id
-    const { defaultAssetAccount } = getUserStorage(userId)
     const { transaction } = ctx.session
+    const defaultAssetAccount = await getDefaultAccount(userId)
+    log('defaultAssetAccount: %O', defaultAssetAccount)
 
     log('transaction: %O', transaction)
     const transactionStore = {
@@ -160,10 +187,17 @@ async function createDepositTransactionCbQH(ctx: MyContext) {
 
     const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
     const tr = res.attributes.transactions[0]
+    log('Created transaction: %O', tr)
 
     await ctx.editMessageText(
-      t.depositAddedMessage(tr),
-      formatTransactionKeyboard(tr)
+      ctx.i18n.t('addTransaction.depositAddedMessage', {
+        amount: parseFloat(tr.amount),
+        description: tr.description,
+        destination: tr.destination_name,
+        currency: tr.currency_symbol,
+        date: dayjs(tr.date).format('DD MMM YYYY г.')
+      }),
+      formatTransactionKeyboard(ctx, tr)
     )
 
     return ctx.answerCallbackQuery({ text: 'Транзакция создана!' })
@@ -186,13 +220,51 @@ async function cancelCbQH(ctx: MyContext) {
   }
 }
 
-function editTransactionHandler(ctx: MyContext) {
-  const log = rootLog.extend('editTransactionHandler')
+function editTransactionDateHandler(ctx: MyContext) {
+  const log = rootLog.extend('editTransactionDateHandler')
+  log('Entered editTransactionDate action handler')
   try {
-    log('@TODO Edit transaction...: ')
+    const userId = ctx.from!.id
+    const trId = parseInt(ctx.match![1], 10)
     // add note to transaction with telegram message Id
     // Then search for this message id by `notes_contain:query` and edit transaction
-    return ctx.reply('Not implemented')
+    //
+    const whatToEditKeyboard = new InlineKeyboard()
+      .text(ctx.i18n.t('label.CHANGE_DATE'), `EDIT_TRANSACTION_DATE_ID=${trId}`)
+      .text(ctx.i18n.t('label.CHANGE_CATEGORY'), `EDIT_TRANSACTION_CATEGORY_ID=${trId}`)
+      .text(ctx.i18n.t('label.CHANGE_DESCRIPTION'), `EDIT_TRANSACTION_DESCRIPTION_ID=${trId}`)
+      .text(ctx.i18n.t('label.CHANGE_SOURCE_ACCOUNT'), `EDIT_TRANSACTION_SOURCE_ACCOUNT_ID=${trId}`)
+      .text(ctx.i18n.t('label.CHANGE_DEST_ACCOUNT'), `EDIT_TRANSACTION_DEST_ACCOUNT_ID=${trId}`)
+    return ctx.reply('Not implemented', {
+      parse_mode: 'Markdown',
+      reply_markup: whatToEditKeyboard
+
+    })
+  } catch (err) {
+    console.error(err)
+  }
+}
+function editTransactionHandler(ctx: MyContext) {
+  const log = rootLog.extend('editTransactionHandler')
+  log('Entered editTransaction action handler')
+  try {
+    const userId = ctx.from!.id
+    const trId = parseInt(ctx.match![1], 10)
+    // add note to transaction with telegram message Id
+    // Then search for this message id by `notes_contain:query` and edit transaction
+    //
+    const whatToEditKeyboard = new InlineKeyboard()
+      .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), `CHANGE_TRANSACTION_CATEGORY_ID=${trId}`)
+      .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), `CHANGE_TRANSACTION_DESCRIPTION_ID=${trId}`).row()
+      .text(ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), `CHANGE_TRANSACTION_SOURCE_ACCOUNT_ID=${trId}`)
+      .text(ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'), `CHANGE_TRANSACTION_DEST_ACCOUNT_ID=${trId}`).row()
+      .text(ctx.i18n.t('labels.CHANGE_DATE'), `CHANGE_TRANSACTION_DATE_ID=${trId}`).row()
+      .text(ctx.i18n.t('labels.CANCEL'), `CANCEL_CHANGE_TRANSACTION_ID=${trId}`).row()
+
+    return ctx.editMessageText(ctx.i18n.t('addTransaction.whatToEdit'), {
+      parse_mode: 'Markdown',
+      reply_markup: whatToEditKeyboard
+    })
   } catch (err) {
     console.error(err)
   }
@@ -200,15 +272,17 @@ function editTransactionHandler(ctx: MyContext) {
 
 async function deleteTransactionActionHandler(ctx: MyContext) {
   const log = rootLog.extend('deleteTransactionActionHandler')
-  log('Entered deleteTransactionActionHandler action handler')
+  log('Entered deleteTransaction action handler')
   try {
     const userId = ctx.from!.id
     const trId = parseInt(ctx.match![1], 10)
 
     if (trId || !isNaN(trId)) await firefly(userId).Transactions.deleteTransaction(trId)
-    else return ctx.reply(t.couldNotDeleteTransaction(trId))
+    else return ctx.reply(
+      ctx.i18n.t('addTransaction.couldNotDeleteTransaction', { id: trId })
+    )
 
-    await ctx.answerCallbackQuery({ text: t.transactionDeleted })
+    await ctx.answerCallbackQuery({ text: ctx.i18n.t('addTransaction.transactionDeleted') })
     return ctx.deleteMessage()
   } catch (err) {
     console.error(err)
@@ -232,20 +306,20 @@ async function createFastTransaction(userId: number, amount: number, description
     const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
 
     log('res: %O', res)
-    const t = res.attributes.transactions[0]
-    log('t: %O', t)
+    const tr = res.attributes.transactions[0]
+    log('tr: %O', tr)
 
-    return t
+    return tr
   } catch (err) {
     console.error('Error occurred creating express transaction: ', err)
     return Promise.reject(err)
   }
 }
 
-function formatTransactionKeyboard(t: TransactionSplit) {
+function formatTransactionKeyboard(ctx: MyContext, tr: TransactionSplit) {
   const inlineKeyboard = new InlineKeyboard()
-    .text(b.MODIFY_DATE, EDIT_TRANSACTION)
-    .text(b.DELETE, `DELETE_TRANSACTION_ID=${t.transaction_journal_id}`)
+    .text(ctx.i18n.t('labels.EDIT_TRANSACTION'), `EDIT_TRANSACTION_ID=${tr.transaction_journal_id}`)
+    .text(ctx.i18n.t('labels.DELETE'), `DELETE_TRANSACTION_ID=${tr.transaction_journal_id}`)
 
   return {
     parse_mode: 'Markdown' as ParseMode,
@@ -286,12 +360,14 @@ async function createDepositTransaction(ctx: MyContext) {
     const userId = ctx.from!.id
 
     const accountsKeyboard = await createAccountsKeyboard(userId)
-    accountsKeyboard.text(b.CANCEL, CANCEL)
+    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
 
-    return ctx.editMessageText(t.inWhatAccountToAdd(amount), {
-      parse_mode: 'Markdown',
-      reply_markup: accountsKeyboard
-    })
+    return ctx.editMessageText(
+      ctx.i18n.t('addTransaction.inWhatAccountToAdd', { amount: amount }), {
+        parse_mode: 'Markdown',
+        reply_markup: accountsKeyboard
+      }
+    )
 
   } catch (err) {
     log('Error: %O', err)
@@ -337,6 +413,24 @@ async function createAccountsKeyboard(userId: number) {
   } catch (err) {
     log('Error: %O', err)
     console.error('Error occurred creating categories keyboard: ', err)
+    throw err
+  }
+}
+
+async function getDefaultAccount(userId: number) {
+  const log = rootLog.extend('getDefaultAccount')
+  try {
+    let { defaultAssetAccount } = getUserStorage(userId)
+    if (!defaultAssetAccount) {
+      const firstAccount = (await firefly(userId).Accounts.listAccount(
+        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
+      log('firstAccount: %O', firstAccount)
+      defaultAssetAccount = firstAccount.attributes.name
+    }
+
+    return defaultAssetAccount
+  } catch (err) {
+    console.error('Error occurred getting default asset acount: ', err)
     throw err
   }
 }

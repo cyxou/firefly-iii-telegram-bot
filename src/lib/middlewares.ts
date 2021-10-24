@@ -1,13 +1,10 @@
 import debug from 'debug'
+import path from 'path'
 
-import {
-  keyboardButton as b,
-  text as t,
-  command
-} from './constants'
+import i18n from './i18n'
+import { command } from './constants'
 import { getUserStorage } from './storage'
 import type { MyContext } from '../types/MyContext'
-// import { Route } from '../index'
 
 const rootLog = debug(`bot:mdlwr`)
 
@@ -22,7 +19,11 @@ export function requireSettings() {
       log('text: %O', text)
       // We allow only the commands routes to enter if Firefly URL or Firefly
       // Token are not set
-      const whiteList = [ b.SETTINGS, ...Object.values(command) ]
+      const whiteList = [
+        i18n.t('ru', 'labels.SETTINGS'),
+        i18n.t('en', 'labels.SETTINGS'),
+        ...Object.values(command)
+      ]
       log('whiteList: %O', whiteList)
       const isCallbackQuery = !!ctx.callbackQuery
       log('isCallbackQuery: %O', isCallbackQuery)
@@ -41,9 +42,16 @@ export function requireSettings() {
       log('fireflyAccessToken: %O', fireflyAccessToken)
       log('fireflyUrl: %O', fireflyUrl)
 
-      if (!fireflyUrl || !fireflyAccessToken) {
+      if (!fireflyUrl) {
         log('Replying with a message...')
-        return await ctx.reply(t.addUrlAndAccessToken, {
+        return await ctx.reply(ctx.i18n.t('mdlwr.noFireflyURLFound'), {
+          parse_mode: 'Markdown'
+        })
+      }
+
+      if (!fireflyAccessToken) {
+        log('Replying with a message...')
+        return await ctx.reply(ctx.i18n.t('mdlwr.noFireflyAccessTokenFound'), {
           parse_mode: 'Markdown'
         })
       }

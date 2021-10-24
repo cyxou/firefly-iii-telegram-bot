@@ -5,7 +5,7 @@ import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 
 import type { MyContext } from '../types/MyContext'
-import { keyboardButton as b, text as t } from '../lib/constants'
+import i18n from '../lib/i18n';
 import firefly from '../lib/firefly'
 
 export enum Route {
@@ -29,7 +29,8 @@ const DECLINE_CATEGORIES_LIST = 'DECLINE_CATEGORIES_LIST'
 const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
-bot.hears(b.CATEGORIES, listCategoriesCommandHandler)
+bot.hears(i18n.t('ru', 'labels.CATEGORIES'), listCategoriesCommandHandler)
+bot.hears(i18n.t('en', 'labels.CATEGORIES'), listCategoriesCommandHandler)
 bot.callbackQuery(CATEGORY_DETAILS, showCategoryDetails)
 bot.callbackQuery(ADD_CATEGORIES, addCategoriesCbQH)
 bot.callbackQuery(RENAME_CATEGORY, typeNewCategoryName)
@@ -65,9 +66,10 @@ async function addCategoriesCbQH(ctx: MyContext) {
     ctx.session.step = Route.ADD_CATEGORIES
     ctx.session.newCategories = []
 
-    return ctx.editMessageText(t.enterCategories, {
+    return ctx.editMessageText(ctx.i18n.t('categories.typeCategories'), {
       parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
+      reply_markup: new InlineKeyboard()
+        .text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     })
   } catch (err) {
     console.error(err)
@@ -90,10 +92,9 @@ async function typeNewCategoryName(ctx: MyContext) {
     ctx.session.step = Route.RENAME_CATEGORY
     log('ctx.session: %O', ctx.session)
 
-    return ctx.editMessageText(t.typeNewCategoryName, {
-      parse_mode: 'Markdown',
+    return ctx.editMessageText(ctx.i18n.t('categories.typeNewName'), {
       reply_markup: new InlineKeyboard().text(
-        b.CANCEL,
+        ctx.i18n.t('labels.CANCEL'),
         `DETAILS_CATEGORY_ID=${categoryId}&START_DATE=${startDate}`
       )
     })
@@ -113,10 +114,11 @@ async function confirmDeletionCategoryCbQH(ctx: MyContext) {
     log('categoryId: %O', categoryId)
 
     const keyboard = new InlineKeyboard()
-      .text(b.YES, `DO_DELETE_ID=${categoryId}`)
-      .text(b.CANCEL, `DETAILS_CATEGORY_ID=${categoryId}`)
+      .text(ctx.i18n.t('labels.YES'), `DO_DELETE_ID=${categoryId}`)
+      .text(ctx.i18n.t('labels.CANCEL'), `DETAILS_CATEGORY_ID=${categoryId}`)
 
-    return ctx.editMessageText(t.confirmToDeleteCategory, {
+    return ctx.editMessageText(ctx.i18n.t('categories.confirmDeletion'), {
+      parse_mode: 'Markdown',
       reply_markup: keyboard
     })
 
@@ -136,7 +138,7 @@ async function doDeleteCategoryCbQH(ctx: MyContext) {
     log('categoryId: %O', categoryId)
 
     await firefly(userId).Categories.deleteCategory(categoryId)
-    await ctx.answerCallbackQuery({ text: t.categoryDeleted })
+    await ctx.answerCallbackQuery({ text: ctx.i18n.t('categories.deleted') })
 
     return replyWithListOfCategories(ctx)
 
@@ -168,9 +170,9 @@ ${categories.join('\n')}
     `, {
       parse_mode: 'Markdown',
       reply_markup: new InlineKeyboard()
-        .text(b.YES, CONFIRM_CATEGORIES_LIST).row()
-        .text(b.DECLINE_CATEGORIES_LIST, DECLINE_CATEGORIES_LIST).row()
-        .text(b.CANCEL, CANCEL).row()
+        .text(ctx.i18n.t('labels.YES'), CONFIRM_CATEGORIES_LIST).row()
+        .text(ctx.i18n.t('labels.DECLINE_CATEGORIES_LIST'), DECLINE_CATEGORIES_LIST).row()
+        .text(ctx.i18n.t('labels.CANCEL'), CANCEL).row()
     })
   } catch (err) {
     console.error('Error occurred in addCategoriesRouteHandler: ', err)
@@ -254,19 +256,20 @@ async function replyWithListOfCategories(ctx: MyContext) {
 
     const inlineKeyboard = await createCategoriesInlineKeyboard(ctx)
     inlineKeyboard
-      .text(b.ADD_CATEGORIES, ADD_CATEGORIES).row()
-      .text(b.DONE, DONE).row()
+      .text(ctx.i18n.t('labels.ADD_CATEGORIES'), ADD_CATEGORIES).row()
+      .text(ctx.i18n.t('labels.DONE'), DONE).row()
 
     const shouldReply = !!ctx.update.message
 
     if (shouldReply) {
-      return ctx.reply(t.listCategories(categoriesNames), {
-        parse_mode: 'Markdown',
+      return ctx.reply(
+        !categoriesNames.length
+          ? ctx.i18n.t('categories.listEmpty')
+          : ctx.i18n.t('categories.list'), {
         reply_markup: inlineKeyboard
       })
     } else {
-      return ctx.editMessageText(t.listCategories(categoriesNames), {
-        parse_mode: 'Markdown',
+      return ctx.editMessageText(ctx.i18n.t('categories.list'), {
         reply_markup: inlineKeyboard
       })
     }
@@ -342,14 +345,16 @@ async function showCategoryDetails(ctx: MyContext) {
       return { currency: item.currency_code, value: item.difference_float }
     })
     log('sums: %O', sums)
-    const inlineKeyboard = createSingleCategoryKeyboard(startDate, categoryId)
-
-    const text = t.categoryTransactions(
-      categoryName,
-      getMonthNameCapitalized(dayjs(startDate)),
-      formatTransactions(categoryTransactions.data.data),
-      sums
+    const inlineKeyboard = createSingleCategoryKeyboard(
+      ctx, startDate, categoryId
     )
+
+    const text = ctx.i18n.t('categories.transactionsList', {
+      categoryName: categoryName,
+      monthName: getMonthNameCapitalized(dayjs(startDate)),
+      transactions: formatTransactions(ctx, categoryTransactions.data.data),
+      sums: sums.map((sum: any) => `${Math.abs(sum.value)} ${sum.currency}`).join('\n       ').replace(/\n$/, '')
+    })
 
     return ctx.editMessageText(text, {
       parse_mode: 'HTML',
@@ -362,9 +367,9 @@ async function showCategoryDetails(ctx: MyContext) {
   }
 }
 
-function formatTransactions(transactions: any[]) {
+function formatTransactions(ctx: MyContext, transactions: any[]) {
   const log = rootLog.extend('formatTransactions')
-  if (transactions.length === 0) return t.noTransactions
+  if (transactions.length === 0) return ctx.i18n.t('categories.noTransactions')
   log('transactions: %O', transactions[0].attributes)
   const data = [
     ...transactions.map(item => {
@@ -391,7 +396,11 @@ function formatTransactions(transactions: any[]) {
   return table(data, config)
 }
 
-function createSingleCategoryKeyboard(curMonth: string, categoryId: string | number): InlineKeyboard {
+function createSingleCategoryKeyboard(
+  ctx: MyContext,
+  curMonth: string,
+  categoryId: string | number
+): InlineKeyboard {
   const log = rootLog.extend('createSingleCategoryKeyboard')
   const thisMonthName = getMonthNameCapitalized(dayjs(curMonth))
   log('thisMonthName: %O', thisMonthName)
@@ -406,9 +415,9 @@ function createSingleCategoryKeyboard(curMonth: string, categoryId: string | num
   const inlineKeyboard = new InlineKeyboard()
     .text(`<< ${prevMonthName}`, `DETAILS_CATEGORY_ID=${categoryId}&START_DATE=${prevMonth}`)
     .text(`${nextMonthName} >>`, `DETAILS_CATEGORY_ID=${categoryId}&START_DATE=${nextMonth}`).row()
-    .text(b.RENAME_CATEGORY, `RENAME_CATEGORY_ID=${categoryId}`).row()
-    .text(b.DELETE, `DELETE_CATEGORY_ID=${categoryId}`).row()
-    .text(b.CLOSE, CANCEL)
+    .text(ctx.i18n.t('labels.RENAME_CATEGORY'), `RENAME_CATEGORY_ID=${categoryId}`).row()
+    .text(ctx.i18n.t('labels.DELETE'), `DELETE_CATEGORY_ID=${categoryId}`).row()
+    .text(ctx.i18n.t('labels.CLOSE'), CANCEL)
 
   return inlineKeyboard
 }

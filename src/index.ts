@@ -2,18 +2,14 @@ import debug from 'debug'
 import * as dotenv from 'dotenv';
 import dayjs from 'dayjs'
 import 'dayjs/locale/ru'
-import { Bot, GrammyError, HttpError, session } from 'grammy'
+import { Bot, Keyboard, GrammyError, HttpError, session } from 'grammy'
 
 dayjs.locale('ru')
 dotenv.config();
 
+import i18n from './lib/i18n'
 import config from './config'
-import {
-  commandDescription,
-  keyboardButton as b,
-  mainKeyboard,
-  text as t
-} from './lib/constants'
+import { command } from './lib/constants'
 import { requireSettings } from './lib/middlewares'
 
 import settings from './composers/settings'
@@ -42,12 +38,16 @@ bot.use(
     }),
   })
 )
+bot.use(i18n.middleware());
 
-bot.command('start', startHandler)
-bot.command('help', helpHandler)
-bot.hears(b.ACCOUNTS, ctx => ctx.reply('OK'))
-bot.hears(b.TRANSACTIONS, ctx => ctx.reply('OK'))
-bot.hears(b.REPORTS, ctx => ctx.reply('OK'))
+bot.command(command.START, startHandler)
+bot.command(command.HELP, helpHandler)
+bot.hears(i18n.t('en', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
+bot.hears(i18n.t('en', 'labels.TRANSACTIONS'), ctx => ctx.reply('OK'))
+bot.hears(i18n.t('en', 'labels.REPORTS'), ctx => ctx.reply('OK'))
+bot.hears(i18n.t('ru', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
+bot.hears(i18n.t('ru', 'labels.TRANSACTIONS'), ctx => ctx.reply('OK'))
+bot.hears(i18n.t('ru', 'labels.REPORTS'), ctx => ctx.reply('OK'))
 
 // Our custom middlewares
 bot.use(requireSettings())
@@ -74,11 +74,15 @@ bot.catch((err) => {
 async function startHandler(ctx: any) {
   const log = rootLog.extend('startHandler')
   log('start: %O', ctx.message)
+
   await setBotCommands(ctx)
-  return ctx.reply(t.welcome, {
+
+  return ctx.reply(ctx.i18n.t('welcome', {
+    settingsLabel: ctx.i18n.t('labels.SETTINGS') }
+  ), {
     parse_mode: 'Markdown',
     reply_markup: {
-      keyboard: mainKeyboard.build(),
+      keyboard: createMainKeyboard(ctx).build(),
       resize_keyboard: true
     }
   })
@@ -87,23 +91,33 @@ async function startHandler(ctx: any) {
 function helpHandler(ctx: any) {
   const log = rootLog.extend('helpHandler')
   log('help: %O', ctx.message)
-  return ctx.reply(t.help, {
+
+
+  return ctx.reply(ctx.i18n.t('help'), {
     parse_mode: 'Markdown',
     reply_markup: {
-      keyboard: mainKeyboard.build(),
+      keyboard: createMainKeyboard(ctx).build(),
       resize_keyboard: true
     }
   })
+}
+
+function createMainKeyboard(ctx: MyContext) {
+  return new Keyboard()
+    .text(ctx.i18n.t('labels.TRANSACTIONS')).text(ctx.i18n.t('labels.ACCOUNTS')).row()
+    .text(ctx.i18n.t('labels.CATEGORIES')).text(ctx.i18n.t('labels.REPORTS')).row()
+    .text(ctx.i18n.t('labels.SETTINGS'))
 }
 
 function setBotCommands(ctx: MyContext) {
   const log = rootLog.extend('setBotCommands')
   log('Setting bot commands...')
   const myCommands: {command: string, description: string}[] = []
-  for (const [key, val] of Object.entries(commandDescription)) {
+
+  for (const val of Object.values(command)) {
     myCommands.push({
-      command: key,
-      description: val
+      command: val as string,
+      description: ctx.i18n.t(`commands.${val}`)
     })
   }
   log('myCommands: %O', myCommands)

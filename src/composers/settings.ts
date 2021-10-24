@@ -1,11 +1,13 @@
 import dayjs from 'dayjs'
 import debug from 'debug'
+import path from 'path'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 import { ParseMode } from '@grammyjs/types'
 
 import type { MyContext } from '../types/MyContext'
-import { keyboardButton as b, text as t, command } from '../lib/constants'
+import i18n from '../lib/i18n';
+import { command } from '../lib/constants'
 import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
@@ -29,11 +31,13 @@ const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 bot.command(command.SETTINGS, settingsCommandHandler)
-bot.hears(b.SETTINGS, settingsCommandHandler)
+bot.hears(i18n.t('en', 'labels.SETTINGS'), settingsCommandHandler)
+bot.hears(i18n.t('ru', 'labels.SETTINGS'), settingsCommandHandler)
 bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
 bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
 bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
 bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
+// TODO Pass account id rather than account name in callback query
 bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
 bot.callbackQuery(DONE, doneCbQH)
 bot.callbackQuery(CANCEL, cancelCbQH)
@@ -47,7 +51,8 @@ bot.use(router)
 
 export default bot
 
-function settingsText(userId: number) {
+function settingsText(ctx: MyContext) {
+  const userId = ctx.from!.id
   const {
     fireflyUrl,
     fireflyAccessToken,
@@ -56,16 +61,21 @@ function settingsText(userId: number) {
 
   // Grab only first 4 and last 4 chars of the token
   const accessToken = fireflyAccessToken?.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
-  return t.whatDoYouWantToChange(fireflyUrl, accessToken, defaultAssetAccount)
+
+  return ctx.i18n.t('settings.whatDoYouWantToChange', {
+    fireflyUrl: fireflyUrl,
+    accessToken: accessToken,
+    defaultAssetAccount: defaultAssetAccount
+  })
 }
 
-function settingsInlineKeyboard() {
+function settingsInlineKeyboard(ctx: MyContext) {
   const inlineKeyboard = new InlineKeyboard()
-    .text(b.FIREFLY_URL_BUTTON, INPUT_FIREFLY_URL).row()
-    .text(b.FIREFLY_ACCESS_TOKEN_BUTTON, INPUT_FIREFLY_ACCESS_TOKEN).row()
-    .text(b.TEST_CONNECTION, TEST_CONNECTION).row()
-    .text(b.DEFAULT_ASSET_ACCOUNT_BUTTON, SELECT_DEFAULT_ASSET_ACCOUNT).row()
-    .text(b.DONE, DONE)
+    .text(ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), INPUT_FIREFLY_URL).row()
+    .text(ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), INPUT_FIREFLY_ACCESS_TOKEN).row()
+    .text(ctx.i18n.t('labels.TEST_CONNECTION'), TEST_CONNECTION).row()
+    .text(ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'), SELECT_DEFAULT_ASSET_ACCOUNT).row()
+    .text(ctx.i18n.t('labels.DONE'), DONE)
 
   return {
     parse_mode: 'Markdown' as ParseMode,
@@ -75,12 +85,9 @@ function settingsInlineKeyboard() {
 
 function settingsCommandHandler(ctx: MyContext) {
   const log = rootLog.extend('settingsCommandHandler')
-  // log('ctx: %O', ctx)
-  const userId = ctx.from!.id
-  log('userId: %O', userId)
   return ctx.reply(
-    settingsText(userId),
-    settingsInlineKeyboard()
+    settingsText(ctx),
+    settingsInlineKeyboard(ctx)
   )
 }
 
@@ -102,8 +109,8 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
     log('text.length: %O', text.length)
 
     if (text.length < 500) {
-      return ctx.reply(t.badAccessToken, {
-        reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
+      return ctx.reply(ctx.i18n.t('settings.badAccessToken'), {
+        reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
       })
     }
 
@@ -111,8 +118,8 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
     ctx.session.step = 'IDLE'
 
     return ctx.reply(
-      settingsText(userId),
-      settingsInlineKeyboard()
+      settingsText(ctx),
+      settingsInlineKeyboard(ctx)
     )
   } catch (err) {
     console.error(err)
@@ -133,8 +140,8 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
     log('URL is valid: %s', valid)
 
     if (!valid) {
-      return ctx.reply(t.badUrl, {
-        reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
+      return ctx.reply(ctx.i18n.t('settings.badUrl'), {
+        reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
       })
     }
 
@@ -142,8 +149,8 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
     ctx.session.step = 'IDLE'
 
     return ctx.reply(
-      settingsText(userId),
-      settingsInlineKeyboard()
+      settingsText(ctx),
+      settingsInlineKeyboard(ctx)
     )
 
   } catch (err) {
@@ -158,9 +165,9 @@ async function inputFireflyUrlCbQH(ctx: MyContext) {
   try {
     ctx.session.step = Route.FIREFLY_URL
 
-    await ctx.editMessageText(t.inptuFireflyUrl, {
+    await ctx.editMessageText(ctx.i18n.t('settings.inputFireflyUrl'), {
       parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
+      reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     })
   } catch (err) {
     console.error(err)
@@ -172,9 +179,9 @@ async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
   log(`Entered the ${INPUT_FIREFLY_ACCESS_TOKEN} action handler`)
   try {
     ctx.session.step = Route.FIREFLY_ACCESS_TOKEN
-    return ctx.editMessageText(t.inputFireflyAccessToken, {
+    return ctx.editMessageText(ctx.i18n.t('settings.inputFireflyAccessToken'), {
       parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
+      reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     })
   } catch (err) {
     console.error(err)
@@ -199,10 +206,10 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
         `!defaultAccount=${acc.attributes.name}`
       ).row()
     })
-    accKeyboard.text(b.CANCEL, CANCEL)
+    accKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     // log('accKeyboard: %O', accKeyboard)
 
-    return ctx.editMessageText(t.selectDefaultAssetAccount, {
+    return ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), {
       reply_markup: accKeyboard
     })
   } catch (err) {
@@ -221,11 +228,11 @@ async function defaultAccountCbQH(ctx: MyContext) {
 
     storage.defaultAssetAccount = accountName
 
-    await ctx.answerCallbackQuery({text: t.defaultAssetAccountSet})
+    await ctx.answerCallbackQuery({text: ctx.i18n.t('settings.defaultAssetAccountSet')})
 
     return ctx.editMessageText(
-      settingsText(userId),
-      settingsInlineKeyboard()
+      settingsText(ctx),
+      settingsInlineKeyboard(ctx)
     )
   } catch (err) {
     console.error(err)
@@ -243,8 +250,8 @@ async function cancelCbQH(ctx: MyContext) {
 
     await ctx.deleteMessage()
     return ctx.reply(
-      settingsText(userId),
-      settingsInlineKeyboard()
+      settingsText(ctx),
+      settingsInlineKeyboard(ctx)
     )
   } catch (err) {
     console.error(err)
@@ -261,14 +268,16 @@ async function testConnectionCbQH(ctx: MyContext) {
 
     if (!fireflyUrl) {
       return ctx.answerCallbackQuery({
-        text: t.specifySmthFirst(b.FIREFLY_URL_BUTTON),
+        text: ctx.i18n.t('settings.specifySmthFirst', {
+          smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON') }),
         show_alert: true
       })
     }
 
     if (!fireflyAccessToken) {
       return ctx.answerCallbackQuery({
-        text: t.specifySmthFirst(b.FIREFLY_ACCESS_TOKEN_BUTTON),
+        text: ctx.i18n.t('settings.specifySmthFirst', {
+          smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON') }),
         show_alert: true
       })
     }
@@ -277,63 +286,15 @@ async function testConnectionCbQH(ctx: MyContext) {
     log('Firefly user info: %O', userInfo)
 
     if (!userInfo) return ctx.answerCallbackQuery({
-      text: t.connectionFailed,
+      text: ctx.i18n.t('settings.connectionFailed'),
       show_alert: true
     })
 
     return ctx.answerCallbackQuery({
-      text: t.connectionSuccess(userInfo.attributes.email),
+      text: ctx.i18n.t('settings.connectionSuccess', { email: userInfo.attributes.email }),
       show_alert: true
     })
   } catch (err) {
     console.error(err)
   }
 }
-
-/*
-async function textHandler(ctx: MyContext) {
-  const log = rootLog.extend('textHandler')
-  log('Entered textHandler command action...')
-  try {
-    // log('ctx: %O', ctx)
-    const userId = ctx.from!.id
-    const storage = getUserStorage(userId)
-    const { text } = ctx.msg
-    log('User entered text: %s', text)
-    log('ctx.scene.session: %O', ctx.scene.session)
-
-    if (ctx.scene.session.inputFor === INPUT_FIREFLY_URL) {
-      const r = new RegExp(/^(http|https):\/\/[^ "]+$/i)
-      const valid = r.test(text)
-      log('URL is valid: %s', valid)
-
-      if (!valid) {
-        return ctx.reply(t.badUrl, {
-          reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
-        })
-      }
-      storage.set('FIREFLY_URL', text.replace(/\/\/$/, '').toLowerCase())
-      ctx.scene.session.inputFor = null
-    }
-
-    if (ctx.scene.session.inputFor === INPUT_FIREFLY_ACCESS_TOKEN) {
-      log('text.length: %O', text.length)
-      if (text.length < 500) {
-        return ctx.reply(t.badAccessToken, {
-          reply_markup: new InlineKeyboard().text(b.CANCEL, CANCEL)
-        })
-      }
-      storage.set('FIREFLY_ACCESS_TOKEN', text)
-      ctx.scene.session.inputFor = null
-    }
-
-    return ctx.replyWithMarkdown(
-      settingsText(userId),
-      settingsInlineKeyboard()
-    )
-  } catch (err) {
-    console.error(err)
-    ctx.reply('Error occurred handling text: ', err.message)
-  }
-}
-*/
