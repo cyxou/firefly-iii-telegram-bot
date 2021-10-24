@@ -193,7 +193,26 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} callback query handler`)
   try {
     const userId = ctx.from!.id
+    const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
     log('userId: %s', userId)
+
+    if (!fireflyUrl) {
+      return ctx.answerCallbackQuery({
+        text: ctx.i18n.t('settings.specifySmthFirst', {
+          smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON')
+        }),
+        show_alert: true
+      })
+    }
+
+    if (!fireflyAccessToken) {
+      return ctx.answerCallbackQuery({
+        text: ctx.i18n.t('settings.specifySmthFirst', {
+          smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON')
+        }),
+        show_alert: true
+      })
+    }
 
     const accounts = (await firefly(userId).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
@@ -269,7 +288,8 @@ async function testConnectionCbQH(ctx: MyContext) {
     if (!fireflyUrl) {
       return ctx.answerCallbackQuery({
         text: ctx.i18n.t('settings.specifySmthFirst', {
-          smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON') }),
+          smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON')
+        }),
         show_alert: true
       })
     }
@@ -277,7 +297,8 @@ async function testConnectionCbQH(ctx: MyContext) {
     if (!fireflyAccessToken) {
       return ctx.answerCallbackQuery({
         text: ctx.i18n.t('settings.specifySmthFirst', {
-          smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON') }),
+          smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON')
+        }),
         show_alert: true
       })
     }
