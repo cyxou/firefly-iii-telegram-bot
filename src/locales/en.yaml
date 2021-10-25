@@ -1,1 +1,4 @@
-welcome: TODO
+commands:
+  start: Start (greetings message)
+  settings: Settings
+  help: Help

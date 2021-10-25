@@ -11,6 +11,7 @@ import i18n from './lib/i18n'
 import config from './config'
 import { command } from './lib/constants'
 import { requireSettings } from './lib/middlewares'
+import { getUserStorage } from './lib/storage'
 
 import settings from './composers/settings'
 import addTransaction from './composers/add-transaction'
@@ -77,9 +78,28 @@ async function startHandler(ctx: any) {
 
   await setBotCommands(ctx)
 
-  return ctx.reply(ctx.i18n.t('welcome', {
-    settingsLabel: ctx.i18n.t('labels.SETTINGS') }
-  ), {
+  const userId = ctx.from!.id
+  const storage = getUserStorage(userId)
+  const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
+
+  let welcomeMessage: string = ctx.i18n.t('welcome')
+  const isConfigured = !!(fireflyUrl && fireflyAccessToken)
+  log('isConfigured: %O', isConfigured)
+
+  if (!isConfigured) {
+    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('needToSet'))
+  }
+  if (!fireflyUrl) {
+    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('setFireflyUrl'))
+  }
+  if (!fireflyAccessToken) {
+    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('setFireflyAccessToken'))
+  }
+  if (!isConfigured) {
+    welcomeMessage = welcomeMessage.concat('\n\n', ctx.i18n.t('navigateToSettings'))
+  }
+
+  return ctx.reply(welcomeMessage, {
     parse_mode: 'Markdown',
     reply_markup: {
       keyboard: createMainKeyboard(ctx).build(),
@@ -91,7 +111,6 @@ async function startHandler(ctx: any) {
 function helpHandler(ctx: any) {
   const log = rootLog.extend('helpHandler')
   log('help: %O', ctx.message)
-
 
   return ctx.reply(ctx.i18n.t('help'), {
     parse_mode: 'Markdown',
