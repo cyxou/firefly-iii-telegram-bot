@@ -1,6 +1,5 @@
 import dayjs from 'dayjs'
 import debug from 'debug'
-import path from 'path'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 import { ParseMode } from '@grammyjs/types'
@@ -11,6 +10,7 @@ import { command } from '../lib/constants'
 import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
+import { AccountRead } from '../lib/firefly/model/account-read'
 // import { Route as IndexRoute } from '../index'
 
 export enum Route {
@@ -18,7 +18,7 @@ export enum Route {
   FIREFLY_ACCESS_TOKEN = 'SETTINGS|FIREFLY_ACCESS_TOKEN'
 }
 
-const rootLog = debug(`bot:composer:settings`)
+const rootLog = debug(`bot:settings`)
 
 const CANCEL                       = 'CANCEL_SETTINGS'
 const DONE                         = 'DONE_SETTINGS'
@@ -85,6 +85,7 @@ function settingsInlineKeyboard(ctx: MyContext) {
 
 function settingsCommandHandler(ctx: MyContext) {
   const log = rootLog.extend('settingsCommandHandler')
+  log('Entered the settingsCommandHandler...')
   return ctx.reply(
     settingsText(ctx),
     settingsInlineKeyboard(ctx)
@@ -214,12 +215,12 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
       })
     }
 
-    const accounts = (await firefly(userId).Accounts.listAccount(
+    const accounts: AccountRead[] = (await firefly(userId).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     // log('accounts: %O', accounts)
 
     const accKeyboard = new InlineKeyboard()
-    accounts.forEach((acc: any) => {
+    accounts.forEach((acc: AccountRead) => {
       return accKeyboard.text(
         `${acc.attributes.name} ${acc.attributes.currency_symbol}${acc.attributes.current_balance}`,
         `!defaultAccount=${acc.attributes.name}`

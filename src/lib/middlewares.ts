@@ -1,5 +1,4 @@
 import debug from 'debug'
-import path from 'path'
 
 import i18n from './i18n'
 import { command } from './constants'

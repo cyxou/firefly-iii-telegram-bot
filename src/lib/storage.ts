@@ -1,6 +1,5 @@
 import config from '../config'
 import debug from 'debug'
-import path from 'path'
 
 const rootLog = debug(`bot:storage`)
 

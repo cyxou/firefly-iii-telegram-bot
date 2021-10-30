@@ -1,28 +1,27 @@
-import axios from 'axios'
-import dayjs from 'dayjs'
-import debug from 'debug'
-
 import * as api from './api'
 import { Configuration } from './configuration'
-
-const rootLog = debug(`lib:firefly`)
+import globalAxios from 'axios';
+import Debug from 'debug'
 
 import { getUserStorage } from '../storage'
 
+const debug = Debug('firefly')
 
 export default function firefly(userId: number) {
+  const log = debug.extend('index')
   const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
   const configuration = new Configuration({
     accessToken: fireflyAccessToken,
     basePath: fireflyUrl.replace(/\/+$/, ""),
-    // baseOptions: {
-    //   transformResponse: [function (data: any) {
-    //     // Do whatever you want to transform the data
-    //     console.log('ALOHA', data)
-    //
-    //     return data
-    //   }]
-    // }
+  })
+
+  globalAxios.interceptors.response.use(function(response) {
+    // Any status code that lie within the range of 2xx cause this function to trigger
+    // Do something with response data
+    return response;
+  }, function (err) {
+    log('Error response: %O', err.response.data)
+    return Promise.reject(err.response.data);
   })
 
   return {
@@ -33,17 +32,3 @@ export default function firefly(userId: number) {
     Transactions: api.TransactionsApiFactory(configuration),
   }
 }
-
-// console.log('api: ', api)
-// console.log('configuration: ', configuration)
-//
-// test()
-//
-// async function test() {
-//   const aboutData = (await api.AboutApiFactory(configuration).getAbout()).data
-//   console.log('aboutData: ', aboutData)
-//   const currentUser = await api.AboutApiFp(configuration).getCurrentUser()
-//   console.log('currentUser: ', await currentUser())
-//   // const currentUser = ()
-//   // console.log('AboutApi: ',
-// }

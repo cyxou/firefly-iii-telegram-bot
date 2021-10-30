@@ -1,5 +1,6 @@
 import debug from 'debug'
 import dayjs from 'dayjs'
+import type { Dayjs } from 'dayjs'
 import { table, getBorderCharacters } from 'table'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
@@ -14,7 +15,7 @@ export enum Route {
   RENAME_CATEGORY = 'CATEGORIES|RENAME'
 }
 
-const rootLog = debug(`bot:composer:categories`)
+const rootLog = debug(`bot:categories`)
 
 const CANCEL                  = 'CANCEL_CLASSIFICATION'
 const DONE                    = 'DONE_CLASSIFICATION'
@@ -422,6 +423,6 @@ function createSingleCategoryKeyboard(
   return inlineKeyboard
 }
 
-function getMonthNameCapitalized(date: any) {
+function getMonthNameCapitalized(date: Dayjs) {
   return dayjs(date).format('MMMM YYYY').replace(/^./, c => c.toLocaleUpperCase())
 }

@@ -28,4 +28,3 @@ export function getAxiosConfigForUser(userId: number) {
     throw err
   }
 }
-

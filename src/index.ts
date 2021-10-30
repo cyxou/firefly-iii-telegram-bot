@@ -14,7 +14,8 @@ import { requireSettings } from './lib/middlewares'
 import { getUserStorage } from './lib/storage'
 
 import settings from './composers/settings'
-import addTransaction from './composers/add-transaction'
+import addTransaction, { addTransaction as textHandler } from './composers/transactions/add-transaction'
+import editTransaction from './composers/transactions/edit-transaction'
 import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
@@ -41,6 +42,13 @@ bot.use(
 )
 bot.use(i18n.middleware());
 
+// Our custom middlewares
+bot.use(requireSettings())
+bot.use(addTransaction)
+bot.use(editTransaction)
+bot.use(settings)
+bot.use(categories)
+
 bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)
 bot.hears(i18n.t('en', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
@@ -49,37 +57,18 @@ bot.hears(i18n.t('en', 'labels.REPORTS'), ctx => ctx.reply('OK'))
 bot.hears(i18n.t('ru', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
 bot.hears(i18n.t('ru', 'labels.TRANSACTIONS'), ctx => ctx.reply('OK'))
 bot.hears(i18n.t('ru', 'labels.REPORTS'), ctx => ctx.reply('OK'))
-
-// Our custom middlewares
-bot.use(requireSettings())
-
-bot.use(settings)
-bot.use(categories)
-bot.use(addTransaction)
+bot.on('message:text', textHandler)
 
 bot.start()
+bot.catch(errorHandler)
 
-bot.catch((err) => {
-  const ctx = err.ctx
-  console.error(`Error while handling update ${ctx.update.update_id}:`)
-  const e = err.error
-  if (e instanceof GrammyError) {
-    console.error("Error in request:", e.description)
-  } else if (e instanceof HttpError) {
-    console.error("Could not contact Telegram:", e)
-  } else {
-    console.error("Unknown error:", e)
-  }
-})
-
-async function startHandler(ctx: any) {
+async function startHandler(ctx: MyContext) {
   const log = rootLog.extend('startHandler')
   log('start: %O', ctx.message)
 
   await setBotCommands(ctx)
 
   const userId = ctx.from!.id
-  const storage = getUserStorage(userId)
   const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
 
   let welcomeMessage: string = ctx.i18n.t('welcome')
@@ -108,7 +97,7 @@ async function startHandler(ctx: any) {
   })
 }
 
-function helpHandler(ctx: any) {
+function helpHandler(ctx: MyContext) {
   const log = rootLog.extend('helpHandler')
   log('help: %O', ctx.message)
 
@@ -142,4 +131,18 @@ function setBotCommands(ctx: MyContext) {
   log('myCommands: %O', myCommands)
 
   return ctx.api.setMyCommands(myCommands)
+}
+
+
+function errorHandler(err: any) {
+  const ctx = err.ctx
+  console.error(`Error while handling update ${ctx.update.update_id}:`)
+  const e = err.error
+  if (e instanceof GrammyError) {
+    console.error('Error in request:', e.description)
+  } else if (e instanceof HttpError) {
+    console.error('Could not contact Telegram:', e)
+  } else {
+    console.error('Unknown error:', e)
+  }
 }
