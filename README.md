@@ -18,24 +18,25 @@ docker stop earthly-buildkitd || true
 ```
 
 ## TODO
-- [ ] Add transactions improvements (create transfers and deposits)
-- [ ] Edit transactions
+- [X] Add transactions improvements (create transfers and deposits)
+- [X] Edit transactions (no date change thus far)
+- [x] Localization based on Firefly user's preferences
 - [ ] Add English language
-- [ ] Localization based on Firefly user's preferences
 - [ ] Accounts management
-- [ ] Transactions management
+- [ ] List transactions
 - [ ] Reports
+- [ ] Proper error handling
+- [X] Add math equations when creating transactions
 - [ ] Add tests
-
-[license-url]: https://www.gnu.org/licenses/agpl-3.0.html
-[stars-url]: https://github.com/cyxou/firefly-iii-telegram-bot/stargazers
+- [ ] Add [lowdb](https://github.com/typicode/lowdb) as local JSON database for persistance
+- [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
 
 ## Open API Code Generation
 
 ### Preface
 
 This thing is used to generate typescript-axios client code for the Firefly III API
-published here: https://api-docs.firefly-iii.org
+published [here](https://api-docs.firefly-iii.org)
 
 There is an issue with Configuration model: the generated code has its own
 `Configuration` thing that corresponds to axios configuration. Firefly also has
@@ -52,3 +53,8 @@ There is a corresponding task for it in the __package.json__ file: `codegen`.
 Hence the command is `npm run codegen`. Running this command should not introduce
 any git changes unless you want to rollback or update the API specification URL
 which is hard-coded in `codegen` npm task.
+
+
+[license-url]: https://www.gnu.org/licenses/agpl-3.0.html
+[stars-url]: https://github.com/cyxou/firefly-iii-telegram-bot/stargazers
+
