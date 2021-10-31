@@ -9,7 +9,9 @@ import { TransactionRead } from '../lib/firefly/model/transaction-read'
 
 export interface SessionData {
   step: 'IDLE' | CategoriesRoute | SettingsRoute | EditTransactionRoute
-  transaction: Partial<TransactionStore> & Partial<TransactionRead>
+  // transaction: Partial<TransactionStore> & Partial<TransactionRead>
+  newTransaction: TransactionStore
+  editTransaction: Partial<TransactionRead>
   category: any // TODO set proper type
   newCategories: string[]
   deleteMessage?: () => Promise<true>

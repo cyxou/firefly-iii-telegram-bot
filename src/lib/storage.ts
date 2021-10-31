@@ -7,6 +7,7 @@ class UserSettings {
   _fireflyUrl = ''
   _fireflyAccessToken = ''
   _defaultAssetAccount = ''
+  _defaultAssetAccountId = 0
 
   constructor(fireflyUrl = '', fireflyAccessToken = '') {
     this._fireflyUrl = fireflyUrl
@@ -21,6 +22,9 @@ class UserSettings {
 
   get defaultAssetAccount() { return this._defaultAssetAccount }
   set defaultAssetAccount(val: string) { this._defaultAssetAccount = val }
+
+  get defaultAssetAccountId() { return this._defaultAssetAccountId }
+  set defaultAssetAccountId(val: number) { this._defaultAssetAccountId = val }
 }
 
 type UserStorage = {

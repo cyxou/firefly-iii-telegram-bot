@@ -244,11 +244,15 @@ async function defaultAccountCbQH(ctx: MyContext) {
     log('ctx: %O', ctx)
     const userId = ctx.from!.id
     const storage = getUserStorage(userId)
-    const accountName = ctx.match![1]
+    const accountId = parseInt(ctx.match![1], 10)
 
-    storage.defaultAssetAccount = accountName
+    const account = (await firefly(userId).Accounts.getAccount(accountId)).data.data
+    log('account: %O', account)
 
-    await ctx.answerCallbackQuery({text: ctx.i18n.t('settings.defaultAssetAccountSet')})
+    storage.defaultAssetAccount = account.attributes.name
+    storage.defaultAssetAccountId = accountId
+
+    await ctx.answerCallbackQuery({ text: ctx.i18n.t('settings.defaultAssetAccountSet') })
 
     return ctx.editMessageText(
       settingsText(ctx),

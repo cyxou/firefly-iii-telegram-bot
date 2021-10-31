@@ -4,7 +4,7 @@ import { Router } from "@grammyjs/router"
 
 import type { MyContext } from '../../types/MyContext'
 import {
-  editMapper as mapper,
+  editTransactionsMapper as mapper,
   parseAmountInput,
   formatTransaction,
   formatTransactionKeyboard,
@@ -69,8 +69,8 @@ async function showEditTransactionMenu(ctx: MyContext) {
     ctx.session.step = 'IDLE'
 
     const userId = ctx.from!.id
-    const { transaction } = ctx.session
-    log('transaction: %O', transaction)
+    const { editTransaction } = ctx.session
+    log('transaction: %O', editTransaction)
 
     const trId = parseInt(ctx.match![1], 10)
     log('trId: %O', trId)
@@ -78,7 +78,7 @@ async function showEditTransactionMenu(ctx: MyContext) {
     const tr =
       (await firefly(userId).Transactions.getTransaction(trId)).data.data
 
-    ctx.session.transaction = tr
+    ctx.session.editTransaction = tr
 
     // This is a curried function which deletes the original message.
     // We need it because having edited a transaction, we can not edit the
@@ -185,7 +185,7 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     const amount = parseAmountInput(text)
     log('amount: %O', amount)
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
 
     if (!amount) {
       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badAmountTyped'), {
@@ -224,7 +224,7 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
     const description = ctx.msg?.text || ''
     log('description: %O', description)
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
 
     if (!description) {
       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badDescriptionTyped'), {
@@ -249,25 +249,6 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
       formatTransaction(ctx, tr),
       formatTransactionKeyboard(ctx, tr)
     )
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-async function editTransactionDateCbQH(ctx: MyContext) {
-  const log = rootLog.extend('editTransactionDateCbQH')
-  log('Entered editTransactionDate action handler')
-  try {
-    const trId = ctx.match![1]
-
-    const editOptionKeyboard = new InlineKeyboard()
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
-    await ctx.answerCallbackQuery()
-
-    return ctx.editMessageText('To be implemented soon...', {
-      parse_mode: 'Markdown',
-      reply_markup: editOptionKeyboard
-    })
   } catch (err) {
     console.error(err)
   }
@@ -414,7 +395,7 @@ async function setNewCategory(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
     const tr = (await firefly(userId).Transactions.updateTransaction(
       parseInt(trId, 10),
@@ -441,7 +422,7 @@ async function setNewAssetAccount(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
     const tr = (await firefly(userId).Transactions.updateTransaction(
       parseInt(trId, 10),
@@ -468,7 +449,7 @@ async function setNewExpenseAccount(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
     const tr = (await firefly(userId).Transactions.updateTransaction(
       parseInt(trId, 10),
@@ -495,7 +476,7 @@ async function setNewRevenueAccount(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
     const tr = (await firefly(userId).Transactions.updateTransaction(
       parseInt(trId, 10),
@@ -521,7 +502,7 @@ async function setNewDepositAssetAccount(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.transaction.id || ''
+    const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
     const tr = (await firefly(userId).Transactions.updateTransaction(
       parseInt(trId, 10),

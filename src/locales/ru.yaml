@@ -116,16 +116,21 @@ transactions:
       📥📆 ${date}  
        
       Добавлено ${description === 'N/A' ? '' : '*' + description + '* '}
-      *${amount}* *${currency}* на счет *${destination}*
-    transferdMessage: >
+      *${amount}* *${currency}*
+      
+      ${source} ➡️ ${destination}
+    transferMessage: >
       ↔️📆 ${date}  
          
-      Перевод ${amount} ${sourceCurrency} со счета ${source} на счет ${destination}
-    inWhatCategoryToAdd: В какую категорию добавить *${amount}*?
+      Перевод *${amount}* *${currency}* со счета *${source}* на счет *${destination}*
+    selectCategory: В какую категорию добавить *${amount}*?
     transactionDeleted: Транзакция удалена!
     couldNotDelete: 'Не удалось удалить транзакцию по id: ${id}'
-    inWhatAccountToAdd: На какой счет добавить *${amount}*?
-    transactionError: '❗😰 Произошла ошибка при создании транзакции: ${message}'
+    selectRevenueAccount: С какого счета доходов списать *${amount}*?
+    selectAssetAccount: На какой счет добавить *${amount}*?
+    selectSourceAccount: С какого счета перевести *${amount}*?
+    selectDestAccount: На какой счет произвести перевод?
+    transactionError: '❗😰 Произошла ошибка при создании транзакции: *${message}*'
     created: Транзакция создана!
 
   edit:

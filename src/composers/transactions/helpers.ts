@@ -14,7 +14,8 @@ import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 const debug = Debug('bot:transactions:helpers')
 
 export {
-  editMapper,
+  addTransactionsMapper,
+  editTransactionsMapper,
   parseAmountInput,
   formatTransaction,
   formatTransactionUpdate,
@@ -38,8 +39,13 @@ class Mapper {
     // TODO Think about how to solve this in case of multiple different ids
     // needed to be supplied, i.e.
     // SET_TRANSACTION|ID=${trId}&CATEGORY_ID=${categoryId}
-    const s = this.cbDataTemplate.replace(/\$\{.+\}/, '(.+)').trim()
-    return new RegExp(`^${s}$`)
+    // console.log('this.cbDataTemplate: %O', this.cbDataTemplate)
+    const preparedString = this.cbDataTemplate
+      .replace(/\$\{.+\}/, '(.+)')
+      .replace(/\|/g, '\\|')
+    const r = new RegExp(`^${preparedString}$`)
+    // console.log('regex: ', r)
+    return r
   }
   cbData(trId: string) {
     const s = this.cbDataTemplate.replace(/\$\{.+\}/, trId)
@@ -48,7 +54,19 @@ class Mapper {
   }
 }
 
-const editMapper = {
+const addTransactionsMapper = {
+  selectCategory: new Mapper('ADD|WITHDRAWAL|CATEGORY_ID=${categoryId}'),
+  cancelAdd: new Mapper('ADD|CANCEL'),
+  delete: new Mapper('DELETE|TRANSACTION_ID=${trId}'),
+  addTransfer: new Mapper('ADD|TRANSFER|AMOUNT=${amount}'),
+  addDeposit: new Mapper('ADD|DEPOSIT|AMOUNT=${amount}'),
+  selectRevenueAccount: new Mapper('ADD|DEPOSIT|REVENUE_ID=${accountId}'),
+  selectAssetAccount: new Mapper('ADD|DEPOSIT|ASSET_ID=${accountId}'),
+  selectSourceAccount: new Mapper('ADD|TRANSFER|SOURCE_ID=${accountId}'),
+  selectDestAccount: new Mapper('ADD|TRANSFER|DEST_ID=${accountId}')
+}
+
+const editTransactionsMapper = {
   editMenu: new Mapper('EDIT_TRANSACTION_ID=${trId}'),
   done: new Mapper('DONE_EDIT_TRANSACTION_ID=${trId}'),
   editDate: new Mapper('CHANGE_TRANSACTION_DATE_ID=${trId}'),
@@ -79,8 +97,14 @@ function parseAmountInput(amount: string): number | null {
 function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
   const trSplit = tr.attributes.transactions[0]
   const inlineKeyboard = new InlineKeyboard()
-    .text(ctx.i18n.t('labels.EDIT_TRANSACTION'), editMapper.editMenu.cbData(trSplit.transaction_journal_id as string))
-    .text(ctx.i18n.t('labels.DELETE'), `DELETE_TRANSACTION_ID=${trSplit.transaction_journal_id}`)
+    .text(
+      ctx.i18n.t('labels.EDIT_TRANSACTION'),
+      editTransactionsMapper.editMenu.cbData(trSplit.transaction_journal_id as string)
+    )
+    .text(
+      ctx.i18n.t('labels.DELETE'),
+      addTransactionsMapper.delete.cbData(trSplit.transaction_journal_id as string)
+    )
 
   return {
     parse_mode: 'Markdown' as ParseMode,
@@ -90,12 +114,11 @@ function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
 
 function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
   const trSplit = tr.attributes!.transactions[0]
-  const baseProps = {
+  const baseProps: any = {
     amount: parseFloat(trSplit.amount),
     source: trSplit.source_name,
     destination: trSplit.destination_name,
     description: trSplit.description,
-    category: trSplit.category_name,
     currency: trSplit.currency_symbol,
     date: dayjs(trSplit.date).format('DD MMM YYYY г.')
   }
@@ -104,6 +127,7 @@ function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
   switch (trSplit.type) {
     case TransactionSplitTypeEnum.Withdrawal:
       translationString = 'transactions.add.withdrawalMessage'
+      baseProps.category = trSplit.category_name
       break
     case TransactionSplitTypeEnum.Deposit:
       translationString = 'transactions.add.depositMessage'
@@ -146,7 +170,8 @@ async function createCategoriesKeyboard(userId: number, cbDataTemplate: string) 
 async function createAccountsKeyboard(
   userId: number,
   accountType: AccountTypeFilter,
-  cbDataTemplate: string
+  cbDataTemplate: string,
+  opts?: { skipAccountId: string }
 ) {
   const log = debug.extend('createAccountKeyboard')
   try {
@@ -157,6 +182,9 @@ async function createAccountsKeyboard(
 
     for (let i = 0; i < accounts.length; i++) {
       const c = accounts[i]
+
+      if (opts && c.id.toString() === opts.skipAccountId) continue
+
       const last = accounts.length - 1
       const cbData = cbDataTemplate.replace('${accountId}', c.id)
 
@@ -250,35 +278,35 @@ function formatTransactionUpdate(
 function createEditWithdrawalTransactionKeyboard(ctx: MyContext, trId: string | number) {
   const id = trId.toString()
   return new InlineKeyboard()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editMapper.editDesc.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editMapper.editCategory.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editMapper.editAssetAccount.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_EXPENSE_ACCOUNT'), editMapper.editExpenseAccount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_DATE'), editMapper.editDate.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editMapper.editAmount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.DONE'), editMapper.done.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editTransactionsMapper.editCategory.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editAssetAccount.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_EXPENSE_ACCOUNT'), editTransactionsMapper.editExpenseAccount.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.cbData(id)).row()
+    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.cbData(id)).row()
 }
 
 function createEditDepositTransactionKeyboard(ctx: MyContext, trId: string | number) {
   const id = trId.toString()
   return new InlineKeyboard()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editMapper.editDesc.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_REVENUE_ACCOUNT'), editMapper.editRevenueAccount.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editMapper.editDepositAssetAccount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_DATE'), editMapper.editDate.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editMapper.editAmount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.DONE'), editMapper.done.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_REVENUE_ACCOUNT'), editTransactionsMapper.editRevenueAccount.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editDepositAssetAccount.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.cbData(id)).row()
+    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.cbData(id)).row()
 }
 
 function createEditTransferTransactionKeyboard(ctx: MyContext, trId: string | number) {
   const id = trId.toString()
   return new InlineKeyboard()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editMapper.editDesc.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editMapper.editSourceAccount.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editMapper.editDestinationAccount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_DATE'), editMapper.editDate.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editMapper.editAmount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.DONE'), editMapper.done.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editSourceAccount.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editDestinationAccount.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.cbData(id))
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.cbData(id)).row()
+    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.cbData(id)).row()
 }
 
 function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
