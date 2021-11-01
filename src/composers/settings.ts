@@ -11,7 +11,6 @@ import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
-// import { Route as IndexRoute } from '../index'
 
 export enum Route {
   FIREFLY_URL          = 'SETTINGS|FIREFLY_URL',
@@ -217,13 +216,13 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
 
     const accounts: AccountRead[] = (await firefly(userId).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
-    // log('accounts: %O', accounts)
+    log('accounts: %O', accounts)
 
     const accKeyboard = new InlineKeyboard()
     accounts.forEach((acc: AccountRead) => {
       return accKeyboard.text(
         `${acc.attributes.name} ${acc.attributes.currency_symbol}${acc.attributes.current_balance}`,
-        `!defaultAccount=${acc.attributes.name}`
+        `!defaultAccount=${acc.id}`
       ).row()
     })
     accKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
@@ -245,6 +244,7 @@ async function defaultAccountCbQH(ctx: MyContext) {
     const userId = ctx.from!.id
     const storage = getUserStorage(userId)
     const accountId = parseInt(ctx.match![1], 10)
+    log('accountId: %O', accountId)
 
     const account = (await firefly(userId).Accounts.getAccount(accountId)).data.data
     log('account: %O', account)
