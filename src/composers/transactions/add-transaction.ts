@@ -183,7 +183,7 @@ async function deleteTransactionActionHandler(ctx: MyContext) {
   }
 }
 
-async function createFastTransaction(userId: number, amount: number, description: string, account: string): Promise<TransactionRead> {
+async function createFastTransaction(userId: number, amount: number, description: string, accountId: string): Promise<TransactionRead> {
   const log = rootLog.extend('createFastTransaction')
   try {
     const transactionStore = {
@@ -192,8 +192,7 @@ async function createFastTransaction(userId: number, amount: number, description
         date: dayjs().toISOString(),
         amount: amount.toString(),
         description,
-        source_name: account,
-        source_id: null,
+        source_id: accountId,
         destination_id: null,
       }]
     }
