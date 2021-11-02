@@ -8,6 +8,7 @@ import { Router } from "@grammyjs/router"
 import type { MyContext } from '../types/MyContext'
 import i18n from '../lib/i18n';
 import firefly from '../lib/firefly'
+import { TransactionRead } from '../lib/firefly/model/transaction-read'
 
 export enum Route {
   IDLE            = 'IDLE',
@@ -342,19 +343,21 @@ async function showCategoryDetails(ctx: MyContext) {
     // log('categoryTransactions: %O', categoryTransactions)
     // log('expenseCategoriesInsight: %O', expenseCategories)
     const categoryName = category.data.data.attributes.name
-    const sums = expenseCategories.data.map((item: any) => {
+    const sumsObjects = expenseCategories.data.map(item => {
       return { currency: item.currency_code, value: item.difference_float }
     })
-    log('sums: %O', sums)
+    log('sumsObjects: %O', sumsObjects)
     const inlineKeyboard = createSingleCategoryKeyboard(
       ctx, startDate, categoryId
     )
+    const sums = sumsObjects.map((sum: any) => `${Math.abs(sum.value)} ${sum.currency}`)
+      .join('\n       ').replace(/\n$/, '')
 
     const text = ctx.i18n.t('categories.transactionsList', {
       categoryName: categoryName,
       monthName: getMonthNameCapitalized(dayjs(startDate)),
       transactions: formatTransactions(ctx, categoryTransactions.data.data),
-      sums: sums.map((sum: any) => `${Math.abs(sum.value)} ${sum.currency}`).join('\n       ').replace(/\n$/, '')
+      sums: sums
     })
 
     return ctx.editMessageText(text, {
@@ -368,7 +371,7 @@ async function showCategoryDetails(ctx: MyContext) {
   }
 }
 
-function formatTransactions(ctx: MyContext, transactions: any[]) {
+function formatTransactions(ctx: MyContext, transactions: TransactionRead[]) {
   const log = rootLog.extend('formatTransactions')
   if (transactions.length === 0) return ctx.i18n.t('categories.noTransactions')
   log('transactions: %O', transactions[0].attributes)

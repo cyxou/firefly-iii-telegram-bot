@@ -18,15 +18,15 @@ docker stop earthly-buildkitd || true
 ```
 
 ## TODO
-- [X] Add transactions improvements (create transfers and deposits)
-- [X] Edit transactions (no date change thus far)
+- [x] Add transactions improvements (create transfers and deposits)
+- [x] Edit transactions (no date change thus far)
 - [x] Localization based on Firefly user's preferences
 - [ ] Add English language
 - [ ] Accounts management
-- [ ] List transactions
+- [x] List transactions
 - [ ] Reports
 - [ ] Proper error handling
-- [X] Add math equations when creating transactions
+- [x] Add math equations when creating transactions
 - [ ] Add tests
 - [ ] Add [lowdb](https://github.com/typicode/lowdb) as local JSON database for persistance
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
@@ -53,6 +53,10 @@ There is a corresponding task for it in the __package.json__ file: `codegen`.
 Hence the command is `npm run codegen`. Running this command should not introduce
 any git changes unless you want to rollback or update the API specification URL
 which is hard-coded in `codegen` npm task.
+
+### Known bugs and limitations
+ - No support for multiple transaction splits. It is assumed that transactions
+     consist of only one transaction split.
 
 
 [license-url]: https://www.gnu.org/licenses/agpl-3.0.html

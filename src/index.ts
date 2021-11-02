@@ -16,6 +16,7 @@ import { getUserStorage } from './lib/storage'
 import settings from './composers/settings'
 import addTransaction, { addTransaction as textHandler } from './composers/transactions/add-transaction'
 import editTransaction from './composers/transactions/edit-transaction'
+import listTransactions from './composers/transactions/list-transactions'
 import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
@@ -47,16 +48,15 @@ bot.use(i18n.middleware());
 bot.use(requireSettings())
 bot.use(addTransaction)
 bot.use(editTransaction)
+bot.use(listTransactions)
 bot.use(settings)
 bot.use(categories)
 
 bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)
 bot.hears(i18n.t('en', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
-bot.hears(i18n.t('en', 'labels.TRANSACTIONS'), ctx => ctx.reply('OK'))
 bot.hears(i18n.t('en', 'labels.REPORTS'), ctx => ctx.reply('OK'))
 bot.hears(i18n.t('ru', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
-bot.hears(i18n.t('ru', 'labels.TRANSACTIONS'), ctx => ctx.reply('OK'))
 bot.hears(i18n.t('ru', 'labels.REPORTS'), ctx => ctx.reply('OK'))
 bot.on('message:text', textHandler)
 
@@ -113,8 +113,10 @@ function helpHandler(ctx: MyContext) {
 
 function createMainKeyboard(ctx: MyContext) {
   return new Keyboard()
-    .text(ctx.i18n.t('labels.TRANSACTIONS')).text(ctx.i18n.t('labels.ACCOUNTS')).row()
-    .text(ctx.i18n.t('labels.CATEGORIES')).text(ctx.i18n.t('labels.REPORTS')).row()
+    .text(ctx.i18n.t('labels.ACCOUNTS'))
+    .text(ctx.i18n.t('labels.TRANSACTIONS')).row()
+    .text(ctx.i18n.t('labels.REPORTS'))
+    .text(ctx.i18n.t('labels.CATEGORIES')).row()
     .text(ctx.i18n.t('labels.SETTINGS'))
 }
 

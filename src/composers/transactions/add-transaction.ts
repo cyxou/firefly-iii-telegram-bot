@@ -99,12 +99,12 @@ export async function addTransaction(ctx: MyContext) {
 
     const keyboard = await createCategoriesKeyboard(
       userId,
-      mapper.selectCategory.cbDataTemplate
+      mapper.selectCategory.template()
     )
     keyboard
-      .text(ctx.i18n.t('labels.TO_DEPOSITS'), mapper.addDeposit.cbData(amount.toString())).row()
-      .text(ctx.i18n.t('labels.TO_TRANSFERS'), mapper.addTransfer.cbData(amount.toString())).row()
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.cbDataTemplate)
+      .text(ctx.i18n.t('labels.TO_DEPOSITS'), mapper.addDeposit.template({ amount })).row()
+      .text(ctx.i18n.t('labels.TO_TRANSFERS'), mapper.addTransfer.template({ amount })).row()
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
     log('keyboard: %O', keyboard.inline_keyboard)
 
     return ctx.reply(ctx.i18n.t('transactions.add.selectCategory', { amount: amount }), {
@@ -234,9 +234,9 @@ async function startCreatingDepositTransaction(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Revenue,
-      mapper.selectRevenueAccount.cbDataTemplate
+      mapper.selectRevenueAccount.template()
     )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.cbDataTemplate)
+    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
     log('accountsKeyboard: %O', accountsKeyboard)
 
     return ctx.editMessageText(
@@ -268,9 +268,9 @@ async function selectAssetAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.selectAssetAccount.cbDataTemplate
+      mapper.selectAssetAccount.template()
     )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.cbDataTemplate)
+    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
     log('accountsKeyboard: %O', accountsKeyboard)
 
     return ctx.editMessageText(
@@ -303,10 +303,10 @@ async function selectDestAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.selectDestAccount.cbDataTemplate,
+      mapper.selectDestAccount.template(),
       { skipAccountId: transaction.source_id }
     )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.cbDataTemplate)
+    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
     log('accountsKeyboard: %O', accountsKeyboard)
 
     return ctx.editMessageText(
@@ -375,9 +375,9 @@ async function startCreatingTransferTransaction(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.selectSourceAccount.cbDataTemplate
+      mapper.selectSourceAccount.template()
     )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.cbDataTemplate)
+    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
     log('accountsKeyboard: %O', accountsKeyboard)
 
     return ctx.editMessageText(

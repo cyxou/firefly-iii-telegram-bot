@@ -5,6 +5,7 @@ import { ParseMode } from '@grammyjs/types'
 import { InlineKeyboard } from 'grammy'
 
 import firefly from '../../lib/firefly'
+import Mapper from '../../lib/Mapper'
 import type { MyContext } from '../../types/MyContext'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionSplitTypeEnum } from '../../lib/firefly/model/transaction-split'
@@ -14,6 +15,7 @@ import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 const debug = Debug('bot:transactions:helpers')
 
 export {
+  listTransactionsMapper,
   addTransactionsMapper,
   editTransactionsMapper,
   parseAmountInput,
@@ -29,29 +31,9 @@ export {
   createEditMenuKeyboard
 }
 
-class Mapper {
-  cbDataTemplate: string
-  constructor(template: string, ) {
-    this.cbDataTemplate = template
-  }
-  regex() {
-    // Replace all occurencies of ${whatever} in template with supplied parameter
-    // TODO Think about how to solve this in case of multiple different ids
-    // needed to be supplied, i.e.
-    // SET_TRANSACTION|ID=${trId}&CATEGORY_ID=${categoryId}
-    // console.log('this.cbDataTemplate: %O', this.cbDataTemplate)
-    const preparedString = this.cbDataTemplate
-      .replace(/\$\{.+\}/, '(.+)')
-      .replace(/\|/g, '\\|')
-    const r = new RegExp(`^${preparedString}$`)
-    // console.log('regex: ', r)
-    return r
-  }
-  cbData(trId: string) {
-    const s = this.cbDataTemplate.replace(/\$\{.+\}/, trId)
-    // console.log('cbData: ', s)
-    return s
-  }
+const listTransactionsMapper = {
+  list: new Mapper('LIST_TRANSACTIONS|TYPE=${type}&START=${start}'),
+  close: new Mapper('LIST_TRANSACTIONS|DONE'),
 }
 
 const addTransactionsMapper = {
@@ -71,7 +53,7 @@ const editTransactionsMapper = {
   done: new Mapper('DONE_EDIT_TRANSACTION_ID=${trId}'),
   editDate: new Mapper('CHANGE_TRANSACTION_DATE_ID=${trId}'),
   editAmount: new Mapper('CHANGE_TRANSACTION_AMOUNT_ID=${trId}'),
-  editDesc: new Mapper('CHANGE_TRANSACTION_DESCRIPTION_ID=(.+)'),
+  editDesc: new Mapper('CHANGE_TRANSACTION_DESCRIPTION_ID=${trId}'),
   editCategory: new Mapper('CHANGE_TRANSACTION_CATEGORY_ID=${trId}'),
   setCategory: new Mapper('SET_TRANSACTION_CATEGORY_ID=${categoryId}'),
   editAssetAccount: new Mapper('CHANGE_TRANSACTION_SOURCE_ID=${trId}'),
@@ -99,11 +81,11 @@ function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
   const inlineKeyboard = new InlineKeyboard()
     .text(
       ctx.i18n.t('labels.EDIT_TRANSACTION'),
-      editTransactionsMapper.editMenu.cbData(trSplit.transaction_journal_id as string)
+      editTransactionsMapper.editMenu.template({ trId: trSplit.transaction_journal_id as string })
     )
     .text(
       ctx.i18n.t('labels.DELETE'),
-      addTransactionsMapper.delete.cbData(trSplit.transaction_journal_id as string)
+      addTransactionsMapper.delete.template({ trId: trSplit.transaction_journal_id as string })
     )
 
   return {
@@ -141,7 +123,8 @@ function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
   return ctx.i18n.t(translationString, { ...baseProps })
 }
 
-async function createCategoriesKeyboard(userId: number, cbDataTemplate: string) {
+// async function createCategoriesKeyboard(userId: number, cbDataTemplate: string) {
+async function createCategoriesKeyboard(userId: number, template: (c: any) => string) {
   const log = debug.extend('createCategoriesKeyboard')
   try {
     const categories = (await firefly(userId).Categories.listCategory()).data.data
@@ -151,7 +134,8 @@ async function createCategoriesKeyboard(userId: number, cbDataTemplate: string) 
     for (let i = 0; i < categories.length; i++) {
       const c = categories[i]
       const last = categories.length - 1
-      const cbData = cbDataTemplate.replace('${categoryId}', c.id)
+      // const cbData = cbDataTemplate.replace('${categoryId}', c.id)
+      const cbData = template({ categoryId: c.id })
 
       keyboard.text(c.attributes.name, cbData)
       // Split categories keyboard into two columns so that every odd indexed
@@ -175,24 +159,27 @@ async function createAccountsKeyboard(
 ) {
   const log = debug.extend('createAccountKeyboard')
   try {
-    const accounts = (await firefly(userId).Accounts.listAccount(
+    let accounts = (await firefly(userId).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), accountType)).data.data
     // log('accounts: %O', accounts)
     const keyboard = new InlineKeyboard()
 
-    for (let i = 0; i < accounts.length; i++) {
-      const c = accounts[i]
+    // Prevent from choosing same account when doing transfers
+    if (opts) accounts = accounts.filter(acc => opts.skipAccountId !== acc.id.toString())
 
-      if (opts && c.id.toString() === opts.skipAccountId) continue
+    accounts
+      .reverse() // we want top accounts be closer to the bottom of the screen
+      .forEach((acc, i) => {
+        const last = accounts.length - 1
+        const cbData = cbDataTemplate.replace('${accountId}', acc.id)
 
-      const last = accounts.length - 1
-      const cbData = cbDataTemplate.replace('${accountId}', c.id)
+        keyboard.text(acc.attributes.name, cbData)
+        // Split accounts keyboard into two columns so that every odd indexed
+        // account starts from new row as well as the last account in the list.
+        if (i % 2 !== 0 || i === last) keyboard.row()
+      })
 
-      keyboard.text(c.attributes.name, cbData)
-      // Split accounts keyboard into two columns so that every odd indexed
-      // account starts from new row as well as the last account in the list.
-      if (i % 2 !== 0 || i === last) keyboard.row()
-    }
+    // log('keyboard.inline_keyboard: %O', keyboard.inline_keyboard)
 
     return keyboard
   } catch (err) {
@@ -276,37 +263,34 @@ function formatTransactionUpdate(
 }
 
 function createEditWithdrawalTransactionKeyboard(ctx: MyContext, trId: string | number) {
-  const id = trId.toString()
   return new InlineKeyboard()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editTransactionsMapper.editCategory.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editAssetAccount.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_EXPENSE_ACCOUNT'), editTransactionsMapper.editExpenseAccount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editTransactionsMapper.editCategory.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editAssetAccount.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_EXPENSE_ACCOUNT'), editTransactionsMapper.editExpenseAccount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.template({ trId })).row()
 }
 
 function createEditDepositTransactionKeyboard(ctx: MyContext, trId: string | number) {
-  const id = trId.toString()
   return new InlineKeyboard()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_REVENUE_ACCOUNT'), editTransactionsMapper.editRevenueAccount.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editDepositAssetAccount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_REVENUE_ACCOUNT'), editTransactionsMapper.editRevenueAccount.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editDepositAssetAccount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.template({ trId })).row()
 }
 
 function createEditTransferTransactionKeyboard(ctx: MyContext, trId: string | number) {
-  const id = trId.toString()
   return new InlineKeyboard()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editSourceAccount.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editDestinationAccount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.cbData(id))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.cbData(id)).row()
-    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.cbData(id)).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editSourceAccount.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_ASSET_ACCOUNT'), editTransactionsMapper.editDestinationAccount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.template({ trId })).row()
 }
 
 function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {

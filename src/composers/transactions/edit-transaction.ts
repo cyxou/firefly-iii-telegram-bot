@@ -149,7 +149,7 @@ async function changeTransactionAmountCbQH(ctx: MyContext) {
 
     return ctx.editMessageText(ctx.i18n.t('transactions.edit.typeNewAmount'), {
       reply_markup: new InlineKeyboard()
-        .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+        .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
     })
   } catch (err) {
     console.error(err)
@@ -168,7 +168,7 @@ async function changeTransactionDescriptionCbQH(ctx: MyContext) {
 
     return ctx.editMessageText(ctx.i18n.t('transactions.edit.typeNewDescription'), {
       reply_markup: new InlineKeyboard()
-        .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+        .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
     })
   } catch (err) {
     console.error(err)
@@ -190,7 +190,7 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     if (!amount) {
       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badAmountTyped'), {
         reply_markup: new InlineKeyboard()
-          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
       })
     }
 
@@ -229,7 +229,7 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
     if (!description) {
       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badDescriptionTyped'), {
         reply_markup: new InlineKeyboard()
-          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
       })
     }
 
@@ -265,10 +265,10 @@ async function selectNewCategory(ctx: MyContext) {
 
     const categoriesKeyboard = await createCategoriesKeyboard(
       userId,
-      mapper.setCategory.cbDataTemplate
+      mapper.setCategory.template()
     )
     categoriesKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
     return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'), {
       reply_markup: categoriesKeyboard
@@ -291,11 +291,11 @@ async function selectNewAssetAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.setAssetAccount.cbDataTemplate
+      mapper.setAssetAccount.template()
     )
 
     accountsKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
     log('accountsKeyboard: %O', accountsKeyboard.inline_keyboard)
 
@@ -320,11 +320,11 @@ async function selectNewDepositAssetAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.setDepositAssetAccount.cbDataTemplate
+      mapper.setDepositAssetAccount.template()
     )
 
     accountsKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
     log('accountsKeyboard: %O', accountsKeyboard.inline_keyboard)
 
@@ -348,7 +348,7 @@ async function selectNewExpenseAccount(ctx: MyContext) {
 
     const accountsKeyboard = await createExpenseAccountsKeyboard(userId)
     accountsKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
     return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewExpenseAccount'), {
       reply_markup: accountsKeyboard
@@ -371,10 +371,10 @@ async function selectNewRevenueAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Revenue,
-      mapper.setRevenueAccount.cbDataTemplate
+      mapper.setRevenueAccount.template()
     )
     accountsKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.cbData(trId))
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
     return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewRevenueAccount'), {
       reply_markup: accountsKeyboard
