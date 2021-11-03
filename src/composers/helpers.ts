@@ -4,17 +4,20 @@ import { evaluate } from 'mathjs'
 import { ParseMode } from '@grammyjs/types'
 import { InlineKeyboard } from 'grammy'
 
-import firefly from '../../lib/firefly'
-import Mapper from '../../lib/Mapper'
-import type { MyContext } from '../../types/MyContext'
-import { TransactionRead } from '../../lib/firefly/model/transaction-read'
-import { TransactionSplitTypeEnum } from '../../lib/firefly/model/transaction-split'
-import { TransactionSplit } from '../../lib/firefly/model/transaction-split'
-import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
+import firefly from '../lib/firefly'
+import Mapper from '../lib/Mapper'
+import type { MyContext } from '../types/MyContext'
+import { TransactionRead } from '../lib/firefly/model/transaction-read'
+import { TransactionSplitTypeEnum } from '../lib/firefly/model/transaction-split'
+import { TransactionSplit } from '../lib/firefly/model/transaction-split'
+import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
+import { AccountTypeEnum } from '../lib/firefly/model/account'
 
 const debug = Debug('bot:transactions:helpers')
 
 export {
+  createAccountsMenuKeyboard,
+  listAccountsMapper,
   listTransactionsMapper,
   addTransactionsMapper,
   editTransactionsMapper,
@@ -25,10 +28,12 @@ export {
   createCategoriesKeyboard,
   createAccountsKeyboard,
   createExpenseAccountsKeyboard,
-  // createEditWithdrawalTransactionKeyboard,
-  // createEditDepositTransactionKeyboard,
-  // createEditTransferTransactionKeyboard
   createEditMenuKeyboard
+}
+
+const listAccountsMapper = {
+  list: new Mapper('LIST_ACCOUNTS|TYPE=${type}'),
+  close: new Mapper('LIST_ACCOUNTS|DONE'),
 }
 
 const listTransactionsMapper = {
@@ -123,8 +128,7 @@ function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
   return ctx.i18n.t(translationString, { ...baseProps })
 }
 
-// async function createCategoriesKeyboard(userId: number, cbDataTemplate: string) {
-async function createCategoriesKeyboard(userId: number, template: (c: any) => string) {
+async function createCategoriesKeyboard(userId: number, mapper: Mapper) {
   const log = debug.extend('createCategoriesKeyboard')
   try {
     const categories = (await firefly(userId).Categories.listCategory()).data.data
@@ -134,8 +138,7 @@ async function createCategoriesKeyboard(userId: number, template: (c: any) => st
     for (let i = 0; i < categories.length; i++) {
       const c = categories[i]
       const last = categories.length - 1
-      // const cbData = cbDataTemplate.replace('${categoryId}', c.id)
-      const cbData = template({ categoryId: c.id })
+      const cbData = mapper.template({ categoryId: c.id })
 
       keyboard.text(c.attributes.name, cbData)
       // Split categories keyboard into two columns so that every odd indexed
@@ -304,4 +307,61 @@ function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
     default:
       return new InlineKeyboard().text('👻 Unexpected transaction type')
   }
+}
+
+function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeEnum) {
+  const mapper = listAccountsMapper
+  const keyboard = new InlineKeyboard()
+
+  // Dynamically add only relevant transactin type buttons
+  switch (accType) {
+    case AccountTypeEnum.Asset:
+      keyboard
+        .text(ctx.i18n.t('accounts.labels.expense'),
+          listAccountsMapper.list.template({ type: AccountTypeFilter.Expense })).row()
+        .text(ctx.i18n.t('accounts.labels.revenue'),
+          mapper.list.template({ type: AccountTypeFilter.Revenue })).row()
+        .text(ctx.i18n.t('accounts.labels.liability'),
+          mapper.list.template({ type: AccountTypeFilter.Liability })).row()
+      break
+    case AccountTypeEnum.Expense:
+      keyboard
+        .text(ctx.i18n.t('accounts.labels.asset'),
+          listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
+        .text(ctx.i18n.t('accounts.labels.revenue'),
+          mapper.list.template({ type: AccountTypeFilter.Revenue })).row()
+        .text(ctx.i18n.t('accounts.labels.liability'),
+          mapper.list.template({ type: AccountTypeFilter.Liability })).row()
+      break
+    case AccountTypeEnum.Revenue:
+      keyboard
+        .text(ctx.i18n.t('accounts.labels.asset'),
+          listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
+        .text(ctx.i18n.t('accounts.labels.expense'),
+          mapper.list.template({ type: AccountTypeFilter.Expense })).row()
+        .text(ctx.i18n.t('accounts.labels.liability'),
+          mapper.list.template({ type: AccountTypeFilter.Liability })).row()
+      break
+    case AccountTypeEnum.Liability:
+      keyboard
+        .text(ctx.i18n.t('accounts.labels.asset'),
+          listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
+        .text(ctx.i18n.t('accounts.labels.expense'),
+          mapper.list.template({ type: AccountTypeFilter.Expense })).row()
+        .text(ctx.i18n.t('accounts.labels.revenue'),
+          mapper.list.template({ type: AccountTypeFilter.Revenue })).row()
+      break
+    default:
+      keyboard
+        .text(ctx.i18n.t('accounts.labels.asset'),
+          listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
+        .text(ctx.i18n.t('accounts.labels.expense'),
+          mapper.list.template({ type: AccountTypeFilter.Expense })).row()
+        .text(ctx.i18n.t('accounts.labels.revenue'),
+          mapper.list.template({ type: AccountTypeFilter.Revenue })).row()
+        .text(ctx.i18n.t('accounts.labels.liability'),
+          mapper.list.template({ type: AccountTypeFilter.Liability })).row()
+  }
+  keyboard.text(ctx.i18n.t('labels.DONE'), listAccountsMapper.close.template())
+  return keyboard
 }

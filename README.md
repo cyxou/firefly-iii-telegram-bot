@@ -22,7 +22,7 @@ docker stop earthly-buildkitd || true
 - [x] Edit transactions (no date change thus far)
 - [x] Localization based on Firefly user's preferences
 - [ ] Add English language
-- [ ] Accounts management
+- [x] Accounts management
 - [x] List transactions
 - [ ] Reports
 - [ ] Proper error handling

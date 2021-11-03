@@ -14,5 +14,6 @@ export interface SessionData {
   editTransaction: Partial<TransactionRead>
   category: any // TODO set proper type
   newCategories: string[]
-  deleteMessage?: () => Promise<true>
+  deleteBotsMessage?: () => Promise<boolean>,
+  deleteKeyboardMenuMessage?: () => Promise<boolean>
 }

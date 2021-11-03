@@ -10,13 +10,14 @@ dotenv.config();
 import i18n from './lib/i18n'
 import config from './config'
 import { command } from './lib/constants'
-import { requireSettings } from './lib/middlewares'
+import { requireSettings, cleanup } from './lib/middlewares'
 import { getUserStorage } from './lib/storage'
 
 import settings from './composers/settings'
 import addTransaction, { addTransaction as textHandler } from './composers/transactions/add-transaction'
 import editTransaction from './composers/transactions/edit-transaction'
 import listTransactions from './composers/transactions/list-transactions'
+import accounts from './composers/accounts'
 import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
@@ -38,7 +39,7 @@ bot.use(
       newTransaction: { transactions: []},
       editTransaction: {},
       category: {},
-      newCategories: []
+      newCategories: [],
     }),
   })
 )
@@ -46,18 +47,18 @@ bot.use(i18n.middleware());
 
 // Our custom middlewares
 bot.use(requireSettings())
+bot.use(cleanup())
 bot.use(addTransaction)
 bot.use(editTransaction)
 bot.use(listTransactions)
+bot.use(accounts)
 bot.use(settings)
 bot.use(categories)
 
 bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)
-bot.hears(i18n.t('en', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
-bot.hears(i18n.t('en', 'labels.REPORTS'), ctx => ctx.reply('OK'))
-bot.hears(i18n.t('ru', 'labels.ACCOUNTS'), ctx => ctx.reply('OK'))
-bot.hears(i18n.t('ru', 'labels.REPORTS'), ctx => ctx.reply('OK'))
+bot.hears(i18n.t('en', 'labels.REPORTS'), ctx => ctx.reply('Coming soon...'))
+bot.hears(i18n.t('ru', 'labels.REPORTS'), ctx => ctx.reply('Coming soon...'))
 bot.on('message:text', textHandler)
 
 bot.start()

@@ -12,7 +12,7 @@ import {
   createAccountsKeyboard,
   createExpenseAccountsKeyboard,
   createEditMenuKeyboard
-} from './helpers'
+} from '../helpers'
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
@@ -87,7 +87,7 @@ async function showEditTransactionMenu(ctx: MyContext) {
     // another one with the updated transaction data. This function is meant to
     // be called only from the route handler functions where a user types in
     // things as opposed to clicking on inline keyboard buttons.
-    ctx.session.deleteMessage = (function(ctx: MyContext) {
+    ctx.session.deleteBotsMessage = (function(ctx: MyContext) {
       const messageId = ctx.update?.callback_query?.message!.message_id || 0
       const chatId = ctx.update?.callback_query?.message!.chat.id || 0
       return function() {
@@ -196,9 +196,9 @@ async function changeAmountRouteHandler(ctx: MyContext) {
 
     ctx.session.step = 'IDLE'
 
-    if (ctx.session.deleteMessage) {
+    if (ctx.session.deleteBotsMessage) {
       log('Deleting original message')
-      await ctx.session.deleteMessage()
+      await ctx.session.deleteBotsMessage()
     }
 
     const tr = (await firefly(userId).Transactions.updateTransaction(
@@ -235,9 +235,9 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
 
     ctx.session.step = 'IDLE'
 
-    if (ctx.session.deleteMessage) {
+    if (ctx.session.deleteBotsMessage) {
       log('Deleting original message')
-      await ctx.session.deleteMessage()
+      await ctx.session.deleteBotsMessage()
     }
 
     const tr = (await firefly(userId).Transactions.updateTransaction(
@@ -265,7 +265,7 @@ async function selectNewCategory(ctx: MyContext) {
 
     const categoriesKeyboard = await createCategoriesKeyboard(
       userId,
-      mapper.setCategory.template()
+      mapper.setCategory
     )
     categoriesKeyboard
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))

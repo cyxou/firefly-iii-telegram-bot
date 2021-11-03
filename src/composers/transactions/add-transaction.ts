@@ -11,7 +11,7 @@ import {
   formatTransactionKeyboard,
   createCategoriesKeyboard,
   createAccountsKeyboard
-} from './helpers'
+} from '../helpers'
 
 import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
@@ -99,7 +99,7 @@ export async function addTransaction(ctx: MyContext) {
 
     const keyboard = await createCategoriesKeyboard(
       userId,
-      mapper.selectCategory.template()
+      mapper.selectCategory
     )
     keyboard
       .text(ctx.i18n.t('labels.TO_DEPOSITS'), mapper.addDeposit.template({ amount })).row()

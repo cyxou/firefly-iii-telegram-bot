@@ -40,7 +40,7 @@ bot.callbackQuery(DELETE_CATEGORY, confirmDeletionCategoryCbQH)
 bot.callbackQuery(DO_DELETE, doDeleteCategoryCbQH)
 bot.callbackQuery(CONFIRM_CATEGORIES_LIST, confirmCategoriesCbQH)
 bot.callbackQuery(DECLINE_CATEGORIES_LIST, listCategoriesCommandHandler)
-bot.callbackQuery(DONE, doneCbQH)
+bot.callbackQuery(DONE, closeHandler)
 bot.callbackQuery(CANCEL, cancelCbQH)
 
 router.route(Route.ADD_CATEGORIES, addCategoriesRouteHandler)
@@ -210,18 +210,14 @@ async function cancelCbQH(ctx: MyContext) {
   }
 }
 
-async function doneCbQH(ctx: MyContext) {
-  const log = rootLog.extend('doneCbQH')
-  log('Entered the doneCbQH')
-  try {
-    ctx.session.step = Route.IDLE
-    await ctx.answerCallbackQuery()
-    log('Deleting the messsage...')
-    return ctx.deleteMessage()
-  } catch (err) {
-    log('err: %O', err)
-    console.error('Error occurred in doneCbQH: ', err)
-  }
+async function closeHandler(ctx: MyContext) {
+  const log = rootLog.extend('closeHandler')
+  log('ctx.session: %O', ctx.session)
+  ctx.session.step = Route.IDLE
+  await ctx.answerCallbackQuery()
+  ctx.session.deleteKeyboardMenuMessage &&
+    await ctx.session.deleteKeyboardMenuMessage()
+  return ctx.deleteMessage()
 }
 
 function parseCategoriesInput(input: string) {

@@ -7,7 +7,7 @@ import type { MyContext } from '../../types/MyContext'
 import i18n from '../../lib/i18n'
 import {
   listTransactionsMapper as mapper
-} from './helpers'
+} from '../helpers'
 
 import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
@@ -65,7 +65,7 @@ async function showTransactions(ctx: MyContext) {
     log('transactions: %O', transactions)
 
     const keyboard = createTransactionsNavigationKeyboard(ctx, start, trType)
-    const text = formatTransactionMessage(ctx, trType, transactions)
+    const text = formatTransactionMessage(ctx, start, trType, transactions)
 
     if (isRegularMessage) {
       return ctx.reply(text, {
@@ -84,7 +84,11 @@ async function showTransactions(ctx: MyContext) {
 }
 
 async function closeHandler(ctx: MyContext) {
+  const log = debug.extend('closeHandler')
+  log('ctx.session: %O', ctx.session)
   await ctx.answerCallbackQuery()
+  ctx.session.deleteKeyboardMenuMessage &&
+    await ctx.session.deleteKeyboardMenuMessage()
   return ctx.deleteMessage()
 }
 
@@ -143,10 +147,10 @@ function createTransactionsNavigationKeyboard(
 ): InlineKeyboard {
   const log = debug.extend('createTransactionsNavigationKeyboard')
   const prevDay = dayjs(curDay).subtract(1, 'day')
-  const prevDayName = prevDay.format('DD MMM')
+  const prevDayName = prevDay.format('D MMMM')
   log('prevDayName: %O', prevDayName)
   const nextDay = dayjs(curDay).add(1, 'day')
-  const nextDayName = nextDay.format('DD MMM')
+  const nextDayName = nextDay.format('D MMMM')
   log('nextDayName: %O', nextDayName)
 
   const keyboard = new InlineKeyboard()
@@ -190,7 +194,7 @@ function createTransactionsNavigationKeyboard(
 
 // Assumed that transactions is a list of only one particular transaction type
 function formatTransactionMessage(
-  ctx: MyContext, trType: TransactionTypeFilter, transactions: TransactionRead[]
+  ctx: MyContext, day: string, trType: TransactionTypeFilter, transactions: TransactionRead[]
 ) {
   const log = debug.extend('formatTransactionMessage')
   const sumsObject = transactions.reduce((res, t) => {
@@ -210,7 +214,7 @@ function formatTransactionMessage(
   }).join('\n       ').replace(/\n$/, '')
 
   return ctx.i18n.t(`transactions.list.${trType}`, {
-    day: dayjs().format('D MMMM'),
+    day: dayjs(day).format('D MMMM'),
     transactions: formatTransactions(ctx, transactions),
     sums: sums
   })
