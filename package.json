@@ -1,24 +1,31 @@
 {
   "name": "firefly-iii-telegram-bot",
-  "description": "A Telegram bot for working with Firefly III with a speed of light",
+  "description": "A Telegram bot for working with Firefly III with a supersonic speed",
   "version": "0.0.1",
   "homepage": "https://github.com/cyxou/firefly-iii-telegram-bot#readme",
-  "license" : "GPL-3.0-or-later",
+  "license": "GPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "https://github.com/cyxou/firefly-iii-telegram-bot.git"
   },
   "author": {
-    "name" : "Alex Sukhov",
-    "email" : "acyxou@gmail.com"
+    "name": "Alex Sukhov",
+    "email": "acyxou@gmail.com"
   },
   "scripts": {
     "start": "nodemon src/index.ts",
     "lint": "eslint . --ext .ts",
     "fix": "eslint . --ext .ts --fix",
-    "build": "tsc"
+    "build": "tsc",
+    "postbuild": "npm run copylocales",
+    "copylocales": "cp -r src/locales dist/",
+    "clean:api": "rm -rf src/lib/firefly/api",
+    "clean:model": "ls ./src/lib/firefly/model/ | grep -v currency-update.ts | xargs -I {} rm ./src/lib/firefly/model/{}",
+    "precodegen": "npm run clean:api && npm run clean:model",
+    "codegen": "openapi-generator-cli generate -i https://api-docs.firefly-iii.org/firefly-iii-1.5.4.yaml -o src/lib/firefly -g typescript-axios -c .openapi-generator-config.yaml"
   },
   "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.4.12",
     "@types/debug": "4.1.7",
     "@types/node": "16.7.2",
     "@typescript-eslint/eslint-plugin": "4.31.2",
@@ -29,10 +36,17 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "axios": "0.21.1",
+    "@grammyjs/i18n": "0.3.0",
+    "@grammyjs/router": "1.1.1",
+    "@types/lodash.isempty": "4.4.6",
+    "axios": "0.21.4",
     "dayjs": "1.10.6",
     "debug": "4.3.2",
     "dotenv": "10.0.0",
-    "telegraf": "4.4.1"
+    "grammy": "1.3.4",
+    "lodash.isempty": "4.4.0",
+    "mathjs": "9.5.1",
+    "node-fetch": "3.0.0",
+    "table": "6.7.2"
   }
 }

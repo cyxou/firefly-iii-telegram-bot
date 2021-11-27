@@ -1,0 +1,9 @@
+globalProperties:
+  verbose: true
+additionalProperties:
+  supportsES6: true
+  useSingleRequestParameter: true
+  withSeparateModelsAndApi: true
+  apiPackage: api
+  modelPackage: model
+  generateAliasAsModel: true

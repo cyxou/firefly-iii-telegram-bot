@@ -3,62 +3,45 @@ import debug from 'debug'
 
 const rootLog = debug(`bot:storage`)
 
-type KEYS =
-  'FIREFLY_URL'
-  | 'FIREFLY_ACCESS_TOKEN'
-  | 'DEFAULT_ASSET_ACCOUNT'
-type StorageMap = Map<KEYS, any>
-type UserStorage = {
-  [key: number]: StorageMap
+class UserSettings {
+  _fireflyUrl = ''
+  _fireflyAccessToken = ''
+  _defaultAssetAccount = ''
+  _defaultAssetAccountId = 0
+
+  constructor(fireflyUrl = '', fireflyAccessToken = '') {
+    this._fireflyUrl = fireflyUrl
+    this._fireflyAccessToken = fireflyAccessToken
+  }
+
+  get fireflyUrl() { return this._fireflyUrl }
+  set fireflyUrl(val: string) { this._fireflyUrl = val }
+
+  get fireflyAccessToken() { return this._fireflyAccessToken }
+  set fireflyAccessToken(val: string) { this._fireflyAccessToken = val }
+
+  get defaultAssetAccount() { return this._defaultAssetAccount }
+  set defaultAssetAccount(val: string) { this._defaultAssetAccount = val }
+
+  get defaultAssetAccountId() { return this._defaultAssetAccountId }
+  set defaultAssetAccountId(val: number) { this._defaultAssetAccountId = val }
 }
 
-const userStorage: UserStorage = { }
+type UserStorage = {
+  [key: number]: UserSettings
+}
 
-export function getUserStorage(userId: number) {
+const userStorage: UserStorage = { } as UserStorage
+
+export function getUserStorage(userId: number): UserSettings {
   return userStorage[userId] || bootstrapUserStorage(userId)
 }
 
-type UserStorageValues = {
-  fireflyUrl: string,
-  fireflyAccessToken: string
-  defaultAssetAccount: string
-}
-
-export function getDataFromUserStorage(userId: number): UserStorageValues {
-  const log = rootLog.extend('getDataFromUserStorage')
-  log('userId: %O', userId)
-  const storage = getUserStorage(userId)
-  log('storage: %O', storage)
-  const fireflyUrl = storage.get('FIREFLY_URL')
-  log('fireflyUrl: %O', fireflyUrl)
-  const fireflyAccessToken = storage.get('FIREFLY_ACCESS_TOKEN')
-  log('fireflyAccessToken: %O', fireflyAccessToken)
-  const defaultAssetAccount = storage.get('DEFAULT_ASSET_ACCOUNT')
-  log('defaultAssetAccount: %O', defaultAssetAccount)
-
-  return {
-    fireflyUrl,
-    fireflyAccessToken,
-    defaultAssetAccount
-  }
-}
-
-function bootstrapUserStorage(userId: number) {
+function bootstrapUserStorage(userId: number): UserSettings {
   const log = rootLog.extend('bootstrapUserStorage')
   log('userId: %O', userId)
-  const map: StorageMap = new Map()
+  const userSettings = new UserSettings(config.fireflyUrl, config.fireflyAccessToken)
 
-  if (config.fireflyUrl) {
-    map.set('FIREFLY_URL', config.fireflyUrl)
-  } else map.set('FIREFLY_URL', null)
-
-  if (config.fireflyAccessToken) {
-    map.set('FIREFLY_ACCESS_TOKEN', config.fireflyAccessToken)
-  } else map.set('FIREFLY_ACCESS_TOKEN', null)
-
-  map.set('DEFAULT_ASSET_ACCOUNT', null)
-
-  userStorage[userId] = map
-  log('userStorage[userId]: %O', userStorage[userId])
+  userStorage[userId] = userSettings
   return userStorage[userId]
 }
