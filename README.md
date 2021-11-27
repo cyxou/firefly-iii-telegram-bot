@@ -18,10 +18,10 @@ docker stop earthly-buildkitd || true
 ```
 
 ## TODO
+- [ ] Add English translations and make it a default language
 - [x] Add transactions improvements (create transfers and deposits)
 - [x] Edit transactions (no date change thus far)
 - [x] Localization based on Firefly user's preferences
-- [ ] Add English language
 - [x] Accounts management
 - [x] List transactions
 - [ ] Reports
@@ -30,6 +30,7 @@ docker stop earthly-buildkitd || true
 - [ ] Add tests
 - [ ] Add [lowdb](https://github.com/typicode/lowdb) as local JSON database for persistance
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
+- [ ] Migrate from home grown Mapper to Grammy's Menu plugin
 
 ## Open API Code Generation
 
@@ -61,4 +62,3 @@ which is hard-coded in `codegen` npm task.
 
 [license-url]: https://www.gnu.org/licenses/agpl-3.0.html
 [stars-url]: https://github.com/cyxou/firefly-iii-telegram-bot/stargazers
-
