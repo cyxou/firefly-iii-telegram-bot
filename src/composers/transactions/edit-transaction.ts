@@ -291,7 +291,7 @@ async function selectNewAssetAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.setAssetAccount.template()
+      mapper.setAssetAccount
     )
 
     accountsKeyboard
@@ -320,7 +320,7 @@ async function selectNewDepositAssetAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Asset,
-      mapper.setDepositAssetAccount.template()
+      mapper.setDepositAssetAccount
     )
 
     accountsKeyboard
@@ -371,7 +371,7 @@ async function selectNewRevenueAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       AccountTypeFilter.Revenue,
-      mapper.setRevenueAccount.template()
+      mapper.setRevenueAccount
     )
     accountsKeyboard
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))

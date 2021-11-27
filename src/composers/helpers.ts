@@ -157,7 +157,7 @@ async function createCategoriesKeyboard(userId: number, mapper: Mapper) {
 async function createAccountsKeyboard(
   userId: number,
   accountType: AccountTypeFilter,
-  cbDataTemplate: string,
+  mapper: Mapper,
   opts?: { skipAccountId: string }
 ) {
   const log = debug.extend('createAccountKeyboard')
@@ -174,7 +174,7 @@ async function createAccountsKeyboard(
       .reverse() // we want top accounts be closer to the bottom of the screen
       .forEach((acc, i) => {
         const last = accounts.length - 1
-        const cbData = cbDataTemplate.replace('${accountId}', acc.id)
+        const cbData = mapper.template({ accountId: acc.id })
 
         keyboard.text(acc.attributes.name, cbData)
         // Split accounts keyboard into two columns so that every odd indexed
