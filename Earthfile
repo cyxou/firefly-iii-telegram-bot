@@ -31,4 +31,4 @@ image:
     COPY +build/dist ./dist
     COPY +deps/node_modules_prod ./node_modules
     ENTRYPOINT ["node", "dist/index.js"]
-    SAVE IMAGE --push $DOCKERHUB_REPO:$TAG
+    SAVE IMAGE --push $DOCKERHUB_REPO:$TAG $DOCKERHUB_REPO:latest
