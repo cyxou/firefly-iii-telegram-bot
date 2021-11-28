@@ -5,8 +5,9 @@ import { Router } from "@grammyjs/router"
 import { ParseMode } from '@grammyjs/types'
 
 import type { MyContext } from '../types/MyContext'
-import i18n from '../lib/i18n';
+import i18n, { getLanguageIcon } from '../lib/i18n';
 import { command } from '../lib/constants'
+import { createMainKeyboard, generateWelcomeMessage } from './helpers'
 import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
@@ -24,6 +25,7 @@ const DONE                         = 'DONE_SETTINGS'
 const INPUT_FIREFLY_URL            = 'INPUT_FIREFLY_URL'
 const INPUT_FIREFLY_ACCESS_TOKEN   = 'INPUT_FIREFLY_ACCESS_TOKEN'
 const SELECT_DEFAULT_ASSET_ACCOUNT = 'SELECT_DEFAULT_ASSET_ACCOUNT'
+const SWITCH_LANGUAGE              = /^SWITCH_LANGUAGE=(.+)$/
 const TEST_CONNECTION              = 'TEST_CONNECTION'
 
 const bot = new Composer<MyContext>()
@@ -36,13 +38,14 @@ bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
 bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
 bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
 bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
+bot.callbackQuery(SWITCH_LANGUAGE, switchLanguageCbQH)
 // TODO Pass account id rather than account name in callback query
 bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
 bot.callbackQuery(DONE, doneCbQH)
 bot.callbackQuery(CANCEL, cancelCbQH)
 
 // Local routes and handlers
-router.route('IDLE', ( ctx, next ) => next())
+router.route('IDLE', ( _, next ) => next())
 router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
 router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
 // router.otherwise(ctx => ctx.reply('otherwise'))
@@ -55,16 +58,18 @@ function settingsText(ctx: MyContext) {
   const {
     fireflyUrl,
     fireflyAccessToken,
-    defaultAssetAccount
+    defaultAssetAccount,
+    language
   } = getUserStorage(userId)
 
   // Grab only first 4 and last 4 chars of the token
   const accessToken = fireflyAccessToken?.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
 
   return ctx.i18n.t('settings.whatDoYouWantToChange', {
-    fireflyUrl: fireflyUrl,
-    accessToken: accessToken,
-    defaultAssetAccount: defaultAssetAccount
+    fireflyUrl,
+    accessToken,
+    defaultAssetAccount,
+    language: getLanguageIcon(language)
   })
 }
 
@@ -74,6 +79,8 @@ function settingsInlineKeyboard(ctx: MyContext) {
     .text(ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), INPUT_FIREFLY_ACCESS_TOKEN).row()
     .text(ctx.i18n.t('labels.TEST_CONNECTION'), TEST_CONNECTION).row()
     .text(ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'), SELECT_DEFAULT_ASSET_ACCOUNT).row()
+    .text(ctx.i18n.t('labels.SWITCH_TO_RUSSIAN'), 'SWITCH_LANGUAGE=ru').row()
+    .text(ctx.i18n.t('labels.SWITCH_TO_ENGLISH'), 'SWITCH_LANGUAGE=en').row()
     .text(ctx.i18n.t('labels.DONE'), DONE)
 
   return {
@@ -320,6 +327,39 @@ async function testConnectionCbQH(ctx: MyContext) {
       text: ctx.i18n.t('settings.connectionSuccess', { email: userInfo.attributes.email }),
       show_alert: true
     })
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function switchLanguageCbQH(ctx: MyContext) {
+  const log = rootLog.extend('switchLanguageCbQH')
+  log(`Entered the switch language query handler`)
+  try {
+    log('ctx: %O', ctx)
+    const userId = ctx.from!.id
+    const storage = getUserStorage(userId)
+    const language = ctx.match![1]
+    log('language: %O', language)
+
+    ctx.i18n.locale(language)
+    dayjs.locale(language)
+    storage.language = language
+
+    const welcomeMessage = generateWelcomeMessage(ctx)
+
+    ctx.reply(welcomeMessage, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        keyboard: createMainKeyboard(ctx).build(),
+        resize_keyboard: true
+      }
+    })
+
+    return ctx.editMessageText(
+      settingsText(ctx),
+      settingsInlineKeyboard(ctx)
+    )
   } catch (err) {
     console.error(err)
   }

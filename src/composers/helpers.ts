@@ -2,11 +2,12 @@ import dayjs from 'dayjs'
 import Debug from 'debug'
 import { evaluate } from 'mathjs'
 import { ParseMode } from '@grammyjs/types'
-import { InlineKeyboard } from 'grammy'
+import { Keyboard, InlineKeyboard } from 'grammy'
 
 import firefly from '../lib/firefly'
 import Mapper from '../lib/Mapper'
 import type { MyContext } from '../types/MyContext'
+import { getUserStorage } from '../lib/storage'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TransactionSplitTypeEnum } from '../lib/firefly/model/transaction-split'
 import { TransactionSplit } from '../lib/firefly/model/transaction-split'
@@ -28,7 +29,9 @@ export {
   createCategoriesKeyboard,
   createAccountsKeyboard,
   createExpenseAccountsKeyboard,
-  createEditMenuKeyboard
+  createEditMenuKeyboard,
+  createMainKeyboard,
+  generateWelcomeMessage
 }
 
 const listAccountsMapper = {
@@ -364,4 +367,40 @@ function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeEnum) {
   }
   keyboard.text(ctx.i18n.t('labels.DONE'), listAccountsMapper.close.template())
   return keyboard
+}
+
+function generateWelcomeMessage(ctx: MyContext) {
+  const log = debug.extend('generateWelcomeMessage')
+
+  log('start: %O', ctx.message)
+  const userId = ctx.from!.id
+  const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
+
+  let welcomeMessage: string = ctx.i18n.t('welcome')
+  const isConfigured = !!(fireflyUrl && fireflyAccessToken)
+  log('isConfigured: %O', isConfigured)
+
+  if (!isConfigured) {
+    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('needToSet'))
+  }
+  if (!fireflyUrl) {
+    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('setFireflyUrl'))
+  }
+  if (!fireflyAccessToken) {
+    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('setFireflyAccessToken'))
+  }
+  if (!isConfigured) {
+    welcomeMessage = welcomeMessage.concat('\n\n', ctx.i18n.t('navigateToSettings'))
+  }
+
+  return welcomeMessage
+}
+
+function createMainKeyboard(ctx: MyContext) {
+  return new Keyboard()
+    .text(ctx.i18n.t('labels.ACCOUNTS'))
+    .text(ctx.i18n.t('labels.TRANSACTIONS')).row()
+    .text(ctx.i18n.t('labels.REPORTS'))
+    .text(ctx.i18n.t('labels.CATEGORIES')).row()
+    .text(ctx.i18n.t('labels.SETTINGS'))
 }

@@ -423,5 +423,5 @@ function createSingleCategoryKeyboard(
 }
 
 function getMonthNameCapitalized(date: Dayjs) {
-  return dayjs(date).format('MMMM YYYY').replace(/^./, c => c.toLocaleUpperCase())
+  return dayjs(date).format('MMMM, YYYY').replace(/^./, c => c.toLocaleUpperCase())
 }

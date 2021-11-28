@@ -16,17 +16,18 @@ sudo apt-get install qemu binfmt-support qemu-user-static
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 docker stop earthly-buildkitd || true
 ```
+More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 
 ## TODO
-- [ ] Add English translations and make it a default language
+- [x] Add English translations and make it a default language
 - [x] Add transactions improvements (create transfers and deposits)
 - [x] Edit transactions (no date change thus far)
 - [x] Localization based on Firefly user's preferences
 - [x] Accounts management
 - [x] List transactions
+- [x] Add math equations when creating transactions
 - [ ] Reports
 - [ ] Proper error handling
-- [x] Add math equations when creating transactions
 - [ ] Add tests
 - [ ] Add [lowdb](https://github.com/typicode/lowdb) as local JSON database for persistance
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
