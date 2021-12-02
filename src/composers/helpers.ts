@@ -110,7 +110,8 @@ function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
     destination: trSplit.destination_name,
     description: trSplit.description,
     currency: trSplit.currency_symbol,
-    date: dayjs(trSplit.date).format('DD MMM YYYY г.')
+    date: dayjs(trSplit.date).format('LLL'),
+    trId: tr.id
   }
 
   let translationString: string

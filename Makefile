@@ -8,7 +8,7 @@ push-arm-image:
 	earthly --platform=linux/arm --push +image
 
 push-image:
-	earthly --push +image
+	earthly --push +all
 
 start:
 	docker run --name firefly-iii-telegram-bot --rm -it --env-file .env cyxou/firefly-iii-telegram-bot:latest

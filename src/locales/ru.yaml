@@ -23,7 +23,7 @@ labels:
   DONE: ✅ OK
   EDIT_TRANSACTION: ✏️ Изменить
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
-  FIREFLY_URL_BUTTON: 🌐 Firefly URL
+  FIREFLY_URL_BUTTON: 🔗 Firefly URL
   LIST_TAGS: 🏷️  Тэг
   RENAME_CATEGORY: ✏️ Переименовать
   REPORTS: 📈 Отчеты
@@ -41,7 +41,7 @@ welcome: >
   👋 Привет! Этот бот помогает быстро создавать транзакции в Firefly III, 
   а также управлять некоторыми его сущностями.
 needToSet: 'Для работы с ботом необходимо указать:'
-setFireflyUrl: '  - *🌐 Firefly URL* - адрес сайта Firefly III'
+setFireflyUrl: '  - *🔗 Firefly URL* - адрес сайта Firefly III'
 setFireflyAccessToken: '  - *🔑 Access Token*, созданный в веб-интерфейсе Firefly'
 navigateToSettings: Загляните в *🔧 Настройки* для продолжения работы.
 
@@ -66,7 +66,7 @@ common:
   errorOccurred: Произошла ошибка!
 
 mdlwr:
-  noFireflyURLFound: Для работы с ботом необходимо указать *🌐 Firefly URL* в разделе *🔧 Настройки* бота
+  noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
 settings:
   notSpecified: '<НЕ😱УКАЗАН>'
@@ -180,6 +180,8 @@ transactions:
       *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}  
 
       ${source} ➡️ ${destination}
+        
+      id: ${trId}
     depositMessage: >
       📆 ${date}  
        

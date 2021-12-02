@@ -23,7 +23,7 @@ labels:
   DONE: ✅ OK
   EDIT_TRANSACTION: ✏️ Edit
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
-  FIREFLY_URL_BUTTON: 🌐 Firefly URL
+  FIREFLY_URL_BUTTON: 🔗 Firefly URL
   LIST_TAGS: 🏷️  Tag
   RENAME_CATEGORY: ✏️ Rename
   REPORTS: 📈 Reports
@@ -38,11 +38,11 @@ labels:
   SWITCH_TO_RUSSIAN: 🇷🇺 Switch to Russian
 
 welcome: >
-  👋 Hi! This bot helps quickly add transactions in Firefly III.
+  👋 Hi! This bot helps to quickly add transactions in Firefly III.
   It also can manage some of Firefly's entities.
 needToSet: 'To start working with the bot, you need to specify the following:'
-setFireflyUrl: '  - *🌐 Firefly URL* - URL address of your Firefly III instance'
-setFireflyAccessToken: '  - *🔑 Access Token*, created in Firefly III web interface'
+setFireflyUrl: '  - *🔗 Firefly URL* - URL address of your Firefly III instance'
+setFireflyAccessToken: '  - *🔑 Access Token* created in Firefly III web interface'
 navigateToSettings: To proceed further head over to *🔧 Settings*.
 
 help: >
@@ -66,7 +66,7 @@ common:
   errorOccurred: An error occurred!
 
 mdlwr:
-  noFireflyURLFound: To work with the bot, you need to specify *🌐 Firefly URL* in bot *🔧 Settings*.
+  noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
 settings:
   notSpecified: '<NOT😱SPECIFIED>'
@@ -181,6 +181,8 @@ transactions:
       *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}  
 
       ${source} ➡️ ${destination}
+        
+      id: ${trId}
     depositMessage: >
       📆 ${date}  
        
