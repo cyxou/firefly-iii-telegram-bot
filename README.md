@@ -3,14 +3,50 @@
 
 # Firefly III Telegram Bot
 
+## Setup
+First you'll have to generate a Telegram Bot token through BotFather. Once you generate the token, keep it safe.
+
+### Docker (Recommended)
+
+```shell
+docker run \
+  --rm --it --name firefly-bot \
+  --env BOT_TOKEN=<your-bot-token> \
+  cyxou/firefly-iii-telegram-bot:latest
+```
+
+You may also provide additional environment variables via the _.env_ file.
+For this rename the _example.env_ to _.env_ and update it with your values.
+Then you can pass it to docker like so:
+
+```shell
+docker run \
+  --rm --it --name firefly-bot \
+  --env-file .env
+  cyxou/firefly-iii-telegram-bot:latest
+```
+
+### Manual
+
+For this you need to have NodeJS installed.
+
+ - Clone the repository
+ - Install dependencies by running `npm install`
+ - Run `export BOT_TOKEN=<your-bot-token>`
+ - Run `npm start`
+
+If you'll have certificate errors when trying to connect to Firefly III instance,
+stop the bot, do `export NODE_TLS_REJECT_UNAUTHORIZED=0` in your shell and start the
+bot.
+
 ## Development
 
 To build docker images you would need to install additional tools and packages.
  - Docker
  - Earthly
- - Some other tools for building multi platform docker images.
+ - QEMU for building multi platform docker images.
 
- On linux, QEMU needs to be installed manually. On Ubuntu, this can be achieved by running:
+On linux, QEMU needs to be installed manually. On Ubuntu, this can be achieved by running:
 ```shell
 sudo apt-get install qemu binfmt-support qemu-user-static
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
@@ -26,9 +62,10 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [x] Accounts management
 - [x] List transactions
 - [x] Add math equations when creating transactions
+- [ ] Configure CI/CD so that it builds and pushes docker images on merges to master
 - [ ] Reports
 - [ ] Proper error handling
-- [ ] Add tests
+- [ ] Tests
 - [ ] Add [lowdb](https://github.com/typicode/lowdb) as local JSON database for persistance
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
 - [ ] Migrate from home grown Mapper to Grammy's Menu plugin
