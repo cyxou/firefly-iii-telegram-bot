@@ -1,17 +1,14 @@
 import debug from 'debug'
 import * as dotenv from 'dotenv';
-import dayjs from 'dayjs'
-import 'dayjs/locale/ru'
-import { Bot, Keyboard, GrammyError, HttpError, session } from 'grammy'
+import { Bot, GrammyError, HttpError, session } from 'grammy'
 
-dayjs.locale('ru')
 dotenv.config();
 
 import i18n from './lib/i18n'
 import config from './config'
 import { command } from './lib/constants'
 import { requireSettings, cleanup } from './lib/middlewares'
-import { getUserStorage } from './lib/storage'
+import { createMainKeyboard, generateWelcomeMessage } from './composers/helpers'
 
 import settings from './composers/settings'
 import addTransaction, { addTransaction as textHandler } from './composers/transactions/add-transaction'
@@ -70,25 +67,7 @@ async function startHandler(ctx: MyContext) {
 
   await setBotCommands(ctx)
 
-  const userId = ctx.from!.id
-  const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
-
-  let welcomeMessage: string = ctx.i18n.t('welcome')
-  const isConfigured = !!(fireflyUrl && fireflyAccessToken)
-  log('isConfigured: %O', isConfigured)
-
-  if (!isConfigured) {
-    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('needToSet'))
-  }
-  if (!fireflyUrl) {
-    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('setFireflyUrl'))
-  }
-  if (!fireflyAccessToken) {
-    welcomeMessage = welcomeMessage.concat('\n', ctx.i18n.t('setFireflyAccessToken'))
-  }
-  if (!isConfigured) {
-    welcomeMessage = welcomeMessage.concat('\n\n', ctx.i18n.t('navigateToSettings'))
-  }
+  const welcomeMessage = generateWelcomeMessage(ctx)
 
   return ctx.reply(welcomeMessage, {
     parse_mode: 'Markdown',
@@ -110,15 +89,6 @@ function helpHandler(ctx: MyContext) {
       resize_keyboard: true
     }
   })
-}
-
-function createMainKeyboard(ctx: MyContext) {
-  return new Keyboard()
-    .text(ctx.i18n.t('labels.ACCOUNTS'))
-    .text(ctx.i18n.t('labels.TRANSACTIONS')).row()
-    .text(ctx.i18n.t('labels.REPORTS'))
-    .text(ctx.i18n.t('labels.CATEGORIES')).row()
-    .text(ctx.i18n.t('labels.SETTINGS'))
 }
 
 function setBotCommands(ctx: MyContext) {

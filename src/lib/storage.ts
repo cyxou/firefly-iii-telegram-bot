@@ -2,12 +2,14 @@ import config from '../config'
 import debug from 'debug'
 
 const rootLog = debug(`bot:storage`)
+const allowedLanguages = ['ru', 'en']
 
 class UserSettings {
   _fireflyUrl = ''
   _fireflyAccessToken = ''
   _defaultAssetAccount = ''
   _defaultAssetAccountId = 0
+  _language = 'en'
 
   constructor(fireflyUrl = '', fireflyAccessToken = '') {
     this._fireflyUrl = fireflyUrl
@@ -25,6 +27,11 @@ class UserSettings {
 
   get defaultAssetAccountId() { return this._defaultAssetAccountId }
   set defaultAssetAccountId(val: number) { this._defaultAssetAccountId = val }
+
+  get language() { return this._language }
+  set language(val: string) {
+    if (allowedLanguages.includes(val as 'en' | 'ru')) this._language = val
+  }
 }
 
 type UserStorage = {

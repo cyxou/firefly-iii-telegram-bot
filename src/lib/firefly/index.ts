@@ -20,7 +20,7 @@ export default function firefly(userId: number) {
     // Do something with response data
     return response;
   }, function (err) {
-    log('Error response: %O', err.response.data)
+    log('Error response: %O', err)
     return Promise.reject(err.response.data);
   })
 

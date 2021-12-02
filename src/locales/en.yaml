@@ -2,3 +2,248 @@ commands:
   start: Start (greetings message)
   settings: Settings
   help: Help
+
+labels:
+  ACCOUNTS: 💳 Accounts
+  ADD_CATEGORIES: ➕ Add categories
+  CANCEL: ✖ Cancel
+  CATEGORIES: 🔖 Categories
+  CHANGE_CATEGORY: 🔖 Category
+  CHANGE_DATE: 📆 Date
+  CHANGE_AMOUNT: 💸 Amount
+  CHANGE_DESCRIPTION: 📝 Description
+  CHANGE_REVENUE_ACCOUNT: 🏦 Revenue account
+  CHANGE_EXPENSE_ACCOUNT: 🏛️ Expense account
+  CHANGE_ASSET_ACCOUNT: 💳 Asset account
+  CLASSIFICATION: 🏷️  Classification
+  CLOSE: 🔙 Back
+  DECLINE_CATEGORIES_LIST: ✏️ Nope, try again
+  DEFAULT_ASSET_ACCOUNT_BUTTON: 💳 Default asset account
+  DELETE: ❌ Delete
+  DONE: ✅ OK
+  EDIT_TRANSACTION: ✏️ Edit
+  FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
+  FIREFLY_URL_BUTTON: 🔗 Firefly URL
+  LIST_TAGS: 🏷️  Tag
+  RENAME_CATEGORY: ✏️ Rename
+  REPORTS: 📈 Reports
+  SETTINGS: 🔧 Settings
+  TEST_CONNECTION: 🔌 Check connection
+  TO_WITHDRAWALS: 📤 To withdrawals
+  TO_DEPOSITS: 📥 To deposits
+  TO_TRANSFERS: ↔️ To transfers
+  TRANSACTIONS: 🔀 Transactions
+  YES: ✅ Yes
+  SWITCH_TO_ENGLISH: 🇬🇧 Switch to English
+  SWITCH_TO_RUSSIAN: 🇷🇺 Switch to Russian
+
+welcome: >
+  👋 Hi! This bot helps to quickly add transactions in Firefly III.
+  It also can manage some of Firefly's entities.
+needToSet: 'To start working with the bot, you need to specify the following:'
+setFireflyUrl: '  - *🔗 Firefly URL* - URL address of your Firefly III instance'
+setFireflyAccessToken: '  - *🔑 Access Token* created in Firefly III web interface'
+navigateToSettings: To proceed further head over to *🔧 Settings*.
+
+help: >
+  ❕ To add a transaction, send an amount. It can be a number, or a math expression,
+  like `100-5*3`.
+  Upon receiving amount, bot will ask additional questions for transaction parameters.
+    
+  You can also add transactions that do not require require additional questions from the bot,
+  by sending transaction description and an amount, like so
+    
+  `Cafe 35`
+    
+  In this case a new withdrawal transaction from the default asset account and 
+  description `Cafe` with amount of `35` will be created.
+    
+  ✨ Going further you can set up different *Rules* in a corresponding section of
+  Firefly III, in which case all your bot transactions will be created respecting those
+  rules.
+
+common:
+  errorOccurred: An error occurred!
+
+mdlwr:
+  noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
+  noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
+settings:
+  notSpecified: '<NOT😱SPECIFIED>'
+  inputFireflyUrl: >
+    Type in URL address of your Firefly III instance.
+    It should be in the format of this: *https://firefly.example.com*
+    or this: *http://localhost:8080*
+  inputFireflyAccessToken: >
+    Paste your Personal Access Token.
+    You can create and copy it from the Firefly III web interface:
+    *Options → Profile → OAuth → Create new token*
+  defaultAssetAccountSet: Default asset account has been set!
+  whatDoYouWantToChange: >
+    🔧 *Settings*  
+       
+    What do you want to change?  
+       
+    *🔗 Firefly URL*: ${fireflyUrl || '<NOT😱SPECIFIED>'}
+
+    *🔑 Access Token*: ${accessToken || '<NOT😱SPECIFIED>'}
+
+    *💳 Default asset account*: ${defaultAssetAccount || '<NOT😱SPECIFIED>'}
+
+    *🌐 Language*: ${language}
+  selectDefaultAssetAccount: >
+    Choose an asset account which will be used as a default one for withdrawals.
+    If left unset, the very first asset account from the list below will be used by
+    default with every withdrawal.
+  specifySmthFirst: Specify ${smth} first.
+  connectionFailed: Connection has NOT been established!
+  connectionSuccess: >
+    Connection established!
+
+    Hi, ${email}!
+  badAccessToken: Entered text does not look like an Access Token. Try again, please.
+  badUrl: >
+    Entered text does not look like a URL address. Try again, please.
+    Type in the URL address of your Firefly III instance, for example https://firefly.example.com:
+
+accounts:
+  labels:
+    asset: Asset accounts
+    expense: Expense accounts
+    revenue: Revenue accounts
+    liability: Liabilities
+  list:
+    noAccounts: No accounts yet🤷
+    asset: >
+      Balance of your asset accounts:
+       
+      <pre>${accounts.replace(/\n$/, '')}
+      
+      ──────────────────
+      
+      SUM: ${sums ? sums : '0'}</pre>
+    expense: >
+      Balance of your expense accounts:
+       
+      <pre>${accounts.replace(/\n$/, '')}
+      
+      ──────────────────
+      
+      SUM: ${sums ? sums : '0'}</pre>
+    revenue: >
+      Balance of your revenue accounts:
+       
+      <pre>${accounts.replace(/\n$/, '')}
+      
+      ──────────────────
+      
+      SUM: ${sums ? sums : '0'}</pre>
+    liability: >
+      Balance of your liabilities:
+       
+      <pre>${accounts.replace(/\n$/, '')}
+      
+      ──────────────────
+      
+      SUM: ${sums ? sums : '0'}</pre>
+
+transactions:
+  list:
+    withdrawal: >
+      Your withdrawals for <b>${day}</b>:  
+        
+      <pre>${transactions.replace(/\n$/, '')}
+      
+      ──────────────────
+      
+      SUM: ${sums ? sums : '0'}</pre>
+    deposit: >
+      Your revenues for <b>${day}</b>:  
+        
+      <pre>${transactions.replace(/\n$/, '')}
+      
+      ──────────────────
+      
+      SUM: ${sums ? sums : '0'}</pre>
+    transfer: >
+      Your transactions for <b>${day}</b>:  
+        
+      <pre>${transactions.replace(/\n$/, '')}</pre>
+    noTransactions: 🤷 No transactions
+  add:
+    dontUnderstand: >
+      🤖 I don't understand that.  
+      Enter a transaction amount, it needs to be a number! 😉
+    withdrawalMessage: >
+      📆 ${date}  
+        
+      📤 Added ${description === 'N/A' ? '' : '*' + description + '*'}
+      *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}  
+
+      ${source} ➡️ ${destination}
+        
+      id: ${trId}
+    depositMessage: >
+      📆 ${date}  
+       
+      📥 Added ${description === 'N/A' ? '' : '*' + description + '* '}
+      *${amount}* *${currency}*
+      
+      ${source} ➡️ ${destination}
+    transferMessage: >
+      📆 ${date}  
+         
+      ↔️ Transfer *${amount}* *${currency}* from account *${source}* to account *${destination}*
+    selectCategory: In which category to add *${amount}*?
+    transactionDeleted: Transaction deleted!
+    couldNotDelete: 'Could not delete transaction by id: ${id}'
+    selectRevenueAccount: 'Choose a revenue account to withdraw *${amount}*:'
+    selectAssetAccount: 'Choose an asset account to add *${amount}*:'
+    selectSourceAccount: 'Choose an account to transfer *${amount}* from:'
+    selectDestAccount: 'Choose an account to transfer to:'
+    transactionError: '❗😰 Ann error occurred during transaction creation: *${message}*'
+    created: Transaction created!
+
+  edit:
+    whatToEdit: ❓What do you want to change?
+    updated: Transaction updated!
+    badAmountTyped: 'An amount should be a number. Type in new amount please:'
+    badDescriptionTyped: 'Description needs to be text. Type in new description please:'
+    typeNewAmount: 'Type in new amount:'
+    typeNewDescription: 'Type in new description:'
+    chooseNewCategory: 'Choose new category:'
+    chooseNewAssetAccount: 'Choose new asset account:'
+    chooseNewExpenseAccount: 'Choose new expense account:'
+    chooseNewRevenueAccount: 'Choose new revenue account:'
+
+categories:
+  listEmpty: No categories thus yet.
+  list: >
+    To view transactions for a specific category, choose it from the list bellow.
+    You can also rename or delete a category once it is chosen.
+  typeCategories: >
+    Type in your new categories so that each one would be on a separate line, for example: 
+       
+    💡 Utilities
+
+    👕 Clothes and shoes
+
+    🥦 Groceries  
+       
+    *P.S.*: Category names can be changed later.
+
+    *P.P.S.*: It's OK if a category with the same name already exists.
+  typeNewName: 'Type in new category name:'
+  confirmDeletion: >
+    Are you sure that you want to delete this category?
+    Corresponding transactions won't be deleted. They can be found in *🔀 Transactions* section.
+  deleted: Category deleted!
+  noTransactions: No transactions
+  transactionsList: >
+    <b>${categoryName}</b> withdrawals for the month of <b>${monthName}</b>:  
+      
+    <pre>${transactions.replace(/\n$/, '')}
+    
+    ──────────────────
+    
+    SUM: ${sums ? sums : '0'}</pre>

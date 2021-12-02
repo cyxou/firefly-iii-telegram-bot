@@ -1,9 +1,19 @@
 import path from 'path'
 import { I18n, pluralize } from '@grammyjs/i18n';
 
+import dayjs from 'dayjs'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
+import 'dayjs/locale/ru'
+import 'dayjs/locale/en'
+
+const defaultLanguage = 'en'
+
+dayjs.locale(defaultLanguage)
+dayjs.extend(localizedFormat)
+
 const params = {
   directory: path.resolve(__dirname, '../locales'),
-  defaultLanguage: 'ru',
+  defaultLanguage: defaultLanguage,
   defaultLanguageOnMissing: true,
   sessionName: 'session',
   useSession: true,
@@ -17,3 +27,12 @@ const params = {
 const i18n = new I18n(params)
 
 export default i18n
+
+export function getLanguageIcon(language: string) {
+  const lang2icons = {
+    ru: '🇷🇺',
+    en: '🇬🇧'
+  }
+
+  return lang2icons[language]
+}

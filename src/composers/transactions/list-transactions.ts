@@ -121,7 +121,7 @@ function formatTransactions(ctx: MyContext, transactions: TransactionRead[]) {
       }
       log('typeIcon: %O', typeIcon)
 
-      const date = dayjs(tr.date).format('D MMM')
+      const date = dayjs(tr.date).format('LT')
       const amount = parseFloat(tr.amount).toFixed(2)
       const currency = tr.currency_symbol
       const desc = tr.description
@@ -147,10 +147,10 @@ function createTransactionsNavigationKeyboard(
 ): InlineKeyboard {
   const log = debug.extend('createTransactionsNavigationKeyboard')
   const prevDay = dayjs(curDay).subtract(1, 'day')
-  const prevDayName = prevDay.format('D MMMM')
+  const prevDayName = prevDay.format('ll')
   log('prevDayName: %O', prevDayName)
   const nextDay = dayjs(curDay).add(1, 'day')
-  const nextDayName = nextDay.format('D MMMM')
+  const nextDayName = nextDay.format('ll')
   log('nextDayName: %O', nextDayName)
 
   const keyboard = new InlineKeyboard()
@@ -214,7 +214,7 @@ function formatTransactionMessage(
   }).join('\n       ').replace(/\n$/, '')
 
   return ctx.i18n.t(`transactions.list.${trType}`, {
-    day: dayjs(day).format('D MMMM'),
+    day: dayjs(day).format('LL'),
     transactions: formatTransactions(ctx, transactions),
     sums: sums
   })
