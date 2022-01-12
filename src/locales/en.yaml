@@ -69,7 +69,7 @@ mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
 settings:
-  notSpecified: '<NOT😱SPECIFIED>'
+  notSpecified: '🚨 <NOT SPECIFIED>'
   inputFireflyUrl: >
     Type in URL address of your Firefly III instance.
     It should be in the format of this: *https://firefly.example.com*
@@ -84,11 +84,11 @@ settings:
        
     What do you want to change?  
        
-    *🔗 Firefly URL*: ${fireflyUrl || '<NOT😱SPECIFIED>'}
+    *🔗 Firefly URL*: ${fireflyUrl || '🚨 <NOT SPECIFIED>'}
 
-    *🔑 Access Token*: ${accessToken || '<NOT😱SPECIFIED>'}
+    *🔑 Access Token*: ${accessToken || '🚨 <NOT SPECIFIED>'}
 
-    *💳 Default asset account*: ${defaultAssetAccount || '<NOT😱SPECIFIED>'}
+    *💳 Default asset account*: ${defaultAssetAccount || '🚨 <NOT SPECIFIED>'}
 
     *🌐 Language*: ${language}
   selectDefaultAssetAccount: >

@@ -69,7 +69,7 @@ mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
 settings:
-  notSpecified: '<НЕ😱УКАЗАН>'
+  notSpecified: '🚨<НЕ УКАЗАН>'
   inputFireflyUrl: >
     Введите URL-адрес вашего сервера Firefly III.
     Он должен быть в таком же формате, как этот: *https://firefly.example.com*
@@ -84,11 +84,11 @@ settings:
        
     Что Вы хотите изменить?  
        
-    *🔗 Firefly URL*: ${fireflyUrl || '<НЕ😱УКАЗАН>'}
+    *🔗 Firefly URL*: ${fireflyUrl || '🚨<НЕ УКАЗАН>'}
 
-    *🔑 Access Token*: ${accessToken || '<НЕ😱УКАЗАН>'}
+    *🔑 Access Token*: ${accessToken || '🚨<НЕ УКАЗАН>'}
 
-    *💳 Счет по умолчанию*: ${defaultAssetAccount || '<НЕ😱УКАЗАН>'}
+    *💳 Счет по умолчанию*: ${defaultAssetAccount || '🚨<НЕ УКАЗАН>'}
 
     *🌐 Язык*: ${language}
   selectDefaultAssetAccount: >
