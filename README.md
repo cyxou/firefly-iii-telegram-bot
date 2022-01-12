@@ -1,7 +1,9 @@
-[![License][license-shield]][license-url]
-[![Stargazers][stars-shield]][stars-url]
-
 # Firefly III Telegram Bot
+This Telegram bot facilitates creating [Firefly III](https://www.firefly-iii.org/) transactions 
+as well as provides some capabilities to manage other Firefly's entities like
+Accounts, Categories, Reports, etc.
+
+![welcome screen](https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/welcome-screen.png?raw=true)
 
 ## Setup
 First you'll have to generate a Telegram Bot token through BotFather. Once you generate the token, keep it safe.
