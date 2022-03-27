@@ -24,7 +24,7 @@ Then you can pass it to docker like so:
 ```shell
 docker run \
   --rm --it --name firefly-bot \
-  --env-file .env
+  --env-file .env \
   cyxou/firefly-iii-telegram-bot:latest
 ```
 
