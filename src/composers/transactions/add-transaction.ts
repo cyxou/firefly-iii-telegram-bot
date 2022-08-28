@@ -111,7 +111,7 @@ export async function addTransaction(ctx: MyContext) {
       parse_mode: 'Markdown',
       reply_markup:  keyboard
     })
-  } catch (err) {
+  } catch (err: any) {
     log('Error: %O', err)
     console.error('Error occurred handling text message: ', err)
     return ctx.reply(err.message)
@@ -143,7 +143,7 @@ async function newTransactionCategoryCbQH(ctx: MyContext) {
     )
 
     return ctx.answerCallbackQuery({ text: ctx.i18n.t('transactions.add.created') })
-  } catch (err) {
+  } catch (err: any) {
     await ctx.answerCallbackQuery({ text: ctx.i18n.t('common.errorOccurred') })
     console.error('Error occurred in category action handler: ', err)
     return ctx.editMessageText(

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import Debug from 'debug'
 import { evaluate } from 'mathjs'
-import { ParseMode } from '@grammyjs/types'
+import { ParseMode, ApiError } from '@grammyjs/types'
 import { Keyboard, InlineKeyboard } from 'grammy'
 
 import firefly from '../lib/firefly'
@@ -263,7 +263,7 @@ function formatTransactionUpdate(
 
     return `${formatTransaction(ctx, trRead)}\n${diffPart}`
 
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
     return err.message
   }

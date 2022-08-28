@@ -31,7 +31,7 @@ export default class CallbackDataAgent {
         Object.assign({}, context),
         options
       )
-    } catch (err) {
+    } catch (err: any) {
       throw new Error(`Failed to compile template: ${err.message}`)
     }
   }

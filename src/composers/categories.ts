@@ -144,7 +144,7 @@ async function doDeleteCategoryCbQH(ctx: MyContext) {
 
     return replyWithListOfCategories(ctx)
 
-  } catch (err) {
+  } catch (err: any) {
     log('Error: %O', err)
     console.error(err)
     ctx.reply('Error occurred deleting a category: ', err.message)
