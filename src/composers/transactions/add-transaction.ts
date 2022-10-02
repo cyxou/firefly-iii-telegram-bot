@@ -72,12 +72,13 @@ export async function addTransaction(ctx: MyContext) {
     log('description: ', description)
 
     if (description) {
-      const tr = await createFastTransaction(
+      const tr = await createFastTransaction({
         userId,
+        date: ctx.message?.date,
         amount,
         description,
-        defaultAssetAccountId.toString()
-      )
+        accountId: defaultAssetAccountId.toString()
+      })
 
       return ctx.reply(
         formatTransaction(ctx, tr),
@@ -88,7 +89,7 @@ export async function addTransaction(ctx: MyContext) {
     ctx.session.newTransaction = {
       transactions: [{
         type: TransactionSplitStoreTypeEnum.Withdrawal,
-        date: dayjs().toISOString(),
+        date: dayjs((ctx.message?.date || Date.now())).toISOString(),
         description: 'N/A',
         source_id: defaultAssetAccountId.toString(),
         amount: amount.toString(),
@@ -183,13 +184,21 @@ async function deleteTransactionActionHandler(ctx: MyContext) {
   }
 }
 
-async function createFastTransaction(userId: number, amount: number, description: string, accountId: string): Promise<TransactionRead> {
+interface ICreateFastTransactionPayload {
+  userId: number
+  amount: number
+  description: string
+  accountId: string
+  date: number | undefined
+}
+
+async function createFastTransaction({ userId, amount, description, accountId, date }: ICreateFastTransactionPayload): Promise<TransactionRead> {
   const log = rootLog.extend('createFastTransaction')
   try {
     const transactionStore = {
       transactions: [{
         type: TransactionSplitStoreTypeEnum.Withdrawal,
-        date: dayjs().toISOString(),
+        date: dayjs(date || Date.now()).toISOString(),
         amount: amount.toString(),
         description,
         source_id: accountId,
@@ -364,7 +373,7 @@ async function startCreatingTransferTransaction(ctx: MyContext) {
     ctx.session.newTransaction = {
       transactions: [{
         type: TransactionSplitStoreTypeEnum.Transfer,
-        date: dayjs().toISOString(),
+        date: dayjs((ctx.message?.date || Date.now())).toISOString(),
         description: 'N/A',
         source_id: null,
         amount: amount.toString(),
