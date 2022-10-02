@@ -96,6 +96,8 @@ settings:
     Если его не задать, то будет использован самый первый счет из списка ниже.
   specifySmthFirst: Сперва укажите ${smth}.
   connectionFailed: Соединение НЕ установлено!
+  connectionFailedUnauthenticated: Ошибка аутентификации! Скорее всего вы некоректно указали ваш Access Token или он более недействителен.
+  connectionFailedBadUrl: Ошибка соединения с сервером Firefly! Убедитесь, что вы вели корректный Firefly URL.
   connectionSuccess: >
     Соединение установлено!
 

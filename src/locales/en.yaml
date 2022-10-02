@@ -97,6 +97,8 @@ settings:
     default with every withdrawal.
   specifySmthFirst: Specify ${smth} first.
   connectionFailed: Connection has NOT been established!
+  connectionFailedUnauthenticated: Authentication error! Please make sure that specified Access Token is not malformed and not expired.
+  connectionFailedBadUrl: Error connecting to Firefly host! Please make sure that you specified the right Firefly URL.
   connectionSuccess: >
     Connection established!
 
