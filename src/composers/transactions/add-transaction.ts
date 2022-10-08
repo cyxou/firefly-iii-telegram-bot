@@ -17,6 +17,7 @@ import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionSplitStoreTypeEnum } from '../../lib/firefly/model/transaction-split-store'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
+import { AccountTypeEnum } from '../../lib/firefly/model'
 
 const rootLog = debug(`bot:transactions:add`)
 
@@ -276,7 +277,7 @@ async function selectAssetAccount(ctx: MyContext) {
 
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
-      AccountTypeFilter.Asset,
+      [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
       mapper.selectAssetAccount
     )
     accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())

@@ -2,7 +2,7 @@ import * as api from './api'
 import { Configuration } from './configuration'
 import globalAxios from 'axios';
 import Debug from 'debug'
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 
 import { getUserStorage } from '../storage'
 import { AuthenticationError, HostNotFoundError  } from '../errorHandler'
@@ -29,7 +29,7 @@ export default function firefly(userId: number) {
   }
 }
 
-function resSuccessInterceptor(response: any) { return response }
+function resSuccessInterceptor(response: AxiosResponse) { return response }
 function resErrorInterceptor(axiosError: AxiosError) {
   const log = debug.extend('axios:resErrorInterceptor')
   log('Axios error: %O', axiosError)

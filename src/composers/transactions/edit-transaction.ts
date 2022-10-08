@@ -16,6 +16,7 @@ import {
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
+import { AccountTypeEnum } from '../../lib/firefly/model'
 
 export enum Route {
   IDLE               = 'IDLE',
@@ -290,7 +291,7 @@ async function selectNewAssetAccount(ctx: MyContext) {
 
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
-      AccountTypeFilter.Asset,
+      [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
       mapper.setAssetAccount
     )
 

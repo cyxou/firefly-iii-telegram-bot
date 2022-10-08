@@ -28,6 +28,8 @@
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "2.5.2",
     "@types/debug": "4.1.7",
+    "@types/lodash.flatten": "4.4.7",
+    "@types/lodash.isempty": "4.4.7",
     "@types/node": "18.7.15",
     "@typescript-eslint/eslint-plugin": "5.36.2",
     "@typescript-eslint/parser": "5.36.2",
@@ -40,12 +42,12 @@
   "dependencies": {
     "@grammyjs/i18n": "0.5.1",
     "@grammyjs/router": "2.0.0",
-    "@types/lodash.isempty": "4.4.7",
     "axios": "0.27.2",
     "dayjs": "1.11.5",
     "debug": "4.3.4",
     "dotenv": "16.0.2",
     "grammy": "1.11.0",
+    "lodash.flatten": "4.4.0",
     "lodash.isempty": "4.4.0",
     "mathjs": "11.1.0",
     "node-fetch": "3.2.10",

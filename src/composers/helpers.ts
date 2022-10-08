@@ -1,7 +1,8 @@
 import dayjs from 'dayjs'
 import Debug from 'debug'
+import flatten from 'lodash.flatten'
 import { evaluate } from 'mathjs'
-import { ParseMode, ApiError } from '@grammyjs/types'
+import { ParseMode } from '@grammyjs/types'
 import { Keyboard, InlineKeyboard } from 'grammy'
 
 import firefly from '../lib/firefly'
@@ -13,6 +14,7 @@ import { TransactionSplitTypeEnum } from '../lib/firefly/model/transaction-split
 import { TransactionSplit } from '../lib/firefly/model/transaction-split'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountTypeEnum } from '../lib/firefly/model/account'
+import { AccountRead } from '../lib/firefly/model/account-read'
 
 const debug = Debug('bot:transactions:helpers')
 
@@ -160,15 +162,30 @@ async function createCategoriesKeyboard(userId: number, mapper: Mapper) {
 
 async function createAccountsKeyboard(
   userId: number,
-  accountType: AccountTypeFilter,
+  accountType: AccountTypeFilter | AccountTypeFilter[],
   mapper: Mapper,
   opts?: { skipAccountId: string }
 ) {
   const log = debug.extend('createAccountKeyboard')
   try {
-    let accounts = (await firefly(userId).Accounts.listAccount(
-        1, dayjs().format('YYYY-MM-DD'), accountType)).data.data
-    // log('accounts: %O', accounts)
+    let accounts: AccountRead[] = []
+    const now = dayjs().format('YYYY-MM-DD')
+
+    if (Array.isArray(accountType)) {
+      const promises: any = []
+      accountType.forEach(at => promises.push(firefly(userId).Accounts.listAccount(1, now, at)))
+      const responses = await Promise.all(promises)
+
+      log('Responses length: %s', responses.length)
+
+      accounts = flatten(responses.map(r => {
+        return r.data.data
+      }))
+    } else {
+      accounts = (await firefly(userId).Accounts.listAccount(1, now, accountType)).data.data
+    }
+
+    log('accounts: %O', accounts)
     const keyboard = new InlineKeyboard()
 
     // Prevent from choosing same account when doing transfers
@@ -186,7 +203,7 @@ async function createAccountsKeyboard(
         if (i % 2 !== 0 || i === last) keyboard.row()
       })
 
-    // log('keyboard.inline_keyboard: %O', keyboard.inline_keyboard)
+    log('keyboard.inline_keyboard: %O', keyboard.inline_keyboard)
 
     return keyboard
   } catch (err) {
