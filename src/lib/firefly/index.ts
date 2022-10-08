@@ -5,7 +5,7 @@ import Debug from 'debug'
 import { AxiosError, AxiosResponse } from 'axios';
 
 import { getUserStorage } from '../storage'
-import { AuthenticationError, HostNotFoundError  } from '../errorHandler'
+import { AuthenticationError, HostNotFoundError, BadRequestError  } from '../errorHandler'
 
 const debug = Debug('firefly')
 
@@ -33,13 +33,18 @@ function resSuccessInterceptor(response: AxiosResponse) { return response }
 function resErrorInterceptor(axiosError: AxiosError) {
   const log = debug.extend('axios:resErrorInterceptor')
   log('Axios error: %O', axiosError)
+  log('Axios response data: %O', axiosError.response?.data)
 
   if (axiosError.response?.status === 401 && axiosError.response.statusText === 'Unauthorized') {
     return Promise.reject(new AuthenticationError(axiosError?.code))
   }
 
+  if (axiosError.code === 'ERR_BAD_REQUEST') {
+    return Promise.reject(new BadRequestError(axiosError.code))
+  }
+
   if (axiosError.code === 'ENOTFOUND') {
-    return Promise.reject(new HostNotFoundError(axiosError?.code))
+    return Promise.reject(new HostNotFoundError(axiosError.code))
   }
 
   return Promise.reject(axiosError)

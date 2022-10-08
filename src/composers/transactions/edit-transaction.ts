@@ -16,7 +16,6 @@ import {
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
-import { AccountTypeEnum } from '../../lib/firefly/model'
 
 export enum Route {
   IDLE               = 'IDLE',
@@ -40,7 +39,7 @@ router.route(Route.CHANGE_DESCRIPTION, changeDescriptionRouteHandler)
 // Edit Withdrawal transaction
 bot.callbackQuery(mapper.editCategory.regex(), selectNewCategory)
 bot.callbackQuery(mapper.setCategory.regex(), setNewCategory)
-bot.callbackQuery(mapper.editAssetAccount.regex(), selectNewAssetAccount)
+bot.callbackQuery(mapper.editAssetAccount.regex(), selectNewWithdrawalAccount)
 bot.callbackQuery(mapper.setAssetAccount.regex(), setNewAssetAccount)
 bot.callbackQuery(mapper.editExpenseAccount.regex(), selectNewExpenseAccount)
 bot.callbackQuery(mapper.setExpenseAccount.regex(), setNewExpenseAccount)
@@ -280,9 +279,9 @@ async function selectNewCategory(ctx: MyContext) {
   }
 }
 
-async function selectNewAssetAccount(ctx: MyContext) {
-  const log = rootLog.extend('selectNewAssetAccount')
-  log('Entered selectNewAssetAccount action handler')
+async function selectNewWithdrawalAccount(ctx: MyContext) {
+  const log = rootLog.extend('selectNewWithdrawalAccount')
+  log('Entered selectNewWithdrawalAccount action handler')
   try {
     const userId = ctx.from!.id
     const trId = ctx.match![1]

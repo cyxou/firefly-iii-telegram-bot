@@ -18,6 +18,13 @@ export class HostNotFoundError extends Error {
   }
 }
 
+export class BadRequestError extends Error {
+  constructor(message: string | undefined) {
+    super(message)
+    this.name = 'BadRequestError'
+  }
+}
+
 export function handleCallbackQueryError(err: Error, ctx: MyContext) {
   const log = debug.extend('handleCallbackQueryError')
 
