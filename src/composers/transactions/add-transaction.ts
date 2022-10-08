@@ -17,7 +17,6 @@ import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionSplitStoreTypeEnum } from '../../lib/firefly/model/transaction-split-store'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
-import { AccountTypeEnum } from '../../lib/firefly/model'
 
 const rootLog = debug(`bot:transactions:add`)
 
@@ -75,7 +74,8 @@ export async function addTransaction(ctx: MyContext) {
     if (description) {
       const tr = await createFastTransaction({
         userId,
-        date: ctx.message?.date,
+        // Telegram message date is a Unix timestamp (10 digits, seconds since the Unix Epoch)
+        date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
         amount,
         description,
         accountId: defaultAssetAccountId.toString()
@@ -190,7 +190,7 @@ interface ICreateFastTransactionPayload {
   amount: number
   description: string
   accountId: string
-  date: number | undefined
+  date: string | undefined
 }
 
 async function createFastTransaction({ userId, amount, description, accountId, date }: ICreateFastTransactionPayload): Promise<TransactionRead> {
@@ -384,7 +384,7 @@ async function startCreatingTransferTransaction(ctx: MyContext) {
 
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
-      AccountTypeFilter.Asset,
+      [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
       mapper.selectSourceAccount
     )
     accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
