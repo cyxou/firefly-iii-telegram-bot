@@ -16,6 +16,7 @@ import {
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
+import { isNaN } from 'lodash'
 
 export enum Route {
   IDLE               = 'IDLE',
@@ -23,7 +24,7 @@ export enum Route {
   CHANGE_DESCRIPTION = 'EDIT_TRANSACTION|DESCRIPTION'
 }
 
-const rootLog = debug(`bot:transactions:edit`)
+const rootLog = debug('bot:transactions:edit')
 
 const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
@@ -33,28 +34,16 @@ bot.callbackQuery(mapper.editMenu.regex(), showEditTransactionMenu)
 bot.callbackQuery(mapper.done.regex(), doneEditTransactionCbQH)
 bot.callbackQuery(mapper.editAmount.regex(), changeTransactionAmountCbQH)
 bot.callbackQuery(mapper.editDesc.regex(), changeTransactionDescriptionCbQH)
+
 router.route(Route.CHANGE_AMOUNT, changeAmountRouteHandler)
 router.route(Route.CHANGE_DESCRIPTION, changeDescriptionRouteHandler)
 
-// Edit Withdrawal transaction
 bot.callbackQuery(mapper.editCategory.regex(), selectNewCategory)
 bot.callbackQuery(mapper.setCategory.regex(), setNewCategory)
-bot.callbackQuery(mapper.editAssetAccount.regex(), selectNewWithdrawalAccount)
-bot.callbackQuery(mapper.setAssetAccount.regex(), setNewAssetAccount)
-bot.callbackQuery(mapper.editExpenseAccount.regex(), selectNewExpenseAccount)
-bot.callbackQuery(mapper.setExpenseAccount.regex(), setNewExpenseAccount)
-
-// Edit Deposit transaction
-bot.callbackQuery(mapper.editRevenueAccount.regex(), selectNewRevenueAccount)
-bot.callbackQuery(mapper.setRevenueAccount.regex(), setNewRevenueAccount)
-bot.callbackQuery(mapper.editDepositAssetAccount.regex(), selectNewDepositAssetAccount)
-bot.callbackQuery(mapper.setDepositAssetAccount.regex(), setNewDepositAssetAccount)
-
-// Edit Transfer transaction
-// bot.callbackQuery(mapper.editSourceAccount.regex, editSourceAccount)
-// bot.callbackQuery(mapper.setSourceAccount.regex, setSourceAccount)
-// bot.callbackQuery(mapper.editDestinationAccount.regex, editDestinationAccount)
-// bot.callbackQuery(mapper.setDestinationAccount.regex, setDestinationAccount)
+bot.callbackQuery(mapper.editSourceAccount.regex(), selectNewSourceAccount)
+bot.callbackQuery(mapper.setSourceAccount.regex(), setNewSourceAccount)
+bot.callbackQuery(mapper.editDestinationAccount.regex(), selectNewDestinationAccount)
+bot.callbackQuery(mapper.setDestinationAccount.regex(), setNewDestinationAccount)
 
 bot.use(router)
 
@@ -75,8 +64,7 @@ async function showEditTransactionMenu(ctx: MyContext) {
     const trId = parseInt(ctx.match![1], 10)
     log('trId: %O', trId)
 
-    const tr =
-      (await firefly(userId).Transactions.getTransaction(trId)).data.data
+    const tr = (await firefly(userId).Transactions.getTransaction(trId)).data.data
 
     ctx.session.editTransaction = tr
 
@@ -279,9 +267,9 @@ async function selectNewCategory(ctx: MyContext) {
   }
 }
 
-async function selectNewWithdrawalAccount(ctx: MyContext) {
-  const log = rootLog.extend('selectNewWithdrawalAccount')
-  log('Entered selectNewWithdrawalAccount action handler')
+async function selectNewSourceAccount(ctx: MyContext) {
+  const log = rootLog.extend('selectNewSourceAccount')
+  log('Entered selectNewSourceAccount action handler')
   try {
     const userId = ctx.from!.id
     const trId = ctx.match![1]
@@ -291,7 +279,7 @@ async function selectNewWithdrawalAccount(ctx: MyContext) {
     const accountsKeyboard = await createAccountsKeyboard(
       userId,
       [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
-      mapper.setAssetAccount
+      mapper.setSourceAccount
     )
 
     accountsKeyboard
@@ -299,7 +287,7 @@ async function selectNewWithdrawalAccount(ctx: MyContext) {
 
     log('accountsKeyboard: %O', accountsKeyboard.inline_keyboard)
 
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewAssetAccount'), {
+    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewSourceAccount'), {
       reply_markup: accountsKeyboard
     })
 
@@ -308,38 +296,9 @@ async function selectNewWithdrawalAccount(ctx: MyContext) {
   }
 }
 
-async function selectNewDepositAssetAccount(ctx: MyContext) {
-  const log = rootLog.extend('selectNewDepositAssetAccount')
-  log('Entered selectNewDepositAssetAccount action handler')
-  try {
-    const userId = ctx.from!.id
-    const trId = ctx.match![1]
-
-    await ctx.answerCallbackQuery()
-
-    const accountsKeyboard = await createAccountsKeyboard(
-      userId,
-      AccountTypeFilter.Asset,
-      mapper.setDepositAssetAccount
-    )
-
-    accountsKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
-
-    log('accountsKeyboard: %O', accountsKeyboard.inline_keyboard)
-
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewAssetAccount'), {
-      reply_markup: accountsKeyboard
-    })
-
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-async function selectNewExpenseAccount(ctx: MyContext) {
-  const log = rootLog.extend('selectNewExpenseAccount')
-  log('Entered selectNewExpenseAccount action handler')
+async function selectNewDestinationAccount(ctx: MyContext) {
+  const log = rootLog.extend('selectNewDestinationAccount')
+  log('Entered selectNewDestinationAccount action handler')
   try {
     const userId = ctx.from!.id
     const trId = ctx.match![1]
@@ -350,33 +309,7 @@ async function selectNewExpenseAccount(ctx: MyContext) {
     accountsKeyboard
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewExpenseAccount'), {
-      reply_markup: accountsKeyboard
-    })
-
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-async function selectNewRevenueAccount(ctx: MyContext) {
-  const log = rootLog.extend('selectNewRevenueAccount')
-  log('Entered selectNewRevenueAccount action handler')
-  try {
-    const userId = ctx.from!.id
-    const trId = ctx.match![1]
-
-    await ctx.answerCallbackQuery()
-
-    const accountsKeyboard = await createAccountsKeyboard(
-      userId,
-      AccountTypeFilter.Revenue,
-      mapper.setRevenueAccount
-    )
-    accountsKeyboard
-      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
-
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewRevenueAccount'), {
+    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewDestinationAccount'), {
       reply_markup: accountsKeyboard
     })
 
@@ -412,22 +345,43 @@ async function setNewCategory(ctx: MyContext) {
   }
 }
 
-async function setNewAssetAccount(ctx: MyContext) {
-  const log = rootLog.extend('setNewAssetAccount')
-  log('Entered setNewAssetAccount action handler')
+async function setNewSourceAccount(ctx: MyContext) {
+  const log = rootLog.extend('setNewSourceAccount')
+  log('Entered setNewSourceAccount action handler')
   try {
     const userId = ctx.from!.id
-    const sourceId = ctx.match![1]
-    log('sourceId: %O', sourceId)
+    const sourceAccountId = parseInt(ctx.match![1], 10)
+    log('sourceAccountId: %O', sourceAccountId)
+
+    if (isNaN(sourceAccountId)) throw new Error('Source Account ID is bad!')
+
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.editTransaction.id || ''
+    const trId = parseInt(ctx.session.editTransaction.id || '', 10)
     log('trId: %O', trId)
-    const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
-      { transactions: [{ source_id: sourceId }]}
-    )).data.data
+
+    if (isNaN(trId)) throw new Error('Transaction ID is bad!')
+
+    const transaction = ctx.session.editTransaction
+    log('Transaction to update: %O', transaction)
+    log('Inner transactions: %O', transaction.attributes?.transactions)
+
+    // When we change the source account of the transaction, we also want to change the
+    // currency of the transaction to match the newly set source account. Otherwise
+    // the transaction would have the original account's currency.
+    const sourceAccountData = (await firefly(userId).Accounts.getAccount(sourceAccountId)).data.data
+    log('sourceAccountData: %O', sourceAccountData)
+
+    const update = {
+      transactions: [{
+        source_id: sourceAccountId.toString(),
+        currency_id: sourceAccountData.attributes.currency_id
+      }]
+    }
+
+    // Proceed with updating the transaction
+    const tr = (await firefly(userId).Transactions.updateTransaction(trId, update)).data.data
 
     return ctx.editMessageText(
       formatTransaction(ctx, tr),
@@ -439,9 +393,9 @@ async function setNewAssetAccount(ctx: MyContext) {
   }
 }
 
-async function setNewExpenseAccount(ctx: MyContext) {
-  const log = rootLog.extend('setNewExpenseAccount')
-  log('Entered setNewExpenseAccount action handler')
+async function setNewDestinationAccount(ctx: MyContext) {
+  const log = rootLog.extend('setNewDestinationAccount')
+  log('Entered setNewDestinationAccount action handler')
   try {
     const userId = ctx.from!.id
     const destId = ctx.match![1]
@@ -461,58 +415,6 @@ async function setNewExpenseAccount(ctx: MyContext) {
       formatTransactionKeyboard(ctx, tr)
     )
 
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-async function setNewRevenueAccount(ctx: MyContext) {
-  const log = rootLog.extend('setNewRevenueAccount')
-  log('Entered setNewRevenueAccount action handler')
-  try {
-    const userId = ctx.from!.id
-    const sourceId = ctx.match![1]
-    log('destId: %O', sourceId)
-
-    await ctx.answerCallbackQuery()
-
-    const trId = ctx.session.editTransaction.id || ''
-    log('trId: %O', trId)
-    const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
-      { transactions: [{ source_id: sourceId }]}
-    )).data.data
-
-    return ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
-    )
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-async function setNewDepositAssetAccount(ctx: MyContext) {
-  const log = rootLog.extend('setNewDepositAssetAccount')
-  log('Entered setNewDepositAssetAccount action handler')
-  try {
-    const userId = ctx.from!.id
-    const destinationId = ctx.match![1]
-    log('destId: %O', destinationId)
-
-    await ctx.answerCallbackQuery()
-
-    const trId = ctx.session.editTransaction.id || ''
-    log('trId: %O', trId)
-    const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
-      { transactions: [{ destination_id: destinationId }]}
-    )).data.data
-
-    return ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
-    )
   } catch (err) {
     console.error(err)
   }

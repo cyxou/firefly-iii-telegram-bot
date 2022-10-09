@@ -12,14 +12,14 @@ labels:
   CHANGE_DATE: 📆 Date
   CHANGE_AMOUNT: 💸 Amount
   CHANGE_DESCRIPTION: 📝 Description
-  CHANGE_REVENUE_ACCOUNT: 🏦 Revenue account
-  CHANGE_EXPENSE_ACCOUNT: 🏛️ Expense account
-  CHANGE_ASSET_ACCOUNT: 💳 Asset account
+  CHANGE_SOURCE_ACCOUNT: 📤 Source account
+  CHANGE_DEST_ACCOUNT: 📥 Destination account
   CLASSIFICATION: 🏷️  Classification
   CLOSE: 🔙 Back
   DECLINE_CATEGORIES_LIST: ✏️ Nope, try again
   DEFAULT_ASSET_ACCOUNT_BUTTON: 💳 Default asset account
   DELETE: ❌ Delete
+  OPEN_IN_BROWSER: 🔗 Открыть в браузере
   DONE: ✅ OK
   EDIT_TRANSACTION: ✏️ Edit
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
@@ -183,8 +183,6 @@ transactions:
       *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}  
 
       ${source} ➡️ ${destination}
-        
-      id: ${trId}
     depositMessage: >
       📆 ${date}  
        
@@ -214,8 +212,8 @@ transactions:
     typeNewAmount: 'Type in new amount:'
     typeNewDescription: 'Type in new description:'
     chooseNewCategory: 'Choose new category:'
-    chooseNewAssetAccount: 'Choose new asset account:'
-    chooseNewExpenseAccount: 'Choose new expense account:'
+    chooseNewSourceAccount: 'Choose new source account:'
+    chooseNewDestinationAccount: 'Choose new destination account:'
     chooseNewRevenueAccount: 'Choose new revenue account:'
 
 categories:

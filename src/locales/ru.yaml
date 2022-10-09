@@ -12,14 +12,14 @@ labels:
   CHANGE_DATE: 📆 Дату
   CHANGE_AMOUNT: 💸 Сумму
   CHANGE_DESCRIPTION: 📝 Описание
-  CHANGE_REVENUE_ACCOUNT: 🏦 Счет доходов
-  CHANGE_EXPENSE_ACCOUNT: 🏛️ Счет расходов
-  CHANGE_ASSET_ACCOUNT: 💳 Основной счет
+  CHANGE_SOURCE_ACCOUNT: 📤 Счет списания
+  CHANGE_DEST_ACCOUNT: 📥 Счет зачисления
   CLASSIFICATION: 🏷️  Классификация
   CLOSE: 🔙 Назад
   DECLINE_CATEGORIES_LIST: ✏️ Нет, ввести заново
   DEFAULT_ASSET_ACCOUNT_BUTTON: 💳 Счет по умолчанию
   DELETE: ❌ Удалить
+  OPEN_IN_BROWSER: 🔗 Open in browser
   DONE: ✅ OK
   EDIT_TRANSACTION: ✏️ Изменить
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
@@ -182,8 +182,6 @@ transactions:
       *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}  
 
       ${source} ➡️ ${destination}
-        
-      id: ${trId}
     depositMessage: >
       📆 ${date}  
        
@@ -213,8 +211,8 @@ transactions:
     typeNewAmount: 'Введите новое значение суммы:'
     typeNewDescription: 'Введите новое описание транзакции:'
     chooseNewCategory: 'Выберите новую категорию для транзакции:'
-    chooseNewAssetAccount: 'Выберите новый основной счет для транзакции:'
-    chooseNewExpenseAccount: 'Выберите новый счет расхода для транзакции:'
+    chooseNewSourceAccount: 'Выберите счет списания транзакции:'
+    chooseNewDestinationAccount: 'Выберите счет зачисления транзакции:'
     chooseNewRevenueAccount: 'Выберите новый счет дохода для транзакции:'
 
 categories:

@@ -76,7 +76,8 @@ export async function addTransaction(ctx: MyContext) {
     log('description: ', description)
 
     if (description) {
-      const tr = await createFastTransaction({
+      log('Creating quick transaction...')
+      const tr = await createQuickTransaction({
         userId,
         // Telegram message date is a Unix timestamp (10 digits, seconds since the Unix Epoch)
         date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
@@ -205,7 +206,7 @@ interface ICreateFastTransactionPayload {
   date: string | undefined
 }
 
-async function createFastTransaction({ userId, amount, description, accountId, date }: ICreateFastTransactionPayload): Promise<TransactionRead> {
+async function createQuickTransaction({ userId, amount, description, accountId, date }: ICreateFastTransactionPayload): Promise<TransactionRead> {
   const log = rootLog.extend('createFastTransaction')
   try {
     const transactionStore = {
@@ -220,9 +221,8 @@ async function createFastTransaction({ userId, amount, description, accountId, d
     }
     const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
 
-    // log('res: %O', res)
-    const tr = res.attributes.transactions[0]
-    log('transaction: %O', tr)
+    log('Created transaction: %O', res)
+    log('Created transaction splits: %O', res.attributes.transactions)
 
     return res
   } catch (err) {
