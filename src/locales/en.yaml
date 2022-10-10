@@ -209,7 +209,12 @@ transactions:
     updated: Transaction updated!
     badAmountTyped: 'An amount should be a number. Type in new amount please:'
     badDescriptionTyped: 'Description needs to be text. Type in new description please:'
-    typeNewAmount: 'Type in new amount:'
+    typeNewAmount: >
+      Type in new amount.
+
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to perform the appropriate operation on the current value of the transaction.
+
+      For example, "+35" would add 35 to existing amount of transaction.
     typeNewDescription: 'Type in new description:'
     chooseNewCategory: 'Choose new category:'
     chooseNewSourceAccount: 'Choose new source account:'

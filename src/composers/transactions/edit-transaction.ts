@@ -170,7 +170,9 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     const userId = ctx.from!.id
     log('ctx.session: %O', ctx.session)
     const text = ctx.msg?.text || ''
-    const amount = parseAmountInput(text)
+
+    const currentAmount = ctx.session.editTransaction.attributes?.transactions[0].amount
+    const amount = parseAmountInput(text, currentAmount)
     log('amount: %O', amount)
 
     const trId = ctx.session.editTransaction.id || ''

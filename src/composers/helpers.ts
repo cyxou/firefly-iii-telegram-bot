@@ -72,10 +72,16 @@ const editTransactionsMapper = {
   setDestinationAccount: new Mapper('SET_DESTINATION_ACCOUNT_ID=${accountId}'),
 }
 
-function parseAmountInput(amount: string): number | null {
-  const validInput = /^\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*$/
-  if (validInput.exec(amount)) return Math.abs(evaluate(amount))
-  else return null
+function parseAmountInput(amount: string, oldAmount?: string): number | null {
+  const validInput = /^[-+/*]?\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*$/
+  if (!validInput.exec(amount)) return null
+
+  if (oldAmount && (amount.startsWith('+') || amount.startsWith('-')
+    || amount.startsWith('/') || amount.startsWith('*'))) {
+      return Math.abs(evaluate(`${oldAmount}${amount}`))
+    }
+
+  return Math.abs(evaluate(amount))
 }
 
 function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
