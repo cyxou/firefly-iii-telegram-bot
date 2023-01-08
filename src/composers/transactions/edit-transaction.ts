@@ -16,7 +16,6 @@ import {
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
-import { isNaN } from 'lodash'
 
 export enum Route {
   IDLE               = 'IDLE',

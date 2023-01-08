@@ -17,7 +17,6 @@ import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionSplitStoreTypeEnum } from '../../lib/firefly/model/transaction-split-store'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
-import { parseInt } from 'lodash'
 
 const rootLog = debug(`bot:transactions:add`)
 
