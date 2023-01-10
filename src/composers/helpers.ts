@@ -58,6 +58,7 @@ const addTransactionsMapper = {
 }
 
 const editTransactionsMapper = {
+  assignCategory: new Mapper('ASSIGN_TRANSACTION_CATEGORY_ID=${trId}'),
   editMenu: new Mapper('EDIT_TRANSACTION_ID=${trId}'),
   done: new Mapper('DONE_EDIT_TRANSACTION_ID=${trId}'),
   editDate: new Mapper('CHANGE_TRANSACTION_DATE_ID=${trId}'),
@@ -84,7 +85,18 @@ function parseAmountInput(amount: string, oldAmount?: string): number | null {
 }
 
 function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
+  const log = debug.extend('formatTransactionKeyboard')
   const inlineKeyboard = new InlineKeyboard()
+  // If transaction does not have a category, show button to specify one
+  if (!tr.attributes.transactions[0].category_name) {
+    inlineKeyboard
+      .text(
+        ctx.i18n.t('labels.CHANGE_CATEGORY'),
+        editTransactionsMapper.assignCategory.template({ trId: tr.id })
+      )
+  }
+
+  inlineKeyboard
     .text(
       ctx.i18n.t('labels.EDIT_TRANSACTION'),
       editTransactionsMapper.editMenu.template({ trId: tr.id })
@@ -93,6 +105,8 @@ function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
       ctx.i18n.t('labels.DELETE'),
       addTransactionsMapper.delete.template({ trId: tr.id })
     )
+
+  log('inlineKeyboard: %O', inlineKeyboard)
 
   return {
     parse_mode: 'Markdown' as ParseMode,

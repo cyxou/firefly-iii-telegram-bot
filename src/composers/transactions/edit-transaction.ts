@@ -28,6 +28,7 @@ const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 // Common for all transaction types
+bot.callbackQuery(mapper.assignCategory.regex(), assignCategory)
 bot.callbackQuery(mapper.editMenu.regex(), showEditTransactionMenu)
 bot.callbackQuery(mapper.done.regex(), doneEditTransactionCbQH)
 bot.callbackQuery(mapper.editAmount.regex(), changeTransactionAmountCbQH)
@@ -173,12 +174,20 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     const amount = parseAmountInput(text, currentAmount)
     log('amount: %O', amount)
 
-    const trId = ctx.session.editTransaction.id || ''
+    const tr = ctx.session.editTransaction
+    log('tr.id: %O', tr.id)
+    const update = {
+      transactions: [{
+        source_id: tr.attributes?.transactions[0].source_id,
+        destination_id: tr.attributes?.transactions[0].destination_id,
+        amount: amount?.toString()
+      }]
+    }
 
     if (!amount) {
       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badAmountTyped'), {
         reply_markup: new InlineKeyboard()
-          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
+          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId: tr.id || '' }))
       })
     }
 
@@ -189,14 +198,14 @@ async function changeAmountRouteHandler(ctx: MyContext) {
       await ctx.session.deleteBotsMessage()
     }
 
-    const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
-      { transactions: [{ amount: amount.toString() }] }
+    const updatedTr = (await firefly(userId).Transactions.updateTransaction(
+      parseInt(tr.id || '', 10),
+      update
     )).data.data
 
     return ctx.reply(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
+      formatTransaction(ctx, updatedTr),
+      formatTransactionKeyboard(ctx, updatedTr)
     )
   } catch (err) {
     console.error(err)
@@ -212,12 +221,20 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
     const description = ctx.msg?.text || ''
     log('description: %O', description)
 
-    const trId = ctx.session.editTransaction.id || ''
+    const tr = ctx.session.editTransaction
+    log('tr.id: %O', tr.id)
+    const update = {
+      transactions: [{
+        source_id: tr.attributes?.transactions[0].source_id,
+        destination_id: tr.attributes?.transactions[0].destination_id,
+        description: description.trim()
+      }]
+    }
 
     if (!description) {
       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badDescriptionTyped'), {
         reply_markup: new InlineKeyboard()
-          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
+          .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId: tr.id || '' }))
       })
     }
 
@@ -228,15 +245,45 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
       await ctx.session.deleteBotsMessage()
     }
 
-    const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
-      { transactions: [{ description: description.trim() }] }
+    const updatedTr = (await firefly(userId).Transactions.updateTransaction(
+      parseInt(tr.id || '', 10),
+      update
     )).data.data
 
     return ctx.reply(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
+      formatTransaction(ctx, updatedTr),
+      formatTransactionKeyboard(ctx, updatedTr)
     )
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function assignCategory(ctx: MyContext) {
+  const log = rootLog.extend('assignCategory')
+  log('Entered assignCategory action handler')
+  try {
+    const userId = ctx.from!.id
+    const trId = parseInt(ctx.match![1], 10)
+    log('trId: %O', trId)
+
+    await ctx.answerCallbackQuery()
+
+    const tr = (await firefly(userId).Transactions.getTransaction(trId)).data.data
+
+    ctx.session.editTransaction = tr
+
+    const categoriesKeyboard = await createCategoriesKeyboard(
+      userId,
+      mapper.setCategory
+    )
+    categoriesKeyboard
+      .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
+
+    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'), {
+      reply_markup: categoriesKeyboard
+    })
+
   } catch (err) {
     console.error(err)
   }
@@ -307,7 +354,7 @@ async function selectNewDestinationAccount(ctx: MyContext) {
 
     const accountsKeyboard = (await createAccountsKeyboard(
       userId,
-      [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities],
+      [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities, AccountTypeFilter.Expense],
       mapper.setDestinationAccount
     ))
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
@@ -325,7 +372,7 @@ async function selectNewDestinationAccount(ctx: MyContext) {
 
 async function setNewCategory(ctx: MyContext) {
   const log = rootLog.extend('setNewCategory')
-  log('Entered editTransactionCategory action handler')
+  log('Entered setNewCategory action handler')
   try {
     const userId = ctx.from!.id
     const categoryId = ctx.match![1]
@@ -334,7 +381,8 @@ async function setNewCategory(ctx: MyContext) {
     await ctx.answerCallbackQuery()
 
     const tr = ctx.session.editTransaction
-    log('tr.id: %O', tr.id)
+    log('ctx.session.editTransaction: %O', tr)
+
     const update = {
       transactions: [{
         source_id: tr.attributes?.transactions[0].source_id,
@@ -342,6 +390,8 @@ async function setNewCategory(ctx: MyContext) {
         category_id: categoryId
       }]
     }
+    log('Transaction update: %O', update)
+
     const updatedTr = (await firefly(userId).Transactions.updateTransaction(
       parseInt(tr.id || '', 10),
       update

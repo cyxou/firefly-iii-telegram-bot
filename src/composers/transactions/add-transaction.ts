@@ -83,7 +83,7 @@ export async function addTransaction(ctx: MyContext) {
         amount,
         description,
         sourceAccountId: defaultSourceAccount.id.toString(),
-        destinationAccountId: defaultSourceAccount.id.toString()
+        destinationAccountId: defaultDestinationAccount.id.toString()
       })
 
       return ctx.reply(
