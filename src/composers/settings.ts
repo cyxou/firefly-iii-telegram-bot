@@ -59,7 +59,7 @@ function settingsText(ctx: MyContext) {
   const {
     fireflyUrl,
     fireflyAccessToken,
-    defaultAssetAccount,
+    defaultSourceAccount,
     language
   } = getUserStorage(userId)
 
@@ -69,7 +69,7 @@ function settingsText(ctx: MyContext) {
   return ctx.i18n.t('settings.whatDoYouWantToChange', {
     fireflyUrl,
     accessToken,
-    defaultAssetAccount,
+    defaultSourceAccount,
     language: getLanguageIcon(language)
   })
 }
@@ -234,7 +234,7 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
       ).row()
     })
     accKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
-    // log('accKeyboard: %O', accKeyboard)
+    log('accKeyboard: %O', accKeyboard)
 
     return ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), {
       reply_markup: accKeyboard
@@ -257,8 +257,6 @@ async function defaultAccountCbQH(ctx: MyContext) {
     const account = (await firefly(userId).Accounts.getAccount(accountId)).data.data
     log('account: %O', account)
 
-    storage.defaultAssetAccount = account.attributes.name
-    storage.defaultAssetAccountId = accountId
     storage.defaultSourceAccount = {
       id: accountId.toString(),
       name: account.attributes.name,

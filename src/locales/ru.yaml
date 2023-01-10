@@ -88,7 +88,7 @@ settings:
 
     *🔑 Access Token*: ${accessToken || '🚨<НЕ УКАЗАН>'}
 
-    *💳 Счет по умолчанию*: ${defaultAssetAccount || '🚨<НЕ УКАЗАН>'}
+    *💳 Счет по умолчанию*: ${defaultSourceAccount.name || '🚨<НЕ УКАЗАН>'}
 
     *🌐 Язык*: ${language}
   selectDefaultAssetAccount: >

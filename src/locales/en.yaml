@@ -88,7 +88,7 @@ settings:
 
     *🔑 Access Token*: ${accessToken || '🚨 <NOT SPECIFIED>'}
 
-    *💳 Default asset account*: ${defaultAssetAccount || '🚨 <NOT SPECIFIED>'}
+    *💳 Default asset account*: ${defaultSourceAccount.name || '🚨 <NOT SPECIFIED>'}
 
     *🌐 Language*: ${language}
   selectDefaultAssetAccount: >

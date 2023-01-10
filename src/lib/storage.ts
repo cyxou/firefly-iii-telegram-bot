@@ -9,9 +9,8 @@ const allowedLanguages = ['ru', 'en']
 class UserSettings {
   _fireflyUrl = ''
   _fireflyAccessToken = ''
-  _defaultAssetAccount = ''
   _defaultSourceAccount = { id: '', type: '', name: '' }
-  _defaultAssetAccountId = 0
+  _defaultDestinationAccount = { id: '', type: '', name: '' }
   _language = 'en'
 
   constructor(fireflyUrl = '', fireflyAccessToken = '') {
@@ -28,11 +27,8 @@ class UserSettings {
   get defaultSourceAccount() { return this._defaultSourceAccount }
   set defaultSourceAccount(val: AccountAttributes) { this._defaultSourceAccount = val }
 
-  get defaultAssetAccount() { return this._defaultAssetAccount }
-  set defaultAssetAccount(val: string) { this._defaultAssetAccount = val }
-
-  get defaultAssetAccountId() { return this._defaultAssetAccountId }
-  set defaultAssetAccountId(val: number) { this._defaultAssetAccountId = val }
+  get defaultDestinationAccount() { return this._defaultDestinationAccount }
+  set defaultDestinationAccount(val: AccountAttributes) { this._defaultDestinationAccount = val }
 
   get language() { return this._language }
   set language(val: string) {
@@ -56,5 +52,6 @@ function bootstrapUserStorage(userId: number): UserSettings {
   const userSettings = new UserSettings(config.fireflyUrl, config.fireflyAccessToken)
 
   userStorage[userId] = userSettings
+  log('userStorage[userId]: %O', userStorage[userId])
   return userStorage[userId]
 }

@@ -30,7 +30,6 @@ export {
   formatTransactionKeyboard,
   createCategoriesKeyboard,
   createAccountsKeyboard,
-  createExpenseAccountsKeyboard,
   createEditMenuKeyboard,
   createMainKeyboard,
   generateWelcomeMessage
@@ -201,33 +200,6 @@ async function createAccountsKeyboard(
       })
 
     log('keyboard.inline_keyboard: %O', keyboard.inline_keyboard)
-
-    return keyboard
-  } catch (err) {
-    log('Error: %O', err)
-    console.error('Error occurred creating acounts keyboard: ', err)
-    throw err
-  }
-}
-
-async function createExpenseAccountsKeyboard(userId: number) {
-  const log = debug.extend('createAssetsAccountKeyboard')
-  try {
-    const accounts = (await firefly(userId).Accounts.listAccount(
-        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Expense)).data.data
-    // log('accounts: %O', accounts)
-    const keyboard = new InlineKeyboard()
-
-    for (let i = 0; i < accounts.length; i++) {
-      const c = accounts[i]
-      const last = accounts.length - 1
-      const cbData = `SET_TRANSACTION_EXPENSE_ID=${c.id}`
-
-      keyboard.text(c.attributes.name, cbData)
-      // Split accounts keyboard into two columns so that every odd indexed
-      // account starts from new row as well as the last account in the list.
-      if (i % 2 !== 0 || i === last) keyboard.row()
-    }
 
     return keyboard
   } catch (err) {

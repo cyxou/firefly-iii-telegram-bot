@@ -63,11 +63,11 @@ export async function addTransaction(ctx: MyContext) {
       parse_mode: 'Markdown'
     }))
 
-    const defaultAssetAccountId = await getDefaultAccountId(userId)
-    log('defaultAssetAccountId: %O', defaultAssetAccountId)
-
-    const defaultSourceAccount = await getDefaultAccount(userId)
+    const defaultSourceAccount = await getDefaultSourceAccount(userId)
     log('defaultSourceAccount: %O', defaultSourceAccount)
+
+    const defaultDestinationAccount = await getDefaultDestinationAccount(userId)
+    log('defaultDestinationAccount: %O', defaultDestinationAccount)
 
     // If description is not null, than we'll add transaction in a fast mode
     // without asking a user any additional info
@@ -82,7 +82,8 @@ export async function addTransaction(ctx: MyContext) {
         date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
         amount,
         description,
-        accountId: defaultAssetAccountId.toString()
+        sourceAccountId: defaultSourceAccount.id.toString(),
+        destinationAccountId: defaultSourceAccount.id.toString()
       })
 
       return ctx.reply(
@@ -130,8 +131,10 @@ async function newTransactionCategoryCbQH(ctx: MyContext) {
     const userId = ctx.from!.id
     const categoryId = ctx.match![1]
     log('categoryId: %s', categoryId)
-    const defaultSourceAccount = await getDefaultAccount(userId)
+    const defaultSourceAccount = await getDefaultSourceAccount(userId)
     log('defaultSourceAccount: %O', defaultSourceAccount)
+    const defaultDestinationAccount = await getDefaultDestinationAccount(userId)
+    log('defaultDestinationAccount: %O', defaultDestinationAccount)
 
     const payload = {
       transactions: [{
@@ -141,7 +144,7 @@ async function newTransactionCategoryCbQH(ctx: MyContext) {
         source_id: defaultSourceAccount.id.toString(),
         amount: ctx.session.newTransaction.amount || '',
         category_id: categoryId,
-        destination_id: ''
+        destination_id: defaultDestinationAccount.id.toString()
       }]
     }
 
@@ -201,11 +204,12 @@ interface ICreateFastTransactionPayload {
   userId: number
   amount: number
   description: string
-  accountId: string
+  sourceAccountId: string
+  destinationAccountId: string
   date: string | undefined
 }
 
-async function createQuickTransaction({ userId, amount, description, accountId, date }: ICreateFastTransactionPayload): Promise<TransactionRead> {
+async function createQuickTransaction({ userId, amount, description, sourceAccountId, destinationAccountId, date }: ICreateFastTransactionPayload): Promise<TransactionRead> {
   const log = rootLog.extend('createFastTransaction')
   try {
     const transactionStore = {
@@ -214,8 +218,8 @@ async function createQuickTransaction({ userId, amount, description, accountId, 
         date: dayjs(date || Date.now()).toISOString(),
         amount: amount.toString(),
         description,
-        source_id: accountId,
-        destination_id: null,
+        source_id: sourceAccountId,
+        destination_id: destinationAccountId,
       }]
     }
     const res = (await firefly(userId).Transactions.storeTransaction(transactionStore)).data.data
@@ -230,27 +234,8 @@ async function createQuickTransaction({ userId, amount, description, accountId, 
   }
 }
 
-async function getDefaultAccountId(userId: number) {
-  const log = rootLog.extend('getDefaultAccountId')
-  try {
-    let { defaultAssetAccountId } = getUserStorage(userId)
-
-    if (!defaultAssetAccountId) {
-      const firstAccount = (await firefly(userId).Accounts.listAccount(
-        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
-      log('firstAccount: %O', firstAccount)
-      defaultAssetAccountId = parseInt(firstAccount.id, 10)
-    }
-
-    return defaultAssetAccountId
-  } catch (err) {
-    console.error('Error occurred getting default asset acount: ', err)
-    throw err
-  }
-}
-
-async function getDefaultAccount(userId: number) {
-  const log = rootLog.extend('getDefaultAccount')
+async function getDefaultSourceAccount(userId: number) {
+  const log = rootLog.extend('getDefaultSourceAccount')
   try {
     let { defaultSourceAccount } = getUserStorage(userId)
 
@@ -268,6 +253,29 @@ async function getDefaultAccount(userId: number) {
     return defaultSourceAccount
   } catch (err) {
     console.error('Error occurred getting default source acount: ', err)
+    throw err
+  }
+}
+
+async function getDefaultDestinationAccount(userId: number) {
+  const log = rootLog.extend('getDefaultDestinationAccount')
+  try {
+    let { defaultDestinationAccount } = getUserStorage(userId)
+
+    if (!defaultDestinationAccount.name) {
+      const cashAccount = (await firefly(userId).Accounts.listAccount(
+        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data[0]
+      log('cashAccount: %O', cashAccount)
+      defaultDestinationAccount = {
+        id: cashAccount.id,
+        name: cashAccount.attributes.name,
+        type: cashAccount.attributes.type
+      }
+    }
+
+    return defaultDestinationAccount
+  } catch (err) {
+    console.error('Error occurred getting Cash Account: ', err)
     throw err
   }
 }

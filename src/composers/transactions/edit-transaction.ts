@@ -10,7 +10,6 @@ import {
   formatTransactionKeyboard,
   createCategoriesKeyboard,
   createAccountsKeyboard,
-  createExpenseAccountsKeyboard,
   createEditMenuKeyboard
 } from '../helpers'
 
@@ -306,9 +305,14 @@ async function selectNewDestinationAccount(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const accountsKeyboard = await createExpenseAccountsKeyboard(userId)
-    accountsKeyboard
+    const accountsKeyboard = (await createAccountsKeyboard(
+      userId,
+      [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities],
+      mapper.setDestinationAccount
+    ))
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
+
+    log('accountsKeyboard.inline_keyboard: %O', accountsKeyboard.inline_keyboard)
 
     return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewDestinationAccount'), {
       reply_markup: accountsKeyboard
@@ -329,16 +333,23 @@ async function setNewCategory(ctx: MyContext) {
 
     await ctx.answerCallbackQuery()
 
-    const trId = ctx.session.editTransaction.id || ''
-    log('trId: %O', trId)
-    const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
-      { transactions: [{ category_id: categoryId }]}
+    const tr = ctx.session.editTransaction
+    log('tr.id: %O', tr.id)
+    const update = {
+      transactions: [{
+        source_id: tr.attributes?.transactions[0].source_id,
+        destination_id: tr.attributes?.transactions[0].destination_id,
+        category_id: categoryId
+      }]
+    }
+    const updatedTr = (await firefly(userId).Transactions.updateTransaction(
+      parseInt(tr.id || '', 10),
+      update
     )).data.data
 
     return ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
+      formatTransaction(ctx, updatedTr),
+      formatTransactionKeyboard(ctx, updatedTr)
     )
 
   } catch (err) {
