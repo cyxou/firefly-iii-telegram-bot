@@ -86,17 +86,17 @@ function parseAmountInput(amount: string, oldAmount?: string): number | null {
 
 function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
   const log = debug.extend('formatTransactionKeyboard')
-  const inlineKeyboard = new InlineKeyboard()
+  const trKeyboard = new InlineKeyboard()
   // If transaction does not have a category, show button to specify one
   if (!tr.attributes.transactions[0].category_name) {
-    inlineKeyboard
+    trKeyboard
       .text(
         ctx.i18n.t('labels.CHANGE_CATEGORY'),
         editTransactionsMapper.assignCategory.template({ trId: tr.id })
       )
   }
 
-  inlineKeyboard
+  trKeyboard
     .text(
       ctx.i18n.t('labels.EDIT_TRANSACTION'),
       editTransactionsMapper.editMenu.template({ trId: tr.id })
@@ -106,11 +106,11 @@ function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
       addTransactionsMapper.delete.template({ trId: tr.id })
     )
 
-  log('inlineKeyboard: %O', inlineKeyboard)
+  log('trKeyboard: %O', trKeyboard.inline_keyboard)
 
   return {
     parse_mode: 'Markdown' as ParseMode,
-    reply_markup: inlineKeyboard
+    reply_markup: trKeyboard
   }
 }
 
