@@ -33,7 +33,7 @@ bot.use(
   session({
     initial: (): SessionData => ({
       step: 'IDLE',
-      newTransaction: { transactions: []},
+      newTransaction: {},
       editTransaction: {},
       category: {},
       newCategories: [],

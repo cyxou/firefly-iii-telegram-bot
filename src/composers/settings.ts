@@ -12,6 +12,7 @@ import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
+import { handleCallbackQueryError } from '../lib/errorHandler'
 
 export enum Route {
   FIREFLY_URL          = 'SETTINGS|FIREFLY_URL',
@@ -58,7 +59,7 @@ function settingsText(ctx: MyContext) {
   const {
     fireflyUrl,
     fireflyAccessToken,
-    defaultAssetAccount,
+    defaultSourceAccount,
     language
   } = getUserStorage(userId)
 
@@ -68,7 +69,7 @@ function settingsText(ctx: MyContext) {
   return ctx.i18n.t('settings.whatDoYouWantToChange', {
     fireflyUrl,
     accessToken,
-    defaultAssetAccount,
+    defaultSourceAccount,
     language: getLanguageIcon(language)
   })
 }
@@ -128,8 +129,8 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
       settingsText(ctx),
       settingsInlineKeyboard(ctx)
     )
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 async function fireflyUrlRouteHandler(ctx: MyContext) {
@@ -160,8 +161,8 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
       settingsInlineKeyboard(ctx)
     )
 
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    log('Error occurred: %O', err)
   }
 }
 
@@ -176,8 +177,8 @@ async function inputFireflyUrlCbQH(ctx: MyContext) {
       parse_mode: 'Markdown',
       reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     })
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    log('Error occurred: %O', err)
   }
 }
 
@@ -190,8 +191,8 @@ async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
       parse_mode: 'Markdown',
       reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     })
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    log('Error occurred: %O', err)
   }
 }
 
@@ -233,13 +234,13 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
       ).row()
     })
     accKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
-    // log('accKeyboard: %O', accKeyboard)
+    log('accKeyboard: %O', accKeyboard)
 
     return ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), {
       reply_markup: accKeyboard
     })
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -251,13 +252,16 @@ async function defaultAccountCbQH(ctx: MyContext) {
     const userId = ctx.from!.id
     const storage = getUserStorage(userId)
     const accountId = parseInt(ctx.match![1], 10)
-    log('accountId: %O', accountId)
+    log('accountId: %s', accountId)
 
     const account = (await firefly(userId).Accounts.getAccount(accountId)).data.data
     log('account: %O', account)
 
-    storage.defaultAssetAccount = account.attributes.name
-    storage.defaultAssetAccountId = accountId
+    storage.defaultSourceAccount = {
+      id: accountId.toString(),
+      name: account.attributes.name,
+      type: account.attributes.type
+    }
 
     await ctx.answerCallbackQuery({ text: ctx.i18n.t('settings.defaultAssetAccountSet') })
 
@@ -265,8 +269,8 @@ async function defaultAccountCbQH(ctx: MyContext) {
       settingsText(ctx),
       settingsInlineKeyboard(ctx)
     )
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    log('Error occurred: %O', err)
   }
 }
 
@@ -284,8 +288,8 @@ async function cancelCbQH(ctx: MyContext) {
       settingsText(ctx),
       settingsInlineKeyboard(ctx)
     )
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -327,8 +331,9 @@ async function testConnectionCbQH(ctx: MyContext) {
       text: ctx.i18n.t('settings.connectionSuccess', { email: userInfo.attributes.email }),
       show_alert: true
     })
-  } catch (err) {
-    console.error(err)
+
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -360,7 +365,7 @@ async function switchLanguageCbQH(ctx: MyContext) {
       settingsText(ctx),
       settingsInlineKeyboard(ctx)
     )
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    log('Error occurred: %O', err)
   }
 }

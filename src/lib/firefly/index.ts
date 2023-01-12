@@ -2,8 +2,10 @@ import * as api from './api'
 import { Configuration } from './configuration'
 import globalAxios from 'axios';
 import Debug from 'debug'
+import { AxiosError, AxiosResponse } from 'axios';
 
 import { getUserStorage } from '../storage'
+import { AuthenticationError, HostNotFoundError, BadRequestError  } from '../errorHandler'
 
 const debug = Debug('firefly')
 
@@ -14,15 +16,9 @@ export default function firefly(userId: number) {
     accessToken: fireflyAccessToken,
     basePath: fireflyUrl.replace(/\/+$/, ""),
   })
+  log('configuration: %O', configuration)
 
-  globalAxios.interceptors.response.use(function(response) {
-    // Any status code that lie within the range of 2xx cause this function to trigger
-    // Do something with response data
-    return response;
-  }, function (err) {
-    log('Error response: %O', err)
-    return Promise.reject(err.response.data);
-  })
+  globalAxios.interceptors.response.use(resSuccessInterceptor, resErrorInterceptor)
 
   return {
     About: api.AboutApiFactory(configuration),
@@ -31,4 +27,25 @@ export default function firefly(userId: number) {
     Insight: api.InsightApiFactory(configuration),
     Transactions: api.TransactionsApiFactory(configuration),
   }
+}
+
+function resSuccessInterceptor(response: AxiosResponse) { return response }
+function resErrorInterceptor(axiosError: AxiosError) {
+  const log = debug.extend('axios:resErrorInterceptor')
+  log('Axios error: %O', axiosError)
+  log('Axios response data: %O', axiosError.response?.data)
+
+  if (axiosError.response?.status === 401 && axiosError.response.statusText === 'Unauthorized') {
+    return Promise.reject(new AuthenticationError(axiosError?.code))
+  }
+
+  if (axiosError.code === 'ERR_BAD_REQUEST') {
+    return Promise.reject(new BadRequestError(axiosError.code))
+  }
+
+  if (axiosError.code === 'ENOTFOUND') {
+    return Promise.reject(new HostNotFoundError(axiosError.code))
+  }
+
+  return Promise.reject(axiosError)
 }

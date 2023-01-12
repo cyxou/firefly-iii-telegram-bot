@@ -12,14 +12,14 @@ labels:
   CHANGE_DATE: 📆 Date
   CHANGE_AMOUNT: 💸 Amount
   CHANGE_DESCRIPTION: 📝 Description
-  CHANGE_REVENUE_ACCOUNT: 🏦 Revenue account
-  CHANGE_EXPENSE_ACCOUNT: 🏛️ Expense account
-  CHANGE_ASSET_ACCOUNT: 💳 Asset account
+  CHANGE_SOURCE_ACCOUNT: 📤 Source account
+  CHANGE_DEST_ACCOUNT: 📥 Destination account
   CLASSIFICATION: 🏷️  Classification
   CLOSE: 🔙 Back
   DECLINE_CATEGORIES_LIST: ✏️ Nope, try again
   DEFAULT_ASSET_ACCOUNT_BUTTON: 💳 Default asset account
   DELETE: ❌ Delete
+  OPEN_IN_BROWSER: 🔗 Открыть в браузере
   DONE: ✅ OK
   EDIT_TRANSACTION: ✏️ Edit
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
@@ -88,7 +88,7 @@ settings:
 
     *🔑 Access Token*: ${accessToken || '🚨 <NOT SPECIFIED>'}
 
-    *💳 Default asset account*: ${defaultAssetAccount || '🚨 <NOT SPECIFIED>'}
+    *💳 Default asset account*: ${defaultSourceAccount.name || '🚨 <NOT SPECIFIED>'}
 
     *🌐 Language*: ${language}
   selectDefaultAssetAccount: >
@@ -97,6 +97,8 @@ settings:
     default with every withdrawal.
   specifySmthFirst: Specify ${smth} first.
   connectionFailed: Connection has NOT been established!
+  connectionFailedUnauthenticated: Authentication error! Please make sure that specified Access Token is not malformed and not expired.
+  connectionFailedBadUrl: Error connecting to Firefly host! Please make sure that you specified the right Firefly URL.
   connectionSuccess: >
     Connection established!
 
@@ -181,8 +183,6 @@ transactions:
       *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}  
 
       ${source} ➡️ ${destination}
-        
-      id: ${trId}
     depositMessage: >
       📆 ${date}  
        
@@ -209,11 +209,16 @@ transactions:
     updated: Transaction updated!
     badAmountTyped: 'An amount should be a number. Type in new amount please:'
     badDescriptionTyped: 'Description needs to be text. Type in new description please:'
-    typeNewAmount: 'Type in new amount:'
+    typeNewAmount: >
+      Type in new amount.
+
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to perform the appropriate operation on the current value of the transaction.
+
+      For example, "+35" would add 35 to existing amount of transaction.
     typeNewDescription: 'Type in new description:'
     chooseNewCategory: 'Choose new category:'
-    chooseNewAssetAccount: 'Choose new asset account:'
-    chooseNewExpenseAccount: 'Choose new expense account:'
+    chooseNewSourceAccount: 'Choose new source account:'
+    chooseNewDestinationAccount: 'Choose new destination account:'
     chooseNewRevenueAccount: 'Choose new revenue account:'
 
 categories:

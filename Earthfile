@@ -1,3 +1,5 @@
+VERSION 0.6
+
 FROM node:16.9-alpine3.11
 WORKDIR /home/node/app
 

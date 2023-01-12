@@ -64,6 +64,7 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [x] Accounts management
 - [x] List transactions
 - [x] Add math equations when creating transactions
+- [x] Allow selecting of Liabilities accounts in transactions
 - [ ] Configure CI/CD so that it builds and pushes docker images on merges to master
 - [ ] Reports
 - [ ] Proper error handling
