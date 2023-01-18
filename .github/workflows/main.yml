@@ -51,7 +51,7 @@ jobs:
         run: docker login --username "$dockerhubUsername" --password "$dockerhubToken"
 
       - name: Push docker image
-        run: earthly --build-arg DOCKERHUB_REPO=$githubRepo --push +all
+        run: earthly --ci --push +all --DOCKERHUB_REPO=$githubRepo 
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v2
