@@ -8,18 +8,23 @@ const allowedLanguages = ['ru', 'en']
 
 class UserSettings {
   _fireflyUrl = ''
+  _fireflyApiUrl = ''
   _fireflyAccessToken = ''
   _defaultSourceAccount = { id: '', type: '', name: '' }
   _defaultDestinationAccount = { id: '', type: '', name: '' }
   _language = 'en'
 
-  constructor(fireflyUrl = '', fireflyAccessToken = '') {
+  constructor(fireflyUrl = '', fireflyApiUrl = '', fireflyAccessToken = '') {
     this._fireflyUrl = fireflyUrl
+    this._fireflyApiUrl = fireflyApiUrl || fireflyUrl
     this._fireflyAccessToken = fireflyAccessToken
   }
 
   get fireflyUrl() { return this._fireflyUrl }
   set fireflyUrl(val: string) { this._fireflyUrl = val }
+
+  get fireflyApiUrl() { return this._fireflyApiUrl }
+  set fireflyApiUrl(val: string) { this._fireflyApiUrl = val }
 
   get fireflyAccessToken() { return this._fireflyAccessToken }
   set fireflyAccessToken(val: string) { this._fireflyAccessToken = val }
@@ -49,7 +54,7 @@ export function getUserStorage(userId: number): UserSettings {
 function bootstrapUserStorage(userId: number): UserSettings {
   const log = rootLog.extend('bootstrapUserStorage')
   log('userId: %O', userId)
-  const userSettings = new UserSettings(config.fireflyUrl, config.fireflyAccessToken)
+  const userSettings = new UserSettings(config.fireflyUrl, config.fireflyApiUrl, config.fireflyAccessToken)
 
   userStorage[userId] = userSettings
   log('userStorage[userId]: %O', userStorage[userId])

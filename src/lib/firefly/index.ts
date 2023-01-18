@@ -11,10 +11,10 @@ const debug = Debug('firefly')
 
 export default function firefly(userId: number) {
   const log = debug.extend('index')
-  const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
+  const { fireflyApiUrl, fireflyAccessToken } = getUserStorage(userId)
   const configuration = new Configuration({
     accessToken: fireflyAccessToken,
-    basePath: fireflyUrl.replace(/\/+$/, ""),
+    basePath: fireflyApiUrl.replace(/\/+$/, ""),
   })
   log('configuration: %O', configuration)
 
