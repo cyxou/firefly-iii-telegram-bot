@@ -14,7 +14,11 @@ class UserSettings {
   _defaultDestinationAccount = { id: '', type: '', name: '' }
   _language = 'en'
 
-  constructor(fireflyUrl = '', fireflyApiUrl = '', fireflyAccessToken = '') {
+  constructor({ 
+    fireflyUrl = config.fireflyUrl,
+    fireflyApiUrl = config.fireflyApiUrl,
+    fireflyAccessToken = ''
+  }) {
     this._fireflyUrl = fireflyUrl
     this._fireflyApiUrl = fireflyApiUrl || fireflyUrl
     this._fireflyAccessToken = fireflyAccessToken
@@ -54,7 +58,18 @@ export function getUserStorage(userId: number): UserSettings {
 function bootstrapUserStorage(userId: number): UserSettings {
   const log = rootLog.extend('bootstrapUserStorage')
   log('userId: %O', userId)
-  const userSettings = new UserSettings(config.fireflyUrl, config.fireflyApiUrl, config.fireflyAccessToken)
+  let userSettings: UserSettings
+
+  if (config.userId && config.userId === userId) {
+    userSettings = new UserSettings({
+      fireflyAccessToken: config.fireflyAccessToken
+    })
+  } else if (config.userId && config.userId !== userId) {
+    log('⚠️ WARNING! You provided `TG_USER_ID (%s)` via .env file which does not match the current Telegram userId (%s), therefore the user config will be reset.', config.userId, userId)
+    userSettings = new UserSettings({})
+  } else {
+    userSettings = new UserSettings({})
+  }
 
   userStorage[userId] = userSettings
   log('userStorage[userId]: %O', userStorage[userId])
