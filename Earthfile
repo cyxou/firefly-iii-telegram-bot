@@ -11,6 +11,9 @@ COPY package.json .
 RUN node -e "console.log(require('./package.json').version)" > ./version.txt
 ARG VERSION=$(cat ./version.txt)
 
+multiplatformBuild:
+    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+
 validatePR:
     BUILD +runTests
     BUILD +buildDist

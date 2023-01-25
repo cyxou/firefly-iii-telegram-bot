@@ -45,8 +45,7 @@ jobs:
       
       - name: Build and push docker image
         run: |
-          earthly --ci --push --platform=linux/amd64 --platform=linux/arm \
-            +buildImage \
+          earthly --ci --push +multiplatformBuild \
             --DOCKERHUB_REPO=$GITHUB_REPO \
             --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
             --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN
