@@ -4,7 +4,7 @@ ARG DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
 ARG DOCKERHUB_USERNAME=cyxou
 ARG --required DOCKERHUB_ACCESS_TOKEN
 
-FROM node:16.9-alpine3.11
+FROM node:18-alpine3.16
 WORKDIR /home/node/app
 
 COPY package.json .
