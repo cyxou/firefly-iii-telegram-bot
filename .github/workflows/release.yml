@@ -1,7 +1,9 @@
-name: Pull Request Validation
+name: Release
 
 on:
-  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
 
 env:
   DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
@@ -10,9 +12,16 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  validate_pr:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
+      - name: Set up QEMU for multiplatform builds
+        id: qemu
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+
       - uses: actions/checkout@v3
 
       - name: Put back the git branch into git (Earthly uses it for tagging)
@@ -31,9 +40,21 @@ jobs:
       - name: Earthly version
         run: earthly --version
 
-      - name: Validate PR
+      - name: Docker Login
+        run: docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_TOKEN
+      
+      - name: Build and push docker image
         run: |
-          earthly --ci --allow-privileged +validatePR \
+          earthly --ci --push --platform=linux/amd64 --platform=linux/arm \
+            +buildImage \
             --DOCKERHUB_REPO=$GITHUB_REPO \
             --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
             --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN
+      
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+          repository: ${{ env.GITHUB_REPO }}
+          short-description: ${{ github.event.repository.description }}
