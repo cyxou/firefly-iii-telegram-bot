@@ -3,7 +3,7 @@ This Telegram bot facilitates creating [Firefly III](https://www.firefly-iii.org
 as well as provides some capabilities to manage other Firefly's entities like
 Accounts, Categories, Reports, etc.
 
-![welcome screen](https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/welcome-screen.png?raw=true)
+<h1 align="center"><img src="https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/welcome-screen.png?raw=true" alt="screenshot" align="center"/></h1>
 
 ## Setup
 First you'll have to generate a Telegram Bot token through BotFather. Once you generate the token, keep it safe.
@@ -96,10 +96,15 @@ Hence the command is `npm run codegen`. Running this command should not introduc
 any git changes unless you want to rollback or update the API specification URL
 which is hard-coded in `codegen` npm task.
 
-### Known bugs and limitations
+## Known bugs and limitations
  - No support for multiple transaction splits. It is assumed that transactions
      consist of only one transaction split.
 
+## Feedback
+Join the 🔗 [Q&A Telegram group](https://t.me/firefly_iii_telegram_bot_group) if you have
+any questions, feedback or ideas to implement.
+
+## License
 
 [license-url]: https://www.gnu.org/licenses/agpl-3.0.html
 [stars-url]: https://github.com/cyxou/firefly-iii-telegram-bot/stargazers

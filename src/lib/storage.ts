@@ -8,18 +8,27 @@ const allowedLanguages = ['ru', 'en']
 
 class UserSettings {
   _fireflyUrl = ''
+  _fireflyApiUrl = ''
   _fireflyAccessToken = ''
   _defaultSourceAccount = { id: '', type: '', name: '' }
   _defaultDestinationAccount = { id: '', type: '', name: '' }
   _language = 'en'
 
-  constructor(fireflyUrl = '', fireflyAccessToken = '') {
+  constructor({ 
+    fireflyUrl = config.fireflyUrl,
+    fireflyApiUrl = config.fireflyApiUrl,
+    fireflyAccessToken = ''
+  }) {
     this._fireflyUrl = fireflyUrl
+    this._fireflyApiUrl = fireflyApiUrl || fireflyUrl
     this._fireflyAccessToken = fireflyAccessToken
   }
 
   get fireflyUrl() { return this._fireflyUrl }
   set fireflyUrl(val: string) { this._fireflyUrl = val }
+
+  get fireflyApiUrl() { return this._fireflyApiUrl }
+  set fireflyApiUrl(val: string) { this._fireflyApiUrl = val }
 
   get fireflyAccessToken() { return this._fireflyAccessToken }
   set fireflyAccessToken(val: string) { this._fireflyAccessToken = val }
@@ -49,7 +58,18 @@ export function getUserStorage(userId: number): UserSettings {
 function bootstrapUserStorage(userId: number): UserSettings {
   const log = rootLog.extend('bootstrapUserStorage')
   log('userId: %O', userId)
-  const userSettings = new UserSettings(config.fireflyUrl, config.fireflyAccessToken)
+  let userSettings: UserSettings
+
+  if (config.userId && config.userId === userId) {
+    userSettings = new UserSettings({
+      fireflyAccessToken: config.fireflyAccessToken
+    })
+  } else if (config.userId && config.userId !== userId) {
+    log('⚠️ WARNING! You provided `TG_USER_ID (%s)` via .env file which does not match the current Telegram userId (%s), therefore the user config will be reset.', config.userId, userId)
+    userSettings = new UserSettings({})
+  } else {
+    userSettings = new UserSettings({})
+  }
 
   userStorage[userId] = userSettings
   log('userStorage[userId]: %O', userStorage[userId])

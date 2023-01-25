@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+env:
+  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  GITHUB_REPO: cyxou/firefly-iii-telegram-bot
+  FORCE_COLOR: 1
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU for multiplatform builds
+        id: qemu
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+
+      - uses: actions/checkout@v3
+
+      - name: Put back the git branch into git (Earthly uses it for tagging)
+        run: |
+          branch=""
+          if [ -n "$GITHUB_HEAD_REF" ]; then
+            branch="$GITHUB_HEAD_REF"
+          else
+            branch="${GITHUB_REF##*/}"
+          fi
+          git checkout -b "$branch" || true
+
+      - name: Download Earthly
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.6.30/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+
+      - name: Earthly version
+        run: earthly --version
+
+      - name: Docker Login
+        run: docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_TOKEN
+      
+      - name: Build and push docker image
+        run: |
+          earthly --ci --push --platform=linux/amd64 --platform=linux/arm \
+            +buildImage \
+            --DOCKERHUB_REPO=$GITHUB_REPO \
+            --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
+            --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN
+      
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+          repository: ${{ env.GITHUB_REPO }}
+          short-description: ${{ github.event.repository.description }}
