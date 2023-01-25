@@ -1,5 +1,9 @@
 VERSION 0.6
 
+ARG DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
+ARG DOCKERHUB_USERNAME=cyxou
+ARG --required DOCKERHUB_ACCESS_TOKEN
+
 FROM node:16.9-alpine3.11
 WORKDIR /home/node/app
 
@@ -8,10 +12,13 @@ RUN node -e "console.log(require('./package.json').version)" > ./version.txt
 ARG VERSION=$(cat ./version.txt)
 
 all:
-    BUILD \
-        --platform=linux/amd64 \
-        --platform=linux/arm \
-        +image
+    BUILD +buildImage
+    # BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+
+validatePR:
+    BUILD +runTests
+    BUILD +buildDist
+    BUILD +checkIfTagExist
 
 deps:
     COPY *.json .npmrc ./
@@ -25,7 +32,7 @@ deps:
     SAVE ARTIFACT node_modules /node_modules AS LOCAL ./node_modules
     SAVE ARTIFACT node_modules_prod /node_modules_prod
 
-build:
+buildDist:
     COPY +deps/node_modules ./node_modules
     COPY *.json ./
     COPY --dir src ./
@@ -34,14 +41,30 @@ build:
 
     SAVE ARTIFACT dist /dist AS LOCAL ./dist
 
-image:
-    ARG DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
-    ARG TAG=$VERSION
+runTests:
+    RUN echo "😞 No tests yet..."
 
-    COPY +build/dist ./dist
+buildImage:
+    ARG TAG=${VERSION}
+
+    COPY +buildDist/dist ./dist
     COPY +deps/node_modules_prod ./node_modules
 
     ENTRYPOINT ["node", "dist/index.js"]
 
     SAVE IMAGE --push $DOCKERHUB_REPO:$TAG
     SAVE IMAGE --push $DOCKERHUB_REPO:latest
+
+checkIfTagExist:
+    FROM earthly/dind
+
+    ARG TAG=${VERSION}
+
+    # We do explicit login here since earthly/dind image does not infer login from the host
+    RUN docker login --username ${DOCKERHUB_USERNAME} \
+        --password ${DOCKERHUB_ACCESS_TOKEN}
+
+    IF docker manifest inspect ${DOCKERHUB_REPO}:${TAG} > /dev/null
+        RUN echo "👷 Docker image with tag ${VERSION} already exists! You should not override it. Please increment the app version number accordingly. Exiting..." \
+            && exit 1
+    END
