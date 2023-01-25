@@ -22,9 +22,9 @@ validatePR:
 
 deps:
     COPY *.json .npmrc ./
-    RUN npm install --production \
+    RUN npm install --omit=dev --omit=optional \
         && mv ./node_modules ./node_modules_prod \
-        && npm install --no-optional
+        && npm install --omit=optional
 
     # Output these back in case npm install changes them.
     SAVE ARTIFACT package.json AS LOCAL ./package.json
