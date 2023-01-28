@@ -47,6 +47,7 @@ const listTransactionsMapper = {
 
 const addTransactionsMapper = {
   selectCategory: new Mapper('ADD|WITHDRAWAL|CATEGORY_ID=${categoryId}'),
+  confirmWithoutCategory: new Mapper('ADD|WITHDRAWAL'),
   cancelAdd: new Mapper('ADD|CANCEL'),
   delete: new Mapper('DELETE|TRANSACTION_ID=${trId}'),
   addTransfer: new Mapper('ADD|TRANSFER|AMOUNT=${amount}'),
@@ -149,6 +150,7 @@ async function createCategoriesKeyboard(userId: number, mapper: Mapper) {
   try {
     const categories = (await firefly(userId).Categories.listCategory()).data.data
     log('categories: %O', categories)
+
     const keyboard = new InlineKeyboard()
 
     for (let i = 0; i < categories.length; i++) {
@@ -183,7 +185,7 @@ async function createAccountsKeyboard(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(at => promises.push(firefly(userId).Accounts.listAccount(1, now, at)))
+      accountType.forEach(accType => promises.push(firefly(userId).Accounts.listAccount(1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)

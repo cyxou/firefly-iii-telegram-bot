@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import debug from 'debug'
-import { Composer } from 'grammy'
+import { Composer, InlineKeyboard } from 'grammy'
+import flatten from 'lodash.flatten'
 
 import type { MyContext } from '../../types/MyContext'
 import { getUserStorage } from '../../lib/storage'
@@ -17,6 +18,7 @@ import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionSplitStoreTypeEnum } from '../../lib/firefly/model/transaction-split-store'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
+import { AccountAttributes } from '../../types/SessionData'
 
 const rootLog = debug(`bot:transactions:add`)
 
@@ -24,6 +26,7 @@ const bot = new Composer<MyContext>()
 
 // Add Withdrawal and common handlers
 bot.callbackQuery(mapper.selectCategory.regex(), newTransactionCategoryCbQH)
+bot.callbackQuery(mapper.confirmWithoutCategory.regex(), newTransactionCategoryCbQH)
 bot.callbackQuery(mapper.delete.regex(), deleteTransactionActionHandler)
 bot.callbackQuery(mapper.cancelAdd.regex(), cancelCbQH)
 
@@ -40,11 +43,12 @@ bot.callbackQuery(mapper.selectDestAccount.regex(), createTransaction)
 export default bot
 
 export async function addTransaction(ctx: MyContext) {
-  const log = rootLog.extend('textHandler')
+  const log = rootLog.extend('addTransaction')
   log('Entered text handler')
   try {
     const userId = ctx.from!.id
     const text = ctx.message!.text as string
+    const { fireflyUrl } = getUserStorage(userId)
     log('ctx.message.text: %O', text)
 
     const validInput = /^(?<amountOnly>\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*)*$|(?<description>.+)\s(?<amount>\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*)$/
@@ -66,6 +70,15 @@ export async function addTransaction(ctx: MyContext) {
     const defaultSourceAccount = await getDefaultSourceAccount(userId)
     log('defaultSourceAccount: %O', defaultSourceAccount)
 
+    if (!defaultSourceAccount) {
+      const kb = new InlineKeyboard()
+        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${fireflyUrl}/accounts/asset`).row()
+
+      return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), {
+        reply_markup: kb
+      })
+    }
+
     const defaultDestinationAccount = await getDefaultDestinationAccount(userId)
     log('defaultDestinationAccount: %O', defaultDestinationAccount)
 
@@ -83,7 +96,7 @@ export async function addTransaction(ctx: MyContext) {
         amount,
         description,
         sourceAccountId: defaultSourceAccount.id.toString(),
-        destinationAccountId: defaultDestinationAccount.id.toString()
+        destinationAccountId: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : ''
       })
 
       return ctx.reply(
@@ -106,11 +119,23 @@ export async function addTransaction(ctx: MyContext) {
       userId,
       mapper.selectCategory
     )
+    log('Got a partial categories keyboard: %O', keyboard.inline_keyboard)
+
+    // If inline_keyboard array does not contain anything, than user has no categories yet
+    if (!flatten(keyboard.inline_keyboard).length) {
+      keyboard.text(ctx.i18n.t('labels.DONE'), mapper.confirmWithoutCategory.template())
+
+      return ctx.reply(ctx.i18n.t('transactions.add.noCategoriesYet'), {
+        parse_mode: 'Markdown',
+        reply_markup:  keyboard
+      })
+    }
+
     keyboard
       .text(ctx.i18n.t('labels.TO_DEPOSITS'), mapper.addDeposit.template({ amount })).row()
       .text(ctx.i18n.t('labels.TO_TRANSFERS'), mapper.addTransfer.template({ amount })).row()
       .text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
-    log('keyboard: %O', keyboard.inline_keyboard)
+    log('Full keyboard: %O', keyboard.inline_keyboard)
 
     return ctx.reply(ctx.i18n.t('transactions.add.selectCategory', { amount: amount }), {
       parse_mode: 'Markdown',
@@ -141,10 +166,10 @@ async function newTransactionCategoryCbQH(ctx: MyContext) {
         type: TransactionSplitStoreTypeEnum.Withdrawal,
         date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
         description: 'N/A',
-        source_id: defaultSourceAccount.id.toString(),
+        source_id: defaultSourceAccount!.id.toString(),
         amount: ctx.session.newTransaction.amount || '',
-        category_id: categoryId,
-        destination_id: defaultDestinationAccount.id.toString()
+        category_id: categoryId || '',
+        destination_id: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : null
       }]
     }
 
@@ -234,7 +259,7 @@ async function createQuickTransaction({ userId, amount, description, sourceAccou
   }
 }
 
-async function getDefaultSourceAccount(userId: number) {
+async function getDefaultSourceAccount(userId: number): Promise<null | AccountAttributes> {
   const log = rootLog.extend('getDefaultSourceAccount')
   try {
     let { defaultSourceAccount } = getUserStorage(userId)
@@ -243,6 +268,10 @@ async function getDefaultSourceAccount(userId: number) {
       const firstAccount = (await firefly(userId).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
       log('firstAccount: %O', firstAccount)
+
+      // Looks like that a user has not created any Asset accounts yet
+      if (!firstAccount) return null
+
       defaultSourceAccount = {
         id: firstAccount.id,
         name: firstAccount.attributes.name,
@@ -266,6 +295,15 @@ async function getDefaultDestinationAccount(userId: number) {
       const cashAccount = (await firefly(userId).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data[0]
       log('cashAccount: %O', cashAccount)
+
+      // For new user accounts there is no default CashAccount created.
+      // It is created by Firefly automatically upon creation of first
+      // transaction through UI
+      if (!cashAccount) {
+        log('No cash account found. Returning null...')
+        return null
+      }
+
       defaultDestinationAccount = {
         id: cashAccount.id,
         name: cashAccount.attributes.name,

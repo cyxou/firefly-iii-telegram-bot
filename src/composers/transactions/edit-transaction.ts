@@ -1,6 +1,7 @@
 import debug from 'debug'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
+import flatten from 'lodash.flatten'
 
 import type { MyContext } from '../../types/MyContext'
 import {
@@ -15,6 +16,7 @@ import {
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
+import { handleCallbackQueryError } from '../../lib/errorHandler'
 
 export enum Route {
   IDLE               = 'IDLE',
@@ -97,8 +99,10 @@ async function showEditTransactionMenu(ctx: MyContext) {
       reply_markup: editMenuKeyboard
     })
 
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
+    rootLog('Error occured editing transaction: %O', err)
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -277,6 +281,17 @@ async function assignCategory(ctx: MyContext) {
       userId,
       mapper.setCategory
     )
+
+    // If inline_keyboard array does not contain anything, than user has no categories yet
+    if (!flatten(categoriesKeyboard.inline_keyboard).length) {
+      categoriesKeyboard.text(ctx.i18n.t('labels.DONE'), mapper.done.template({ trId }))
+
+      return ctx.editMessageText(ctx.i18n.t('transactions.edit.noCategoriesYet'), {
+        parse_mode: 'Markdown',
+        reply_markup:  categoriesKeyboard
+      })
+    }
+
     categoriesKeyboard
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
@@ -302,6 +317,16 @@ async function selectNewCategory(ctx: MyContext) {
       userId,
       mapper.setCategory
     )
+    // If inline_keyboard array does not contain anything, than user has no categories yet
+    if (!flatten(categoriesKeyboard.inline_keyboard).length) {
+      categoriesKeyboard.text(ctx.i18n.t('labels.DONE'), mapper.editMenu.template({ trId }))
+
+      return ctx.editMessageText(ctx.i18n.t('transactions.edit.noCategoriesYet'), {
+        parse_mode: 'Markdown',
+        reply_markup:  categoriesKeyboard
+      })
+    }
+
     categoriesKeyboard
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
 
@@ -351,10 +376,15 @@ async function selectNewDestinationAccount(ctx: MyContext) {
     const trId = ctx.match![1]
 
     await ctx.answerCallbackQuery()
+    const accTypeFilters = [
+      AccountTypeFilter.CashAccount,
+      AccountTypeFilter.Liabilities,
+      AccountTypeFilter.Expense
+    ]
 
     const accountsKeyboard = (await createAccountsKeyboard(
       userId,
-      [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities, AccountTypeFilter.Expense],
+      accTypeFilters,
       mapper.setDestinationAccount
     ))
       .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))

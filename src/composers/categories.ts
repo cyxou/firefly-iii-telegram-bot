@@ -163,13 +163,7 @@ function addCategoriesRouteHandler(ctx: MyContext) {
     ctx.session.newCategories = categories
     ctx.session.step = Route.IDLE
 
-    return ctx.reply(`
-Будет создано ${categories.length} новых категорий:
-
-${categories.join('\n')}
-
-Все правильно?
-    `, {
+    return ctx.reply(ctx.i18n.t('categories.confirmCreation', { categories }), {
       parse_mode: 'Markdown',
       reply_markup: new InlineKeyboard()
         .text(ctx.i18n.t('labels.YES'), CONFIRM_CATEGORIES_LIST).row()
@@ -335,9 +329,9 @@ async function showCategoryDetails(ctx: MyContext) {
         categoryTransactionsPromise,
         expenseCategoriesPromise
       ])
-    // log('category: %O', category)
-    // log('categoryTransactions: %O', categoryTransactions)
-    // log('expenseCategoriesInsight: %O', expenseCategories)
+    log('category: %O', category)
+    log('categoryTransactions: %O', categoryTransactions)
+    log('expenseCategoriesInsight: %O', expenseCategories)
     const categoryName = category.data.data.attributes.name
     const sumsObjects = expenseCategories.data.map(item => {
       return { currency: item.currency_code, value: item.difference_float }
@@ -349,12 +343,16 @@ async function showCategoryDetails(ctx: MyContext) {
     const sums = sumsObjects.map((sum: any) => `${Math.abs(sum.value)} ${sum.currency}`)
       .join('\n       ').replace(/\n$/, '')
 
+    log('sums: %O', sums)
+
     const text = ctx.i18n.t('categories.transactionsList', {
       categoryName: categoryName,
       monthName: getMonthNameCapitalized(dayjs(startDate)),
       transactions: formatTransactions(ctx, categoryTransactions.data.data),
       sums: sums
     })
+
+    log('text: %s', text)
 
     return ctx.editMessageText(text, {
       parse_mode: 'HTML',
@@ -369,7 +367,10 @@ async function showCategoryDetails(ctx: MyContext) {
 
 function formatTransactions(ctx: MyContext, transactions: TransactionRead[]) {
   const log = rootLog.extend('formatTransactions')
-  if (transactions.length === 0) return ctx.i18n.t('categories.noTransactions')
+  if (transactions.length === 0) {
+    log('No transactions found. Exiting...')
+    return ctx.i18n.t('categories.noTransactions')
+  }
   log('transactions: %O', transactions[0].attributes)
   const data = [
     ...transactions.map(item => {
@@ -402,6 +403,8 @@ function createSingleCategoryKeyboard(
   categoryId: string | number
 ): InlineKeyboard {
   const log = rootLog.extend('createSingleCategoryKeyboard')
+  log('curMonth: %s', curMonth)
+  log('categoryId: %s', categoryId)
   const thisMonthName = getMonthNameCapitalized(dayjs(curMonth))
   log('thisMonthName: %O', thisMonthName)
 
@@ -418,6 +421,8 @@ function createSingleCategoryKeyboard(
     .text(ctx.i18n.t('labels.RENAME_CATEGORY'), `RENAME_CATEGORY_ID=${categoryId}`).row()
     .text(ctx.i18n.t('labels.DELETE'), `DELETE_CATEGORY_ID=${categoryId}`).row()
     .text(ctx.i18n.t('labels.CLOSE'), CANCEL)
+
+  log('inlineKeyboard: %O', inlineKeyboard.inline_keyboard)
 
   return inlineKeyboard
 }
