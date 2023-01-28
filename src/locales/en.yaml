@@ -19,7 +19,8 @@ labels:
   DECLINE_CATEGORIES_LIST: ✏️ Nope, try again
   DEFAULT_ASSET_ACCOUNT_BUTTON: 💳 Default asset account
   DELETE: ❌ Delete
-  OPEN_IN_BROWSER: 🔗 Открыть в браузере
+  OPEN_IN_BROWSER: 🔗 Open in browser
+  OPEN_ASSET_ACCOUNTS_IN_BROWSER: 🔗 Navigate to Asset accounts
   DONE: ✅ OK
   EDIT_TRANSACTION: ✏️ Edit
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
@@ -30,8 +31,8 @@ labels:
   SETTINGS: 🔧 Settings
   TEST_CONNECTION: 🔌 Check connection
   TO_WITHDRAWALS: 📤 To withdrawals
-  TO_DEPOSITS: 📥 To deposits
-  TO_TRANSFERS: ↔️ To transfers
+  TO_DEPOSITS: 📥 New deposit
+  TO_TRANSFERS: ↔️ New transfer
   TRANSACTIONS: 🔀 Transactions
   YES: ✅ Yes
   SWITCH_TO_ENGLISH: 🇬🇧 Switch to English
@@ -64,7 +65,10 @@ help: >
 
 common:
   errorOccurred: An error occurred!
-
+  noDefaultSourceAccountExist: |
+    🙈 Whoa! You do not have any Asset accounts to withdraw money from!   
+       
+    🙏 Please, navigate to your Firefly III website and create at least one Asset account.
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
@@ -93,8 +97,7 @@ settings:
     *🌐 Language*: ${language}
   selectDefaultAssetAccount: >
     Choose an asset account which will be used as a default one for withdrawals.
-    If left unset, the very first asset account from the list below will be used by
-    default with every withdrawal.
+    If left unset, the very first asset account from the list below will be used by default:
   specifySmthFirst: Specify ${smth} first.
   connectionFailed: Connection has NOT been established!
   connectionFailedUnauthenticated: Authentication error! Please make sure that specified Access Token is not malformed and not expired.
@@ -195,6 +198,11 @@ transactions:
          
       ↔️ Transfer *${amount}* *${currency}* from account *${source}* to account *${destination}*
     selectCategory: In which category to add *${amount}*?
+    noCategoriesYet: |
+      🤷 You haven't created any categories yet.
+      The transaction will be created without a category. Continue?
+            
+      💡 You can ceasily create new categories from a corresponding *🔖 Categories* bot button.
     transactionDeleted: Transaction deleted!
     couldNotDelete: 'Could not delete transaction by id: ${id}'
     selectRevenueAccount: 'Choose a revenue account to withdraw *${amount}*:'
@@ -215,14 +223,21 @@ transactions:
       💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to perform the appropriate operation on the current value of the transaction.
 
       For example, "+35" would add 35 to existing amount of transaction.
+    noCategoriesYet: |
+      🤷 You haven't created any categories yet.
+            
+      💡 You can easily create new categories from a corresponding *🔖 Categories* bot button.
     typeNewDescription: 'Type in new description:'
     chooseNewCategory: 'Choose new category:'
     chooseNewSourceAccount: 'Choose new source account:'
     chooseNewDestinationAccount: 'Choose new destination account:'
     chooseNewRevenueAccount: 'Choose new revenue account:'
+    noSuchTransactionAnymore: |
+      🤖 This transaction (${id}) does not exist enymore!
+      It was probably deleted via the Firefly website.
 
 categories:
-  listEmpty: No categories thus yet.
+  listEmpty: No categories yet :(
   list: >
     To view transactions for a specific category, choose it from the list bellow.
     You can also rename or delete a category once it is chosen.
@@ -238,6 +253,12 @@ categories:
     *P.S.*: Category names can be changed later.
 
     *P.P.S.*: It's OK if a category with the same name already exists.
+  confirmCreation: >
+    ${categories.length} new category(s) will be created:   
+       
+    ${categories.join('\n')}  
+       
+    Is that OK?
   typeNewName: 'Type in new category name:'
   confirmDeletion: >
     Are you sure that you want to delete this category?

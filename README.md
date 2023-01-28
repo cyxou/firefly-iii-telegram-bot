@@ -99,6 +99,10 @@ which is hard-coded in `codegen` npm task.
 ## Known bugs and limitations
  - No support for multiple transaction splits. It is assumed that transactions
      consist of only one transaction split.
+ - Looks like for a brand new user account the built-in "(cash)" account is
+   created upon first creation of a transaction via the Firefly UI. Until that
+   built-in "(cash)" account is created, the default Expense account will be an
+   account without a name which is weird.
 
 ## Feedback
 Join the 🔗 [Q&A Telegram group](https://t.me/firefly_iii_telegram_bot_group) if you have

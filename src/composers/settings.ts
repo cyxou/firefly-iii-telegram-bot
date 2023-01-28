@@ -226,13 +226,24 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     log('accounts: %O', accounts)
 
+    if (!accounts.length) {
+      const kb = new InlineKeyboard()
+        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${fireflyUrl}/accounts/asset`).row()
+
+      return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), {
+        reply_markup: kb
+      })
+    }
+
     const accKeyboard = new InlineKeyboard()
-    accounts.forEach((acc: AccountRead) => {
-      return accKeyboard.text(
-        `${acc.attributes.name} ${acc.attributes.currency_symbol}${acc.attributes.current_balance}`,
-        `!defaultAccount=${acc.id}`
-      ).row()
-    })
+    accounts
+      .reverse() // we want top accounts be closer to the bottom of the screen
+      .forEach((acc: AccountRead) => {
+        return accKeyboard.text(
+          `${acc.attributes.name} ${acc.attributes.currency_symbol}${acc.attributes.current_balance}`,
+          `!defaultAccount=${acc.id}`
+        ).row()
+      })
     accKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
     log('accKeyboard: %O', accKeyboard)
 
