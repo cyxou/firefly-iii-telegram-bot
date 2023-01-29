@@ -5,13 +5,13 @@ import { Route as SettingsRoute } from '../composers/settings'
 import { Route as CategoriesRoute } from '../composers/categories'
 import { Route as EditTransactionRoute } from '../composers/transactions/edit-transaction'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
-import { TransactionSplitStoreTypeEnum } from '../lib/firefly/model/transaction-split-store'
+import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
 
 export interface SessionData {
   step: 'IDLE' | CategoriesRoute | SettingsRoute | EditTransactionRoute
   // transaction: Partial<TransactionStore> & Partial<TransactionRead>
   newTransaction: {
-    type?: TransactionSplitStoreTypeEnum
+    type?: TransactionTypeProperty
     date?: string
     description?: string
     sourceAccount?: AccountAttributes

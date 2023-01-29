@@ -16,7 +16,7 @@ import {
 
 import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
-import { TransactionSplitStoreTypeEnum } from '../../lib/firefly/model/transaction-split-store'
+import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountAttributes } from '../../types/SessionData'
 
@@ -106,7 +106,7 @@ export async function addTransaction(ctx: MyContext) {
     }
 
     ctx.session.newTransaction = {
-      type: TransactionSplitStoreTypeEnum.Withdrawal,
+      type: TransactionTypeProperty.Withdrawal,
       date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
       description: 'N/A',
       sourceAccount: defaultSourceAccount,
@@ -163,7 +163,7 @@ async function newTransactionCategoryCbQH(ctx: MyContext) {
 
     const payload = {
       transactions: [{
-        type: TransactionSplitStoreTypeEnum.Withdrawal,
+        type: TransactionTypeProperty.Withdrawal,
         date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
         description: 'N/A',
         source_id: defaultSourceAccount!.id.toString(),
@@ -211,9 +211,9 @@ async function deleteTransactionActionHandler(ctx: MyContext) {
   log('Entered deleteTransaction action handler')
   try {
     const userId = ctx.from!.id
-    const trId = parseInt(ctx.match![1], 10)
+    const trId = ctx.match![1]
 
-    if (trId || !isNaN(trId)) await firefly(userId).Transactions.deleteTransaction(trId)
+    if (trId) await firefly(userId).Transactions.deleteTransaction(trId)
     else return ctx.reply(
       ctx.i18n.t('transactions.add.couldNotDelete', { id: trId })
     )
@@ -239,7 +239,7 @@ async function createQuickTransaction({ userId, amount, description, sourceAccou
   try {
     const transactionStore = {
       transactions: [{
-        type: TransactionSplitStoreTypeEnum.Withdrawal,
+        type: TransactionTypeProperty.Withdrawal,
         date: dayjs(date || Date.now()).toISOString(),
         amount: amount.toString(),
         description,
@@ -321,10 +321,10 @@ async function getDefaultDestinationAccount(userId: number) {
 async function selectDestAccount(ctx: MyContext) {
   const log = rootLog.extend('selectDestAccount')
   try {
-    const sourceId = parseInt(ctx.match![1], 10)
+    const sourceId = ctx.match![1]
     log('sourceId: ', sourceId)
 
-    if (isNaN(sourceId)) throw new Error('Source Account ID is bad!')
+    if (!sourceId) throw new Error('Source Account ID is bad!')
 
     log('ctx.session: %O', ctx.session)
 
@@ -335,7 +335,7 @@ async function selectDestAccount(ctx: MyContext) {
 
     const tr = ctx.session.newTransaction
     tr.sourceAccount = {
-      id: sourceId.toString(),
+      id: sourceId,
       name: sourceAccountData.attributes.name,
       type: sourceAccountData.attributes.type
     }
@@ -376,7 +376,7 @@ async function startCreatingTransferTransaction(ctx: MyContext) {
     const userId = ctx.from!.id
 
     ctx.session.newTransaction = {
-      type: TransactionSplitStoreTypeEnum.Transfer,
+      type: TransactionTypeProperty.Transfer,
       date: dayjs((ctx.message?.date || Date.now())).toISOString(),
       description: 'N/A',
       sourceAccount: { id: '', name: '', type: '' },
@@ -409,25 +409,25 @@ async function startCreatingTransferTransaction(ctx: MyContext) {
 async function createTransaction(ctx: MyContext) {
   const log = rootLog.extend('createTransaction')
   try {
-    const destAccountId = parseInt(ctx.match![1], 10)
+    const destAccountId = ctx.match![1]
     log('destAccountId: ', destAccountId)
     log('ctx.session: %O', ctx.session)
 
     const userId = ctx.from!.id
 
-    let transactionType: TransactionSplitStoreTypeEnum
+    let transactionType: TransactionTypeProperty
     const sourceAccountType = ctx.session.newTransaction.sourceAccount!.type 
     const destAccountData = (await firefly(userId).Accounts.getAccount(destAccountId)).data.data
     log('destAccountData: %O', destAccountData)
 
     if (sourceAccountType === 'liabilities' || sourceAccountType === 'revenue') {
-      transactionType = TransactionSplitStoreTypeEnum.Deposit
+      transactionType = TransactionTypeProperty.Deposit
     } 
     else if (sourceAccountType === 'asset' || destAccountData.attributes.type === 'asset') {
-      transactionType = TransactionSplitStoreTypeEnum.Transfer
+      transactionType = TransactionTypeProperty.Transfer
     }
     else {
-      transactionType = TransactionSplitStoreTypeEnum.Withdrawal
+      transactionType = TransactionTypeProperty.Withdrawal
     }
     log('transactionType: %s', transactionType)
 
@@ -468,7 +468,7 @@ async function startCreatingDepositTransaction(ctx: MyContext) {
     const userId = ctx.from!.id
 
     ctx.session.newTransaction = {
-      type: TransactionSplitStoreTypeEnum.Deposit,
+      type: TransactionTypeProperty.Deposit,
       date: dayjs().toISOString(),
       description: 'N/A',
       amount: amount!.toString(),

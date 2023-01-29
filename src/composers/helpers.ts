@@ -10,10 +10,10 @@ import Mapper from '../lib/Mapper'
 import type { MyContext } from '../types/MyContext'
 import { getUserStorage } from '../lib/storage'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
-import { TransactionSplitTypeEnum } from '../lib/firefly/model/transaction-split'
+import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
 import { TransactionSplit } from '../lib/firefly/model/transaction-split'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
-import { AccountTypeEnum } from '../lib/firefly/model/account'
+// import { AccountTypeEnum } from '../lib/firefly/model/account'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
 const debug = Debug('bot:transactions:helpers')
@@ -129,14 +129,14 @@ function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
 
   let translationString: string
   switch (trSplit.type) {
-    case TransactionSplitTypeEnum.Withdrawal:
+    case TransactionTypeProperty.Withdrawal:
       translationString = 'transactions.add.withdrawalMessage'
       baseProps.category = trSplit.category_name
       break
-    case TransactionSplitTypeEnum.Deposit:
+    case TransactionTypeProperty.Deposit:
       translationString = 'transactions.add.depositMessage'
       break
-    case TransactionSplitTypeEnum.Transfer:
+    case TransactionTypeProperty.Transfer:
       translationString = 'transactions.add.transferMessage'
       break
     default:
@@ -296,13 +296,13 @@ function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
   return keyboard
 }
 
-function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeEnum) {
+function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeFilter) {
   const mapper = listAccountsMapper
   const keyboard = new InlineKeyboard()
 
   // Dynamically add only relevant transactin type buttons
   switch (accType) {
-    case AccountTypeEnum.Asset:
+    case AccountTypeFilter.Asset:
       keyboard
         .text(ctx.i18n.t('accounts.labels.expense'),
           listAccountsMapper.list.template({ type: AccountTypeFilter.Expense })).row()
@@ -311,7 +311,7 @@ function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeEnum) {
         .text(ctx.i18n.t('accounts.labels.liability'),
           mapper.list.template({ type: AccountTypeFilter.Liability })).row()
       break
-    case AccountTypeEnum.Expense:
+    case AccountTypeFilter.Expense:
       keyboard
         .text(ctx.i18n.t('accounts.labels.asset'),
           listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
@@ -320,7 +320,7 @@ function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeEnum) {
         .text(ctx.i18n.t('accounts.labels.liability'),
           mapper.list.template({ type: AccountTypeFilter.Liability })).row()
       break
-    case AccountTypeEnum.Revenue:
+    case AccountTypeFilter.Revenue:
       keyboard
         .text(ctx.i18n.t('accounts.labels.asset'),
           listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
@@ -329,7 +329,7 @@ function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeEnum) {
         .text(ctx.i18n.t('accounts.labels.liability'),
           mapper.list.template({ type: AccountTypeFilter.Liability })).row()
       break
-    case AccountTypeEnum.Liability:
+    case AccountTypeFilter.Liability:
       keyboard
         .text(ctx.i18n.t('accounts.labels.asset'),
           listAccountsMapper.list.template({ type: AccountTypeFilter.Asset })).row()
