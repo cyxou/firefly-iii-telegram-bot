@@ -13,7 +13,6 @@ import {
 
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
-import { AccountTypeEnum } from '../lib/firefly/model/account'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
 const debug = Debug(`bot:accounts`)
@@ -39,12 +38,12 @@ async function showAccounts(ctx: MyContext) {
     log('ctx.match: %O', ctx.match)
 
     const page = 1
-    let accType: AccountTypeEnum | AccountTypeFilter
+    let accType: AccountTypeFilter
     const balanceToDate = dayjs().format('YYYY-MM-DD')
 
     // Check if it is a callback query handler massage or a regular one
     if (isRegularMessage) {
-      accType = AccountTypeEnum.Asset // by default use Asset account type
+      accType = AccountTypeFilter.Asset // by default use Asset account type
     } else {
       await ctx.answerCallbackQuery()
       accType = ctx.match![1] as AccountTypeFilter
@@ -55,8 +54,8 @@ async function showAccounts(ctx: MyContext) {
       page, balanceToDate, accType as AccountTypeFilter)).data.data
     log('accounts: %O', accounts)
 
-    const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeEnum)
-    const text = formatAccountsMessage(ctx, accType as AccountTypeEnum, accounts)
+    const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeFilter)
+    const text = formatAccountsMessage(ctx, accType as AccountTypeFilter, accounts)
 
     if (isRegularMessage) {
       return ctx.reply(text, {
@@ -85,7 +84,7 @@ async function closeHandler(ctx: MyContext) {
 
 // Assumed that accounts is a list of only one particular account type
 function formatAccountsMessage(
-  ctx: MyContext, accType: AccountTypeEnum, accounts: AccountRead[]
+  ctx: MyContext, accType: AccountTypeFilter, accounts: AccountRead[]
 ) {
   const log = debug.extend('formatAccountsMessage')
   const sumsObject = accounts.reduce((res, acc) => {

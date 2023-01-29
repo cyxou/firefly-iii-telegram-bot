@@ -136,7 +136,7 @@ async function doDeleteCategoryCbQH(ctx: MyContext) {
   try {
     const userId = ctx.from!.id
     log('ctx.match: %O', ctx.match)
-    const categoryId = parseInt(ctx.match![1], 10)
+    const categoryId = ctx.match![1]
     log('categoryId: %O', categoryId)
 
     await firefly(userId).Categories.deleteCategory(categoryId)
@@ -305,7 +305,7 @@ async function showCategoryDetails(ctx: MyContext) {
   try {
     await ctx.answerCallbackQuery()
     const userId = ctx.from!.id
-    const categoryId = parseInt(ctx.match![1], 10)
+    const categoryId = ctx.match![1]
     const startDate = ctx.match![2]
     log('ctx.match: %O', ctx.match)
     log('categoryId: %O', categoryId)
@@ -320,7 +320,7 @@ async function showCategoryDetails(ctx: MyContext) {
     const categoryTransactionsPromise = firefly(userId).Categories
       .listTransactionByCategory(categoryId, 1, start, end)
     const expenseCategoriesPromise = firefly(userId).Insight
-      .insightExpenseCategory(start, end, [categoryId])
+      .insightExpenseCategory(start, end, [parseInt(categoryId, 10)])
 
     // Resolve all the promises
     const [ category, categoryTransactions, expenseCategories ] =
@@ -387,8 +387,8 @@ function formatTransactions(ctx: MyContext, transactions: TransactionRead[]) {
   const config = {
     border: getBorderCharacters('void'),
     columnDefault: {
-        paddingLeft: 0,
-        paddingRight: 1
+      paddingLeft: 0,
+      paddingRight: 1
     },
     drawHorizontalLine: () => false
   }

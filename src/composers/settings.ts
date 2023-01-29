@@ -262,7 +262,7 @@ async function defaultAccountCbQH(ctx: MyContext) {
     log('ctx: %O', ctx)
     const userId = ctx.from!.id
     const storage = getUserStorage(userId)
-    const accountId = parseInt(ctx.match![1], 10)
+    const accountId = ctx.match![1]
     log('accountId: %s', accountId)
 
     const account = (await firefly(userId).Accounts.getAccount(accountId)).data.data

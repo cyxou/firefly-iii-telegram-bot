@@ -62,7 +62,7 @@ async function showEditTransactionMenu(ctx: MyContext) {
     const { editTransaction } = ctx.session
     log('transaction: %O', editTransaction)
 
-    const trId = parseInt(ctx.match![1], 10)
+    const trId = ctx.match![1]
     log('trId: %O', trId)
 
     const tr = (await firefly(userId).Transactions.getTransaction(trId)).data.data
@@ -110,7 +110,7 @@ async function doneEditTransactionCbQH(ctx: MyContext) {
   const log = rootLog.extend('doneEditTransactionCbQH')
   try {
     const userId = ctx.from!.id
-    const trId = parseInt(ctx.match![1], 10)
+    const trId = ctx.match![1]
     log('transaction id: %O', trId)
 
     await ctx.answerCallbackQuery()
@@ -203,7 +203,7 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     }
 
     const updatedTr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(tr.id || '', 10),
+      tr.id || '',
       update
     )).data.data
 
@@ -250,7 +250,7 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
     }
 
     const updatedTr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(tr.id || '', 10),
+      tr.id || '',
       update
     )).data.data
 
@@ -268,7 +268,7 @@ async function assignCategory(ctx: MyContext) {
   log('Entered assignCategory action handler')
   try {
     const userId = ctx.from!.id
-    const trId = parseInt(ctx.match![1], 10)
+    const trId = ctx.match![1]
     log('trId: %O', trId)
 
     await ctx.answerCallbackQuery()
@@ -423,7 +423,7 @@ async function setNewCategory(ctx: MyContext) {
     log('Transaction update: %O', update)
 
     const updatedTr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(tr.id || '', 10),
+      tr.id || '',
       update
     )).data.data
 
@@ -442,18 +442,18 @@ async function setNewSourceAccount(ctx: MyContext) {
   log('Entered setNewSourceAccount action handler')
   try {
     const userId = ctx.from!.id
-    const sourceAccountId = parseInt(ctx.match![1], 10)
+    const sourceAccountId = ctx.match![1]
     log('sourceAccountId: %O', sourceAccountId)
 
-    if (isNaN(sourceAccountId)) throw new Error('Source Account ID is bad!')
+    if (!sourceAccountId) throw new Error('Source Account ID is bad!')
 
 
     await ctx.answerCallbackQuery()
 
-    const trId = parseInt(ctx.session.editTransaction.id || '', 10)
+    const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
 
-    if (isNaN(trId)) throw new Error('Transaction ID is bad!')
+    if (!trId) throw new Error('Transaction ID is bad!')
 
     const transaction = ctx.session.editTransaction
     log('Transaction to update: %O', transaction)
@@ -498,7 +498,7 @@ async function setNewDestinationAccount(ctx: MyContext) {
     const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
     const tr = (await firefly(userId).Transactions.updateTransaction(
-      parseInt(trId, 10),
+      trId,
       { transactions: [{ destination_id: destId }]}
     )).data.data
 

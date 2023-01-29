@@ -11,7 +11,7 @@ import {
 
 import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
-import { TransactionSplitTypeEnum } from '../../lib/firefly/model/transaction-split'
+import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { TransactionTypeFilter } from '../../lib/firefly/model/transaction-type-filter'
 
 const debug = Debug(`bot:transactions:list`)
@@ -107,13 +107,13 @@ function formatTransactions(ctx: MyContext, transactions: TransactionRead[]) {
       let typeIcon
       log('tr.type: %O', tr.type)
       switch (tr.type) {
-        case TransactionSplitTypeEnum.Withdrawal:
+        case TransactionTypeProperty.Withdrawal:
           typeIcon = withdrawalIcon
           break
-        case TransactionSplitTypeEnum.Deposit:
+        case TransactionTypeProperty.Deposit:
           typeIcon = depositIcon
           break
-        case TransactionSplitTypeEnum.Transfer:
+        case TransactionTypeProperty.Transfer:
           typeIcon = transferIcon
           break
         default:
