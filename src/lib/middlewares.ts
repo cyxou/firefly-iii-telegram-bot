@@ -2,7 +2,6 @@ import debug from 'debug'
 
 import i18n from './i18n'
 import { command } from './constants'
-import { getUserStorage } from './storage'
 import type { MyContext } from '../types/MyContext'
 
 const rootLog = debug(`bot:mdlwr`)
@@ -79,8 +78,7 @@ export function requireSettings() {
         return next()
       }
 
-      const userId = ctx.from!.id
-      const { fireflyAccessToken, fireflyUrl } = getUserStorage(userId)
+      const { fireflyAccessToken, fireflyUrl } = ctx.session.userSettings
       log('fireflyAccessToken: %O', fireflyAccessToken)
       log('fireflyUrl: %O', fireflyUrl)
 

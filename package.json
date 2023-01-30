@@ -43,6 +43,7 @@
     "@grammyjs/i18n": "0.5.1",
     "@grammyjs/menu": "1.1.2",
     "@grammyjs/router": "2.0.0",
+    "@grammyjs/storage-file": "2.1.0",
     "axios": "1.2.6",
     "dayjs": "1.11.7",
     "debug": "4.3.4",

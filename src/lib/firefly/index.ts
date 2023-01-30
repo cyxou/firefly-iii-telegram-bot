@@ -4,7 +4,6 @@ import globalAxios from 'axios';
 import Debug from 'debug'
 import { AxiosError, AxiosResponse } from 'axios';
 
-import { getUserStorage } from '../storage'
 import {
   AuthenticationError,
   HostNotFoundError,
@@ -14,12 +13,11 @@ import {
 
 const debug = Debug('firefly')
 
-export default function firefly(userId: number) {
+export default function firefly(userSettings : { fireflyApiUrl: string, fireflyAccessToken: string }) {
   const log = debug.extend('index')
-  const { fireflyApiUrl, fireflyAccessToken } = getUserStorage(userId)
   const configuration = new Configuration({
-    accessToken: fireflyAccessToken,
-    basePath: fireflyApiUrl.replace(/\/+$/, ""),
+    accessToken: userSettings.fireflyAccessToken,
+    basePath: userSettings.fireflyApiUrl.replace(/\/+$/, ""),
   })
   log('configuration: %O', configuration)
 

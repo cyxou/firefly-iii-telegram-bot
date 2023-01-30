@@ -8,7 +8,6 @@ import { Keyboard, InlineKeyboard } from 'grammy'
 import firefly from '../lib/firefly'
 import Mapper from '../lib/Mapper'
 import type { MyContext } from '../types/MyContext'
-import { getUserStorage } from '../lib/storage'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
 import { TransactionSplit } from '../lib/firefly/model/transaction-split'
@@ -145,10 +144,10 @@ function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
   return ctx.i18n.t(translationString, { ...baseProps })
 }
 
-async function createCategoriesKeyboard(userId: number, mapper: Mapper) {
+async function createCategoriesKeyboard(ctx: MyContext, mapper: Mapper) {
   const log = debug.extend('createCategoriesKeyboard')
   try {
-    const categories = (await firefly(userId).Categories.listCategory()).data.data
+    const categories = (await firefly(ctx.session.userSettings).Categories.listCategory()).data.data
     log('categories: %O', categories)
 
     const keyboard = new InlineKeyboard()
@@ -173,7 +172,7 @@ async function createCategoriesKeyboard(userId: number, mapper: Mapper) {
 }
 
 async function createAccountsKeyboard(
-  userId: number,
+  ctx: MyContext,
   accountType: AccountTypeFilter | AccountTypeFilter[],
   mapper: Mapper,
   opts?: { skipAccountId: string }
@@ -185,7 +184,7 @@ async function createAccountsKeyboard(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(accType => promises.push(firefly(userId).Accounts.listAccount(1, now, accType)))
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)
@@ -194,7 +193,7 @@ async function createAccountsKeyboard(
         return r.data.data
       }))
     } else {
-      accounts = (await firefly(userId).Accounts.listAccount(1, now, accountType)).data.data
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accountType)).data.data
     }
 
     log('accounts: %O', accounts)
@@ -274,8 +273,7 @@ function formatTransactionUpdate(
 function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
   const keyboard = new InlineKeyboard()
   const trId = tr.id
-  const userId = ctx.from!.id
-  const { fireflyUrl } = getUserStorage(userId)
+  const { fireflyUrl } = ctx.session.userSettings
 
   // Only withdrawal transactions may have category assigned
   if (tr.attributes.transactions[0].type === 'withdrawal') {
@@ -357,8 +355,7 @@ function generateWelcomeMessage(ctx: MyContext) {
   const log = debug.extend('generateWelcomeMessage')
 
   log('start: %O', ctx.message)
-  const userId = ctx.from!.id
-  const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
+  const { fireflyUrl, fireflyAccessToken } = ctx.session.userSettings
 
   let welcomeMessage: string = ctx.i18n.t('welcome')
   const isConfigured = !!(fireflyUrl && fireflyAccessToken)

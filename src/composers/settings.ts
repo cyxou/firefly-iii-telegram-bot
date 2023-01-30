@@ -8,7 +8,6 @@ import type { MyContext } from '../types/MyContext'
 import i18n, { getLanguageIcon } from '../lib/i18n';
 import { command } from '../lib/constants'
 import { createMainKeyboard, generateWelcomeMessage } from './helpers'
-import { getUserStorage } from '../lib/storage'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
@@ -55,13 +54,12 @@ bot.use(router)
 export default bot
 
 function settingsText(ctx: MyContext) {
-  const userId = ctx.from!.id
   const {
     fireflyUrl,
     fireflyAccessToken,
     defaultSourceAccount,
     language
-  } = getUserStorage(userId)
+  } = ctx.session.userSettings
 
   // Grab only first 4 and last 4 chars of the token
   const accessToken = fireflyAccessToken?.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
@@ -108,8 +106,6 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('fireflyAccessTokenRouteHandler')
   log('Entered fireflyAccessTokenRouteHandler...')
   try {
-    const userId = ctx.from!.id
-    const storage = getUserStorage(userId)
     log('ctx.msg: %O', ctx.msg)
     const text = ctx.msg!.text as string
     log('User entered text: %s', text)
@@ -122,7 +118,7 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
       })
     }
 
-    storage.fireflyAccessToken = text
+    ctx.session.userSettings.fireflyAccessToken = text
     ctx.session.step = 'IDLE'
 
     return ctx.reply(
@@ -137,8 +133,6 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('fireflyUrlRouteHandler')
   log('Entered fireflyUrlRouteHandler...')
   try {
-    const userId = ctx.from!.id
-    const storage = getUserStorage(userId)
     log('ctx.msg: %O', ctx.msg)
     const text = ctx.msg!.text as string
     log('User entered text: %s', text)
@@ -153,7 +147,8 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
       })
     }
 
-    storage.fireflyUrl = text
+    ctx.session.userSettings.fireflyUrl = text
+    ctx.session.userSettings.fireflyApiUrl = text
     ctx.session.step = 'IDLE'
 
     return ctx.reply(
@@ -200,9 +195,8 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
   const log = rootLog.extend('selectDefaultAssetAccountCbQH')
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} callback query handler`)
   try {
-    const userId = ctx.from!.id
-    const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
-    log('userId: %s', userId)
+    const userSettings = ctx.session.userSettings
+    const { fireflyUrl, fireflyAccessToken } = userSettings
 
     if (!fireflyUrl) {
       return ctx.answerCallbackQuery({
@@ -222,7 +216,7 @@ async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
       })
     }
 
-    const accounts: AccountRead[] = (await firefly(userId).Accounts.listAccount(
+    const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
         1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     log('accounts: %O', accounts)
 
@@ -260,15 +254,15 @@ async function defaultAccountCbQH(ctx: MyContext) {
   log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} query handler`)
   try {
     log('ctx: %O', ctx)
-    const userId = ctx.from!.id
-    const storage = getUserStorage(userId)
     const accountId = ctx.match![1]
     log('accountId: %s', accountId)
 
-    const account = (await firefly(userId).Accounts.getAccount(accountId)).data.data
+    const userSettings = ctx.session.userSettings
+
+    const account = (await firefly(userSettings).Accounts.getAccount(accountId)).data.data
     log('account: %O', account)
 
-    storage.defaultSourceAccount = {
+    userSettings.defaultSourceAccount = {
       id: accountId.toString(),
       name: account.attributes.name,
       type: account.attributes.type
@@ -289,8 +283,6 @@ async function cancelCbQH(ctx: MyContext) {
   const log = rootLog.extend('cancelCbQH')
   try {
     log('Cancelling...: ')
-    const userId = ctx.from!.id
-    log('userId: %O', userId)
 
     ctx.session.step = 'IDLE'
 
@@ -309,8 +301,8 @@ async function testConnectionCbQH(ctx: MyContext) {
   log('Entered testConnectionCbQH action handler')
   log('ctx: %O', ctx)
   try {
-    const userId  = ctx.from!.id
-    const { fireflyUrl, fireflyAccessToken } = getUserStorage(userId)
+    const userSettings = ctx.session.userSettings
+    const { fireflyUrl, fireflyAccessToken } = userSettings
 
     if (!fireflyUrl) {
       return ctx.answerCallbackQuery({
@@ -330,7 +322,7 @@ async function testConnectionCbQH(ctx: MyContext) {
       })
     }
 
-    const userInfo = (await firefly(userId).About.getCurrentUser()).data.data
+    const userInfo = (await firefly(userSettings).About.getCurrentUser()).data.data
     log('Firefly user info: %O', userInfo)
 
     if (!userInfo) return ctx.answerCallbackQuery({
@@ -353,14 +345,12 @@ async function switchLanguageCbQH(ctx: MyContext) {
   log(`Entered the switch language query handler`)
   try {
     log('ctx: %O', ctx)
-    const userId = ctx.from!.id
-    const storage = getUserStorage(userId)
     const language = ctx.match![1]
     log('language: %O', language)
 
     ctx.i18n.locale(language)
     dayjs.locale(language)
-    storage.language = language
+    ctx.session.userSettings.language = language
 
     const welcomeMessage = generateWelcomeMessage(ctx)
 
