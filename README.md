@@ -12,7 +12,8 @@ First you'll have to generate a Telegram Bot token through BotFather. Once you g
 
 ```shell
 docker run \
-  --rm --it --name firefly-bot \
+  --rm --it --init --name firefly-bot \
+  --volume `pwd`/sessions:/home/node/app/sessions \
   --env BOT_TOKEN=<your-bot-token> \
   cyxou/firefly-iii-telegram-bot:latest
 ```
@@ -23,7 +24,8 @@ Then you can pass it to docker like so:
 
 ```shell
 docker run \
-  --rm --it --name firefly-bot \
+  --rm --it --init --name firefly-bot \
+  --volume `pwd`/sessions:/home/node/app/sessions \
   --env-file .env \
   cyxou/firefly-iii-telegram-bot:latest
 ```
