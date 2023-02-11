@@ -32,7 +32,7 @@ async function showAccounts(ctx: MyContext) {
   log(`Entered showAccounts callback handler...`)
   try {
     log('ctx: %O', ctx)
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const isRegularMessage = !!ctx.update.message
     log('isRegularMessage: %O', isRegularMessage)
     log('ctx.match: %O', ctx.match)
@@ -50,7 +50,7 @@ async function showAccounts(ctx: MyContext) {
     }
     log('accType: %O', accType)
 
-    const accounts = (await firefly(userId).Accounts.listAccount(
+    const accounts = (await firefly(userSettings).Accounts.listAccount(
       page, balanceToDate, accType as AccountTypeFilter)).data.data
     log('accounts: %O', accounts)
 

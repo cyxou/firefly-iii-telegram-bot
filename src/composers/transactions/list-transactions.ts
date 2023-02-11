@@ -31,7 +31,7 @@ async function showTransactions(ctx: MyContext) {
   log(`Entered showTransactions callback handler...`)
   try {
     // await ctx.answerCallbackQuery()
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const isRegularMessage = !!ctx.update.message
     log('isRegularMessage: %O', isRegularMessage)
     log('ctx.match: %O', ctx.match)
@@ -56,7 +56,7 @@ async function showTransactions(ctx: MyContext) {
     log('start: %O', start)
     log('end: %O', end)
 
-    const transactions = (await firefly(userId).Transactions.listTransaction(
+    const transactions = (await firefly(userSettings).Transactions.listTransaction(
       page,
       start,
       end,

@@ -17,7 +17,6 @@ import editTransaction from './composers/transactions/edit-transaction'
 import listTransactions from './composers/transactions/list-transactions'
 import accounts from './composers/accounts'
 import categories from './composers/categories'
-import reports from './composers/reports'
 
 import type { MyContext } from './types/MyContext'
 import type { SessionData } from './types/SessionData'
@@ -47,12 +46,11 @@ bot.use(i18n.middleware());
 bot.use(requireSettings())
 bot.use(cleanup())
 bot.use(addTransaction)
-// bot.use(editTransaction)
-// bot.use(listTransactions)
-// bot.use(accounts)
+bot.use(editTransaction)
+bot.use(listTransactions)
+bot.use(accounts)
 bot.use(settings)
-// bot.use(categories)
-// bot.use(reports)
+bot.use(categories)
 
 bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)

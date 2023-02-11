@@ -134,12 +134,12 @@ async function doDeleteCategoryCbQH(ctx: MyContext) {
   const log = rootLog.extend('doDeleteCategoryCbQH')
   log('Entered the doDeleteCategoryCbQH...')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     log('ctx.match: %O', ctx.match)
     const categoryId = ctx.match![1]
     log('categoryId: %O', categoryId)
 
-    await firefly(userId).Categories.deleteCategory(categoryId)
+    await firefly(userSettings).Categories.deleteCategory(categoryId)
     await ctx.answerCallbackQuery({ text: ctx.i18n.t('categories.deleted') })
 
     return replyWithListOfCategories(ctx)
@@ -179,13 +179,13 @@ async function newCategoryNameRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('newCategoryNameRouteHandler')
   log('Entered newCategoryNameRouteHandler...')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     log('ctx.session: %O', ctx.session)
     const text = ctx.msg?.text || ''
 
     const categoryId = ctx.session.category.id
 
-    await firefly(userId).Categories.updateCategory(categoryId, { name: text })
+    await firefly(userSettings).Categories.updateCategory(categoryId, { name: text })
     return replyWithListOfCategories(ctx)
   } catch (err) {
     console.error(err)
@@ -223,11 +223,11 @@ function parseCategoriesInput(input: string) {
 async function confirmCategoriesCbQH(ctx: MyContext) {
   const log = rootLog.extend('confirmCategoriesCbQH')
   try {
-    log('Creating categories in firefly(userId): %O', ctx.session.newCategories)
-    const userId = ctx.from!.id
+    log('Creating categories in firefly: %O', ctx.session.newCategories)
+    const userSettings = ctx.session.userSettings
 
     for (const category of ctx.session.newCategories) {
-      await firefly(userId).Categories.storeCategory({ name: category })
+      await firefly(userSettings).Categories.storeCategory({ name: category })
     }
 
     await ctx.answerCallbackQuery({ text: 'Категории созданы!' })
@@ -241,8 +241,8 @@ async function replyWithListOfCategories(ctx: MyContext) {
   const log = rootLog.extend('replyWithListOfCategories')
   log('ctx: %O', ctx)
   try {
-    const userId = ctx.from!.id
-    const categories = (await firefly(userId).Categories.listCategory()).data.data
+    const userSettings = ctx.session.userSettings
+    const categories = (await firefly(userSettings).Categories.listCategory()).data.data
     const categoriesNames = categories.map((c: any) => c.attributes.name)
     // log('categories: %O', categories)
 
@@ -273,8 +273,8 @@ async function replyWithListOfCategories(ctx: MyContext) {
 export async function createCategoriesInlineKeyboard(ctx: MyContext): Promise<InlineKeyboard> {
   const log = rootLog.extend('createCategoriesInlineKeyboard')
   try {
-    const userId = ctx.from!.id
-    const categories = (await firefly(userId).Categories.listCategory()).data.data
+    const userSettings = ctx.session.userSettings
+    const categories = (await firefly(userSettings).Categories.listCategory()).data.data
     const keyboard = new InlineKeyboard()
     const nowDate = dayjs().format('YYYY-MM-DD')
 
@@ -304,7 +304,7 @@ async function showCategoryDetails(ctx: MyContext) {
   const log = rootLog.extend('showCategoryDetails')
   try {
     await ctx.answerCallbackQuery()
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const categoryId = ctx.match![1]
     const startDate = ctx.match![2]
     log('ctx.match: %O', ctx.match)
@@ -316,10 +316,10 @@ async function showCategoryDetails(ctx: MyContext) {
     log('start: %O', start)
     log('end: %O', end)
 
-    const categoryPromise = firefly(userId).Categories.getCategory(categoryId)
-    const categoryTransactionsPromise = firefly(userId).Categories
+    const categoryPromise = firefly(userSettings).Categories.getCategory(categoryId)
+    const categoryTransactionsPromise = firefly(userSettings).Categories
       .listTransactionByCategory(categoryId, 1, start, end)
-    const expenseCategoriesPromise = firefly(userId).Insight
+    const expenseCategoriesPromise = firefly(userSettings).Insight
       .insightExpenseCategory(start, end, [parseInt(categoryId, 10)])
 
     // Resolve all the promises
