@@ -7,8 +7,18 @@ import { Route as EditTransactionRoute } from '../composers/transactions/edit-tr
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
 
+type Step = 'IDLE' | CategoriesRoute | SettingsRoute | EditTransactionRoute
+
 export interface SessionData {
-  step: 'IDLE' | CategoriesRoute | SettingsRoute | EditTransactionRoute
+  step: Step
+  userSettings: {
+    fireflyUrl: string
+    fireflyApiUrl: string
+    fireflyAccessToken: string
+    defaultSourceAccount: { id: string, type: string, name: string }
+    defaultDestinationAccount: { id: string, type: string, name: string }
+    language: string
+  },
   // transaction: Partial<TransactionStore> & Partial<TransactionRead>
   newTransaction: {
     type?: TransactionTypeProperty
@@ -32,3 +42,18 @@ export interface AccountAttributes {
   id: string
 }
 
+export const initialSessionData = {
+  userSettings: {
+    fireflyUrl: '',
+    fireflyApiUrl: '',
+    fireflyAccessToken: '',
+    defaultSourceAccount: { id: '', type: '', name: '' },
+    defaultDestinationAccount: { id: '', type: '', name: '' },
+    language: 'en'
+  },
+  step: 'IDLE' as Step,
+  newTransaction: {},
+  editTransaction: {},
+  category: {},
+  newCategories: [],
+}

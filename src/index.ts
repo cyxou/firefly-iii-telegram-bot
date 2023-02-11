@@ -1,6 +1,7 @@
 import debug from 'debug'
 import * as dotenv from 'dotenv';
 import { Bot, GrammyError, HttpError, session } from 'grammy'
+import { FileAdapter } from '@grammyjs/storage-file';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
 import type { SessionData } from './types/SessionData'
+import { initialSessionData } from './types/SessionData'
 
 export const Route = {
   idle: 'IDLE'
@@ -31,12 +33,10 @@ const bot = new Bot<MyContext>(config.botToken)
 // Attach a session middleware and specify the initial data
 bot.use(
   session({
-    initial: (): SessionData => ({
-      step: 'IDLE',
-      newTransaction: {},
-      editTransaction: {},
-      category: {},
-      newCategories: [],
+    getSessionKey,
+    initial: (): SessionData => ({ ...initialSessionData }),
+    storage: new FileAdapter({
+      dirName: 'sessions',
     }),
   })
 )
@@ -54,8 +54,6 @@ bot.use(categories)
 
 bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)
-bot.hears(i18n.t('en', 'labels.REPORTS'), ctx => ctx.reply('Coming soon...'))
-bot.hears(i18n.t('ru', 'labels.REPORTS'), ctx => ctx.reply('Coming soon...'))
 bot.on('message:text', textHandler)
 
 bot.start()
@@ -119,4 +117,13 @@ function errorHandler(err: any) {
   } else {
     console.error('Unknown error:', e)
   }
+}
+
+// Stores data per user-chat combination.
+function getSessionKey(ctx: any): string | undefined {
+  // Give every user their one personal session storage per chat with the bot
+  // (an independent session for each group and their private chat)
+  return ctx.from === undefined || ctx.chat === undefined
+    ? undefined
+    : `${ctx.from.id}_${ctx.chat.id}`;
 }

@@ -1,7 +1,7 @@
 {
   "name": "firefly-iii-telegram-bot",
   "description": "A Telegram bot for working with Firefly III with a supersonic speed",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "homepage": "https://github.com/cyxou/firefly-iii-telegram-bot#readme",
   "license": "GPL-3.0-or-later",
   "repository": {
@@ -43,6 +43,7 @@
     "@grammyjs/i18n": "0.5.1",
     "@grammyjs/menu": "1.1.2",
     "@grammyjs/router": "2.0.0",
+    "@grammyjs/storage-file": "2.1.0",
     "axios": "1.2.6",
     "dayjs": "1.11.7",
     "debug": "4.3.4",

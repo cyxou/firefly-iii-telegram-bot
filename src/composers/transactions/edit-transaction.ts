@@ -58,14 +58,14 @@ async function showEditTransactionMenu(ctx: MyContext) {
     // Prevent all router handlers from happening
     ctx.session.step = 'IDLE'
 
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const { editTransaction } = ctx.session
     log('transaction: %O', editTransaction)
 
     const trId = ctx.match![1]
     log('trId: %O', trId)
 
-    const tr = (await firefly(userId).Transactions.getTransaction(trId)).data.data
+    const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
 
     ctx.session.editTransaction = tr
 
@@ -109,13 +109,13 @@ async function showEditTransactionMenu(ctx: MyContext) {
 async function doneEditTransactionCbQH(ctx: MyContext) {
   const log = rootLog.extend('doneEditTransactionCbQH')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const trId = ctx.match![1]
     log('transaction id: %O', trId)
 
     await ctx.answerCallbackQuery()
 
-    const tr = (await firefly(userId).Transactions.getTransaction(trId)).data.data
+    const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
 
     return ctx.editMessageText(
       formatTransaction(ctx, tr),
@@ -170,7 +170,7 @@ async function changeAmountRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('changeAmountRouteHandler')
   log('Entered change amount route handler')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     log('ctx.session: %O', ctx.session)
     const text = ctx.msg?.text || ''
 
@@ -202,7 +202,7 @@ async function changeAmountRouteHandler(ctx: MyContext) {
       await ctx.session.deleteBotsMessage()
     }
 
-    const updatedTr = (await firefly(userId).Transactions.updateTransaction(
+    const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(
       tr.id || '',
       update
     )).data.data
@@ -220,7 +220,7 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('changeDescriptionRouteHandler')
   log('Entered change description route handler')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     log('ctx.session: %O', ctx.session)
     const description = ctx.msg?.text || ''
     log('description: %O', description)
@@ -249,7 +249,7 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
       await ctx.session.deleteBotsMessage()
     }
 
-    const updatedTr = (await firefly(userId).Transactions.updateTransaction(
+    const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(
       tr.id || '',
       update
     )).data.data
@@ -267,18 +267,18 @@ async function assignCategory(ctx: MyContext) {
   const log = rootLog.extend('assignCategory')
   log('Entered assignCategory action handler')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const trId = ctx.match![1]
     log('trId: %O', trId)
 
     await ctx.answerCallbackQuery()
 
-    const tr = (await firefly(userId).Transactions.getTransaction(trId)).data.data
+    const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
 
     ctx.session.editTransaction = tr
 
     const categoriesKeyboard = await createCategoriesKeyboard(
-      userId,
+      ctx,
       mapper.setCategory
     )
 
@@ -308,13 +308,12 @@ async function selectNewCategory(ctx: MyContext) {
   const log = rootLog.extend('selectNewCategory')
   log('Entered selectNewCategory action handler')
   try {
-    const userId = ctx.from!.id
     const trId = ctx.match![1]
 
     await ctx.answerCallbackQuery()
 
     const categoriesKeyboard = await createCategoriesKeyboard(
-      userId,
+      ctx,
       mapper.setCategory
     )
     // If inline_keyboard array does not contain anything, than user has no categories yet
@@ -343,13 +342,12 @@ async function selectNewSourceAccount(ctx: MyContext) {
   const log = rootLog.extend('selectNewSourceAccount')
   log('Entered selectNewSourceAccount action handler')
   try {
-    const userId = ctx.from!.id
     const trId = ctx.match![1]
 
     await ctx.answerCallbackQuery()
 
     const accountsKeyboard = await createAccountsKeyboard(
-      userId,
+      ctx,
       [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
       mapper.setSourceAccount
     )
@@ -372,7 +370,6 @@ async function selectNewDestinationAccount(ctx: MyContext) {
   const log = rootLog.extend('selectNewDestinationAccount')
   log('Entered selectNewDestinationAccount action handler')
   try {
-    const userId = ctx.from!.id
     const trId = ctx.match![1]
 
     await ctx.answerCallbackQuery()
@@ -383,7 +380,7 @@ async function selectNewDestinationAccount(ctx: MyContext) {
     ]
 
     const accountsKeyboard = (await createAccountsKeyboard(
-      userId,
+      ctx,
       accTypeFilters,
       mapper.setDestinationAccount
     ))
@@ -404,7 +401,7 @@ async function setNewCategory(ctx: MyContext) {
   const log = rootLog.extend('setNewCategory')
   log('Entered setNewCategory action handler')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const categoryId = ctx.match![1]
     log('categoryId: %O', categoryId)
 
@@ -422,7 +419,7 @@ async function setNewCategory(ctx: MyContext) {
     }
     log('Transaction update: %O', update)
 
-    const updatedTr = (await firefly(userId).Transactions.updateTransaction(
+    const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(
       tr.id || '',
       update
     )).data.data
@@ -441,7 +438,7 @@ async function setNewSourceAccount(ctx: MyContext) {
   const log = rootLog.extend('setNewSourceAccount')
   log('Entered setNewSourceAccount action handler')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const sourceAccountId = ctx.match![1]
     log('sourceAccountId: %O', sourceAccountId)
 
@@ -462,7 +459,7 @@ async function setNewSourceAccount(ctx: MyContext) {
     // When we change the source account of the transaction, we also want to change the
     // currency of the transaction to match the newly set source account. Otherwise
     // the transaction would have the original account's currency.
-    const sourceAccountData = (await firefly(userId).Accounts.getAccount(sourceAccountId)).data.data
+    const sourceAccountData = (await firefly(userSettings).Accounts.getAccount(sourceAccountId)).data.data
     log('sourceAccountData: %O', sourceAccountData)
 
     const update = {
@@ -473,7 +470,7 @@ async function setNewSourceAccount(ctx: MyContext) {
     }
 
     // Proceed with updating the transaction
-    const tr = (await firefly(userId).Transactions.updateTransaction(trId, update)).data.data
+    const tr = (await firefly(userSettings).Transactions.updateTransaction(trId, update)).data.data
 
     return ctx.editMessageText(
       formatTransaction(ctx, tr),
@@ -489,7 +486,7 @@ async function setNewDestinationAccount(ctx: MyContext) {
   const log = rootLog.extend('setNewDestinationAccount')
   log('Entered setNewDestinationAccount action handler')
   try {
-    const userId = ctx.from!.id
+    const userSettings = ctx.session.userSettings
     const destId = ctx.match![1]
     log('destId: %O', destId)
 
@@ -497,7 +494,7 @@ async function setNewDestinationAccount(ctx: MyContext) {
 
     const trId = ctx.session.editTransaction.id || ''
     log('trId: %O', trId)
-    const tr = (await firefly(userId).Transactions.updateTransaction(
+    const tr = (await firefly(userSettings).Transactions.updateTransaction(
       trId,
       { transactions: [{ destination_id: destId }]}
     )).data.data
