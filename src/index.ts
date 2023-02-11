@@ -119,13 +119,6 @@ function errorHandler(err: any) {
   }
 }
 
-// // Stores data per user.
-// function getSessionKey(ctx: any): string | undefined {
-//   // Give every user their personal session storage
-//   // (will be shared across groups and in their private chat)
-//   return ctx.from?.id.toString();
-// }
-
 // Stores data per user-chat combination.
 function getSessionKey(ctx: any): string | undefined {
   // Give every user their one personal session storage per chat with the bot
