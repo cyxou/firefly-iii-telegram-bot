@@ -1,6 +1,5 @@
-// import { ITransaction } from '../lib/firefly/transactions'
-// import { ICategory } from '../lib/firefly/categories'
-// import { Route } from '../index'
+import config from '../config'
+
 import { Route as SettingsRoute } from '../composers/settings'
 import { Route as CategoriesRoute } from '../composers/categories'
 import { Route as EditTransactionRoute } from '../composers/transactions/edit-transaction'
@@ -44,8 +43,8 @@ export interface AccountAttributes {
 
 export const initialSessionData = {
   userSettings: {
-    fireflyUrl: '',
-    fireflyApiUrl: '',
+    fireflyUrl: config.fireflyUrl || '',
+    fireflyApiUrl: config.fireflyApiUrl || '',
     fireflyAccessToken: '',
     defaultSourceAccount: { id: '', type: '', name: '' },
     defaultDestinationAccount: { id: '', type: '', name: '' },

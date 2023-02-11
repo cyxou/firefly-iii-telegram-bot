@@ -65,11 +65,11 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [x] List transactions
 - [x] Add math equations when creating transactions
 - [x] Allow selecting of Liabilities accounts in transactions
-- [ ] Configure CI/CD so that it builds and pushes docker images on merges to master
+- [x] Configure CI/CD so that it builds and pushes docker images on merges to master
 - [ ] Reports
 - [ ] Proper error handling
 - [ ] Tests
-- [ ] Add [lowdb](https://github.com/typicode/lowdb) as local JSON database for persistance
+- [x] Add JSON database for persistance (used @grammyjs/storage-file)
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
 - [ ] Migrate from home grown Mapper to Grammy's Menu plugin
 

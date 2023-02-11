@@ -10,4 +10,3 @@
 /dist/
 .openapi-generator
 .env
-/sessions/
