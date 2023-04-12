@@ -6,7 +6,7 @@ Accounts, Categories, Reports, etc.
 <h1 align="center"><img src="https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/welcome-screen.png?raw=true" alt="screenshot" align="center"/></h1>
 
 ## Setup
-First you'll have to generate a Telegram Bot token through BotFather. Once you generate the token, keep it safe.
+First you'll have to [generate a Telegram Bot token through BotFather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token). Once you generate the token, keep it safe.
 
 ### Docker (Recommended)
 
