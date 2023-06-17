@@ -234,7 +234,7 @@ transactions:
     chooseNewDestinationAccount: 'Choose new destination account:'
     chooseNewRevenueAccount: 'Choose new revenue account:'
     noSuchTransactionAnymore: |
-      🤖 This transaction (${id}) does not exist enymore!
+      🤖 This transaction (${id}) does not exist anymore!
       It was probably deleted via the Firefly website.
 
 categories:
