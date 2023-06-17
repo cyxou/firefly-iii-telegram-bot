@@ -37,6 +37,7 @@ labels:
   YES: ✅ Yes
   SWITCH_TO_ENGLISH: 🇬🇧 Switch to English
   SWITCH_TO_RUSSIAN: 🇷🇺 Switch to Russian
+  SWITCH_TO_ITALIAN: 🇮🇹 Switch to Italian
 
 welcome: >
   👋 Hi! This bot helps to quickly add transactions in Firefly III.
