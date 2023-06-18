@@ -17,7 +17,7 @@ build-and-release:
 validatePR:
     BUILD +runTests
     BUILD +buildDist
-    BUILD +checkIfTagExist
+    # BUILD +checkIfTagExist
 
 deps:
     COPY *.json .npmrc ./
@@ -55,14 +55,12 @@ buildImage:
 checkIfTagExist:
     FROM earthly/dind
 
-    ARG TAG=${VERSION}
-
     # We do explicit login here since earthly/dind image does not infer login from the host
     RUN docker login --username ${DOCKERHUB_USERNAME} \
         --password ${DOCKERHUB_ACCESS_TOKEN}
 
-    IF docker manifest inspect ${DOCKERHUB_REPO}:${TAG} > /dev/null
-        RUN echo "👷 Docker image with tag ${VERSION} already exists! You should not override it. Please increment the app version number accordingly. Exiting..." \
+    IF docker manifest inspect ${DOCKERHUB_REPO}:${RELEASE_VERSION} > /dev/null
+        RUN echo "👷 Docker image with tag ${RELEASE_VERSION} already exists! You should not override it. Please increment the app version number accordingly. Exiting..." \
             && exit 1
     END
 
