@@ -27,6 +27,11 @@ export function cleanup() {
       i18n.t('en', 'labels.ACCOUNTS'),
       i18n.t('en', 'labels.REPORTS'),
       i18n.t('en', 'labels.CATEGORIES'),
+      i18n.t('it', 'labels.SETTINGS'),
+      i18n.t('it', 'labels.TRANSACTIONS'),
+      i18n.t('it', 'labels.ACCOUNTS'),
+      i18n.t('it', 'labels.REPORTS'),
+      i18n.t('it', 'labels.CATEGORIES'),
     ]
     log('keyboardCommandList: %O', keyboardCommandList)
     log('keyboardCommandList.includes(text): %O', keyboardCommandList.includes(text))
@@ -63,6 +68,7 @@ export function requireSettings() {
       const whiteList = [
         i18n.t('ru', 'labels.SETTINGS'),
         i18n.t('en', 'labels.SETTINGS'),
+        i18n.t('it', 'labels.SETTINGS'),
         ...Object.values(command)
       ]
       log('whiteList: %O', whiteList)
