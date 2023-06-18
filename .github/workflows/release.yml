@@ -17,7 +17,8 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_and_push:
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU for multiplatform builds
@@ -50,10 +51,12 @@ jobs:
       
       - name: Build and push docker image
         run: |
-          earthly --ci --push +multiplatformBuild \
+          earthly --ci --push +build-and-release \
+            --GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             --DOCKERHUB_REPO=$GITHUB_REPO \
             --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
-            --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN
+            --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN \
+            --RELEASE_VERSION=${GITHUB_REF:10}
       
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v3
@@ -62,28 +65,3 @@ jobs:
           password: ${{ env.DOCKERHUB_TOKEN }}
           repository: ${{ env.GITHUB_REPO }}
           short-description: ${{ github.event.repository.description }}
-
-  release:
-    permissions:
-      contents: write
-    # needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Put back the git branch into git (Earthly uses it for tagging)
-        run: |
-          branch=""
-          if [ -n "$GITHUB_HEAD_REF" ]; then
-            branch="$GITHUB_HEAD_REF"
-          else
-            branch="${GITHUB_REF##*/}"
-          fi
-          git checkout -b "$branch" || true
-      - name: Download Earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.8/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
-      - name: Build and create release
-        run: |
-          earthly --ci +release \
-            --RELEASE_VERSION=${GITHUB_REF:10} \
-            --GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}

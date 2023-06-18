@@ -3,16 +3,16 @@ VERSION 0.7
 ARG --global DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
 ARG --global DOCKERHUB_USERNAME=cyxou
 ARG --global DOCKERHUB_ACCESS_TOKEN
+ARG --global GITHUB_TOKEN
+ARG --global RELEASE_VERSION=latest
 
 FROM node:20-bullseye
+
 WORKDIR /home/node/app
 
-COPY package.json .
-RUN node -e "console.log(require('./package.json').version)" > ./version.txt
-ARG VERSION=$(cat ./version.txt)
-
-multiplatformBuild:
+build-and-release:
     BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+    BUILD +release
 
 validatePR:
     BUILD +runTests
@@ -44,14 +44,12 @@ runTests:
     RUN echo "😞 No tests yet..."
 
 buildImage:
-    ARG TAG=${VERSION}
-
     COPY +buildDist/dist ./dist
     COPY +deps/node_modules_prod ./node_modules
 
     CMD ["dist/index.js"]
 
-    SAVE IMAGE --push $DOCKERHUB_REPO:$TAG
+    SAVE IMAGE --push $DOCKERHUB_REPO:$RELEASE_VERSION
     SAVE IMAGE --push $DOCKERHUB_REPO:latest
 
 checkIfTagExist:
@@ -71,7 +69,7 @@ checkIfTagExist:
 release:
   ARG --required GITHUB_TOKEN
   ARG --required RELEASE_VERSION
-  ARG OUT_BASE="./dist"
+  ENV OUT_BASE="./dist"
   ENV REPO="cyxou/firefly-iii-telegram-bot"
 
   COPY +buildDist/dist ./dist
@@ -84,7 +82,7 @@ release:
       && gh --version
 
   # Generate release notes
-  RUN gh api -X POST 'repos/${REPO}/releases/generate-notes' \
+  RUN gh api -X POST "repos/${REPO}/releases/generate-notes" \
         -F commitish=${RELEASE_VERSION} \
         -F tag_name=${RELEASE_VERSION} \
       > tmp-release-notes.json
