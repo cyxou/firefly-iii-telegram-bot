@@ -31,7 +31,8 @@ export default i18n
 export function getLanguageIcon(language: string) {
   const lang2icons = {
     ru: '🇷🇺',
-    en: '🇬🇧'
+    en: '🇬🇧',
+    it: '🇮🇹'
   }
 
   return lang2icons[language]

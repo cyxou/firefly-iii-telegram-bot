@@ -80,6 +80,7 @@ function settingsInlineKeyboard(ctx: MyContext) {
     .text(ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'), SELECT_DEFAULT_ASSET_ACCOUNT).row()
     .text(ctx.i18n.t('labels.SWITCH_TO_RUSSIAN'), 'SWITCH_LANGUAGE=ru').row()
     .text(ctx.i18n.t('labels.SWITCH_TO_ENGLISH'), 'SWITCH_LANGUAGE=en').row()
+    .text(ctx.i18n.t('labels.SWITCH_TO_ITALIAN'), 'SWITCH_LANGUAGE=it').row()
     .text(ctx.i18n.t('labels.DONE'), DONE)
 
   return {
