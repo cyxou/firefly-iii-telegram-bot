@@ -72,6 +72,7 @@ release:
   ARG --required GITHUB_TOKEN
   ARG --required RELEASE_VERSION
   ARG OUT_BASE="./dist"
+  ENV REPO="cyxou/firefly-iii-telegram-bot"
 
   COPY +buildDist/dist ./dist
 
@@ -83,11 +84,10 @@ release:
       && gh --version
 
   # Generate release notes
-  RUN gh api -X POST 'repos/cyxou/firefly-iii-telegram-bot/releases/generate-notes' \
+  RUN gh api -X POST 'repos/${REPO}/releases/generate-notes' \
         -F commitish=${RELEASE_VERSION} \
         -F tag_name=${RELEASE_VERSION} \
-      > tmp-release-notes.json \
-      && cat ./tmp-release-notes.json | jq
+      > tmp-release-notes.json
 
   # Gzip the bins
   RUN tar -czvf "firefly-iii-telegram-bot.tar.gz" ${OUT_BASE}
@@ -95,10 +95,10 @@ release:
   # Create release
   RUN ls -al
   RUN jq -r .body tmp-release-notes.json > tmp-release-notes.md \
-      && cat tmp-release-notes.md \  
       && gh release create ${RELEASE_VERSION} \
+        --repo ${REPO} \
         --title "$(jq -r .name tmp-release-notes.json)" \
         --notes-file tmp-release-notes.md \
         --verify-tag \
         --draft \
-        "./firefly-iii-telegram-bot.tar.gz#firefly-iii-telegram-bot"
+        "./firefly-iii-telegram-bot.tar.gz#firefly-iii-telegram-bot-dist"

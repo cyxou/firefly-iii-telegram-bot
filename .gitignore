@@ -11,3 +11,4 @@
 .openapi-generator
 .env
 /sessions/
+.arg
