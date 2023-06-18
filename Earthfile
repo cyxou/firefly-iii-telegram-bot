@@ -2,7 +2,7 @@ VERSION 0.7
 
 ARG --global DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
 ARG --global DOCKERHUB_USERNAME=cyxou
-ARG --global --required DOCKERHUB_ACCESS_TOKEN
+ARG --global DOCKERHUB_ACCESS_TOKEN
 
 FROM node:20-bullseye
 WORKDIR /home/node/app
