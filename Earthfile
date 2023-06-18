@@ -1,10 +1,10 @@
-VERSION 0.6
+VERSION 0.7
 
-ARG DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
-ARG DOCKERHUB_USERNAME=cyxou
-ARG --required DOCKERHUB_ACCESS_TOKEN
+ARG --global DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
+ARG --global DOCKERHUB_USERNAME=cyxou
+ARG --global --required DOCKERHUB_ACCESS_TOKEN
 
-FROM node:18-alpine3.16
+FROM node:20-bullseye
 WORKDIR /home/node/app
 
 COPY package.json .
@@ -67,3 +67,38 @@ checkIfTagExist:
         RUN echo "👷 Docker image with tag ${VERSION} already exists! You should not override it. Please increment the app version number accordingly. Exiting..." \
             && exit 1
     END
+
+release:
+  ARG --required GITHUB_TOKEN
+  ARG --required RELEASE_VERSION
+  ARG OUT_BASE="./dist"
+
+  COPY +buildDist/dist ./dist
+
+  # Install gh-cli
+  RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+      && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+      && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+      && apt-get update && apt-get install gh jq -y \
+      && gh --version
+
+  # Generate release notes
+  RUN gh api -X POST 'repos/cyxou/firefly-iii-telegram-bot/releases/generate-notes' \
+        -F commitish=${RELEASE_VERSION} \
+        -F tag_name=${RELEASE_VERSION} \
+      > tmp-release-notes.json \
+      && cat ./tmp-release-notes.json | jq
+
+  # Gzip the bins
+  RUN tar -czvf "firefly-iii-telegram-bot.tar.gz" ${OUT_BASE}
+
+  # Create release
+  RUN ls -al
+  RUN jq -r .body tmp-release-notes.json > tmp-release-notes.md \
+      && cat tmp-release-notes.md \  
+      && gh release create ${RELEASE_VERSION} \
+        --title "$(jq -r .name tmp-release-notes.json)" \
+        --notes-file tmp-release-notes.md \
+        --verify-tag \
+        --draft \
+        "./firefly-iii-telegram-bot.tar.gz#firefly-iii-telegram-bot"
