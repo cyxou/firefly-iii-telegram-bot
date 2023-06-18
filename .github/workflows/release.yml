@@ -3,9 +3,12 @@ name: Release
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
     paths-ignore:
-      - 'README.md'
+      - './*.md'
+    tags:
+      - 'v[0-9]+.[0-9]+.*'
+    branches:
+      - master
 
 env:
   DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
@@ -37,7 +40,7 @@ jobs:
           git checkout -b "$branch" || true
 
       - name: Download Earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.6.30/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.8/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
 
       - name: Earthly version
         run: earthly --version
@@ -59,3 +62,28 @@ jobs:
           password: ${{ env.DOCKERHUB_TOKEN }}
           repository: ${{ env.GITHUB_REPO }}
           short-description: ${{ github.event.repository.description }}
+
+  release:
+    permissions:
+      contents: write
+    # needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Put back the git branch into git (Earthly uses it for tagging)
+        run: |
+          branch=""
+          if [ -n "$GITHUB_HEAD_REF" ]; then
+            branch="$GITHUB_HEAD_REF"
+          else
+            branch="${GITHUB_REF##*/}"
+          fi
+          git checkout -b "$branch" || true
+      - name: Download Earthly
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.8/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+      - name: Build and create release
+        run: |
+          earthly --ci +release \
+            --RELEASE_VERSION=${GITHUB_REF:10} \
+            --GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
