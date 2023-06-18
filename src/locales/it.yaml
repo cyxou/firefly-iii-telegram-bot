@@ -213,7 +213,7 @@ transactions:
   edit:
     whatToEdit: ❓Cosa vuoi modificare?
     updated: Transazione aggiornata!
-    badAmountTyped: 'L'importo deve essere un numero. Si prega di inserire un nuovo importo:'
+    badAmountTyped: "L'importo deve essere un numero. Si prega di inserire un nuovo importo:"
     badDescriptionTyped: 'La descrizione deve essere del testo. Si prega di inserire una nuova descrizione:'
     typeNewAmount: >
       Scrivi il nuovo importo.

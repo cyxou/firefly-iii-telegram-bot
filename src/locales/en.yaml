@@ -48,11 +48,13 @@ setFireflyAccessToken: '  - *🔑 Access Token* created in Firefly III web inter
 navigateToSettings: To proceed further head over to *🔧 Settings*.
 
 help: >
+  🤖 Please navigate to bot *🔧 Settings* section and set up some stuff for using the bot.   
+      
   ❕ To add a transaction, send an amount. It can be a number, or a math expression,
   like `100-5*3`.
   Upon receiving amount, bot will ask additional questions for transaction parameters.
     
-  You can also add transactions that do not require require additional questions from the bot,
+  You can also add transactions that do not require additional questions from the bot,
   by sending transaction description and an amount, like so
     
   `Cafe 35`
