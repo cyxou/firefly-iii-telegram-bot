@@ -3,6 +3,7 @@ import debug from 'debug'
 import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 import { ParseMode } from '@grammyjs/types'
+import { Menu } from '@grammyjs/menu'
 
 import type { MyContext } from '../types/MyContext'
 import i18n, { getLanguageIcon } from '../lib/i18n';
@@ -31,26 +32,53 @@ const TEST_CONNECTION              = 'TEST_CONNECTION'
 const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
+const settingsMenu = new Menu<MyContext>('settings')
+  // .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), inputFireflyUrlCbQH).row()
+  // .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), inputFireflyAccessTokenCbQH).row()
+  // .text(ctx => ctx.i18n.t('labels.TEST_CONNECTION'), testConnectionCbQH).row()
+  // .text(ctx => ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'), selectDefaultAssetAccountCbQH).row()
+  .submenu(
+      ctx => ctx.i18n.t('labels.SWITCH_LANG'),
+      'switch-lang', // navigation target menu
+      ctx => ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'HTML', })
+  ).row()
+  .text(ctx => ctx.i18n.t('labels.DONE'), doneCbQH)
+
+const langMenu = new Menu<MyContext>('switch-lang')
+  .text(ctx => `${ctx.i18n.t('labels.SWITCH_TO_RUSSIAN')}${ctx.i18n.languageCode === 'ru' ? ' ✅' : ''}`, switchLanguageToRu).row()
+  .text(ctx => `${ctx.i18n.t('labels.SWITCH_TO_ENGLISH')}${ctx.i18n.languageCode === 'en' ? ' ✅' : ''}`, switchLanguageToEn).row()
+  .text(ctx => `${ctx.i18n.t('labels.SWITCH_TO_ITALIAN')}${ctx.i18n.languageCode === 'it' ? ' ✅' : ''}`, switchLanguageToIt).row()
+  // .back('🔙');
+  // .back('⬅️');
+  .back('←', ctx => ctx.editMessageText(settingsText(ctx)));
+  // .back('↩');
+  // .back('◄');
+
+settingsMenu.register(langMenu)
+bot.use(settingsMenu)
+
+
 bot.command(command.SETTINGS, settingsCommandHandler)
 bot.hears(i18n.t('en', 'labels.SETTINGS'), settingsCommandHandler)
 bot.hears(i18n.t('ru', 'labels.SETTINGS'), settingsCommandHandler)
 bot.hears(i18n.t('it', 'labels.SETTINGS'), settingsCommandHandler)
-bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
-bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
-bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
-bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
-bot.callbackQuery(SWITCH_LANGUAGE, switchLanguageCbQH)
-// TODO Pass account id rather than account name in callback query
-bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
-bot.callbackQuery(DONE, doneCbQH)
-bot.callbackQuery(CANCEL, cancelCbQH)
+// bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
+// bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
+// bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
+// bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
+// bot.callbackQuery(SWITCH_LANGUAGE, switchLanguageCbQH)
+// // TODO Pass account id rather than account name in callback query
+// bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
+// bot.callbackQuery(DONE, doneCbQH)
+// bot.callbackQuery(CANCEL, cancelCbQH)
+
 
 // Local routes and handlers
-router.route('IDLE', ( _, next ) => next())
-router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
-router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
+// router.route('IDLE', ( _, next ) => next())
+// router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
+// router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
 // router.otherwise(ctx => ctx.reply('otherwise'))
-bot.use(router)
+// bot.use(router)
 
 export default bot
 
@@ -95,7 +123,7 @@ function settingsCommandHandler(ctx: MyContext) {
   log('Entered the settingsCommandHandler...')
   return ctx.reply(
     settingsText(ctx),
-    settingsInlineKeyboard(ctx)
+    { reply_markup: settingsMenu }
   )
 }
 
@@ -342,6 +370,28 @@ async function testConnectionCbQH(ctx: MyContext) {
   }
 }
 
+async function switchLanguageToEn(ctx: MyContext) {
+  ctx.i18n.locale('en')
+  dayjs.locale('en')
+  ctx.session.userSettings.language = 'en'
+  ctx.menu.update();
+  ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'))
+}
+async function switchLanguageToIt(ctx: MyContext) {
+  ctx.i18n.locale('it')
+  dayjs.locale('it')
+  ctx.session.userSettings.language = 'it'
+  ctx.menu.update();
+  ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'))
+}
+async function switchLanguageToRu(ctx: MyContext) {
+  ctx.i18n.locale('ru')
+  dayjs.locale('ru')
+  ctx.session.userSettings.language = 'ru'
+  ctx.menu.update();
+  ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'))
+}
+
 async function switchLanguageCbQH(ctx: MyContext) {
   const log = rootLog.extend('switchLanguageCbQH')
   log(`Entered the switch language query handler`)
@@ -354,20 +404,20 @@ async function switchLanguageCbQH(ctx: MyContext) {
     dayjs.locale(language)
     ctx.session.userSettings.language = language
 
-    const welcomeMessage = generateWelcomeMessage(ctx)
+    // const welcomeMessage = generateWelcomeMessage(ctx)
 
-    ctx.reply(welcomeMessage, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        keyboard: createMainKeyboard(ctx).build(),
-        resize_keyboard: true
-      }
-    })
+    // ctx.reply(welcomeMessage, {
+    //   parse_mode: 'Markdown',
+    //   reply_markup: {
+    //     keyboard: createMainKeyboard(ctx).build(),
+    //     resize_keyboard: true
+    //   }
+    // })
 
-    return ctx.editMessageText(
-      settingsText(ctx),
-      settingsInlineKeyboard(ctx)
-    )
+    // return ctx.editMessageText(
+    //   settingsText(ctx),
+    //   settingsInlineKeyboard(ctx)
+    // )
   } catch (err: any) {
     log('Error occurred: %O', err)
   }

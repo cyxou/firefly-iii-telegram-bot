@@ -35,9 +35,10 @@ labels:
   TO_TRANSFERS: ↔️ New transfer
   TRANSACTIONS: 🔀 Transactions
   YES: ✅ Yes
-  SWITCH_TO_ENGLISH: 🇬🇧 Switch to English
-  SWITCH_TO_RUSSIAN: 🇷🇺 Switch to Russian
-  SWITCH_TO_ITALIAN: 🇮🇹 Switch to Italian
+  SWITCH_LANG: Language
+  SWITCH_TO_ENGLISH: 🇬🇧 English
+  SWITCH_TO_RUSSIAN: 🇷🇺 Russian
+  SWITCH_TO_ITALIAN: 🇮🇹 Italian
 
 welcome: >
   👋 Hi! This bot helps to quickly add transactions in Firefly III.
@@ -76,6 +77,7 @@ mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
 settings:
+  selectBotLang: 'Select bot language:'
   notSpecified: '🚨 <NOT SPECIFIED>'
   inputFireflyUrl: >
     Type in URL address of your Firefly III instance.

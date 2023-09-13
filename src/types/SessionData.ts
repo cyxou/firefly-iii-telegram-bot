@@ -41,18 +41,20 @@ export interface AccountAttributes {
   id: string
 }
 
-export const initialSessionData = {
-  userSettings: {
-    fireflyUrl: config.fireflyUrl || '',
-    fireflyApiUrl: config.fireflyApiUrl || '',
-    fireflyAccessToken: '',
-    defaultSourceAccount: { id: '', type: '', name: '' },
-    defaultDestinationAccount: { id: '', type: '', name: '' },
-    language: 'en'
-  },
-  step: 'IDLE' as Step,
-  newTransaction: {},
-  editTransaction: {},
-  category: {},
-  newCategories: [],
+export function createInitialSessionData() {
+  return  {
+    userSettings: {
+      fireflyUrl: config.fireflyUrl || '',
+      fireflyApiUrl: config.fireflyApiUrl || '',
+      fireflyAccessToken: '',
+      defaultSourceAccount: { id: '', type: '', name: '' },
+      defaultDestinationAccount: { id: '', type: '', name: '' },
+      language: 'en'
+    },
+    step: 'IDLE' as Step,
+    newTransaction: {},
+    editTransaction: {},
+    category: {},
+    newCategories: [],
+  }
 }
