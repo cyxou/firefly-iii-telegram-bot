@@ -96,7 +96,6 @@ settings:
   selectDefaultAssetAccount: >
     Scegli un conto deposito che verrà utilizzato come predefinito per i prelievi.
     Se lasciato vuoto, il primo conto deposito dalla lista sotto verrà utilizzato come predefinito:
-  noAssetAccountsYet: Wow! Sembra che non abbiate ancora creato alcun Account Asset. Considerate di crearne almeno uno dall'interfaccia web di Firefly III.
   specifySmthFirst: Specifica ${smth} prima.
   connectionFailed: Connessione non instaurata!
   connectionFailedUnauthenticated: Errore di autenticazione! Per piacere verifica che il Token di Accesso fornito errato o scaduto.

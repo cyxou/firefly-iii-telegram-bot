@@ -101,7 +101,6 @@ settings:
   selectDefaultAssetAccount: >
     Choose an asset account which will be used as a default one for withdrawals.
     If left unset, the very first asset account from the list below will be used by default:
-  noAssetAccountsYet: Whoa! Looks like you haven't created any Asset accounts yet. Consider creating at least one from the Firefly III web interface.
   specifySmthFirst: Specify ${smth} first.
   connectionFailed: Connection has NOT been established!
   connectionFailedUnauthenticated: Authentication error! Please make sure that specified Access Token is not malformed and not expired.

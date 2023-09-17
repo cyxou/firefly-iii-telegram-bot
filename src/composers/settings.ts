@@ -52,7 +52,7 @@ const settingsMenu = new Menu<MyContext>('settings')
               1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
             // Take care of a case when no accounts are created yet
             if (!accounts.length) {
-              ctx.editMessageText(ctx.i18n.t('settings.noAssetAccountsYet'))
+              ctx.editMessageText(ctx.i18n.t('common.noDefaultSourceAccountExist'))
             } else {
               ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), { parse_mode: 'Markdown' })
             }
