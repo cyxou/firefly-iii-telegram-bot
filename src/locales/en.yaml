@@ -35,10 +35,10 @@ labels:
   TO_TRANSFERS: ↔️ New transfer
   TRANSACTIONS: 🔀 Transactions
   YES: ✅ Yes
-  SWITCH_LANG: Language
-  SWITCH_TO_ENGLISH: 🇬🇧 English
-  SWITCH_TO_RUSSIAN: 🇷🇺 Russian
-  SWITCH_TO_ITALIAN: 🇮🇹 Italian
+  SWITCH_LANG: 🌐 Language
+  SWITCH_TO_EN: 🇬🇧 English
+  SWITCH_TO_RU: 🇷🇺 Russian
+  SWITCH_TO_IT: 🇮🇹 Italian
 
 welcome: >
   👋 Hi! This bot helps to quickly add transactions in Firefly III.
@@ -98,11 +98,10 @@ settings:
     *🔑 Access Token*: ${accessToken || '🚨 <NOT SPECIFIED>'}
 
     *💳 Default asset account*: ${defaultSourceAccount.name || '🚨 <NOT SPECIFIED>'}
-
-    *🌐 Language*: ${language}
   selectDefaultAssetAccount: >
     Choose an asset account which will be used as a default one for withdrawals.
     If left unset, the very first asset account from the list below will be used by default:
+  noAssetAccountsYet: Whoa! Looks like you haven't created any Asset accounts yet. Consider creating at least one from the Firefly III web interface.
   specifySmthFirst: Specify ${smth} first.
   connectionFailed: Connection has NOT been established!
   connectionFailedUnauthenticated: Authentication error! Please make sure that specified Access Token is not malformed and not expired.

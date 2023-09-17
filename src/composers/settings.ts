@@ -1,84 +1,164 @@
-import dayjs from 'dayjs'
 import debug from 'debug'
-import { Composer, InlineKeyboard } from 'grammy'
+import dayjs from 'dayjs'
+import { Composer } from 'grammy'
 import { Router } from "@grammyjs/router"
-import { ParseMode } from '@grammyjs/types'
-import { Menu } from '@grammyjs/menu'
+import { Menu, MenuRange } from '@grammyjs/menu'
 
 import type { MyContext } from '../types/MyContext'
 import i18n, { getLanguageIcon } from '../lib/i18n';
 import { command } from '../lib/constants'
-import { createMainKeyboard, generateWelcomeMessage } from './helpers'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 import { handleCallbackQueryError } from '../lib/errorHandler'
+import { requireSettings } from '../lib/middlewares'
 
 export enum Route {
-  FIREFLY_URL          = 'SETTINGS|FIREFLY_URL',
+  FIREFLY_URL = 'SETTINGS|FIREFLY_URL',
   FIREFLY_ACCESS_TOKEN = 'SETTINGS|FIREFLY_ACCESS_TOKEN'
 }
 
-const rootLog = debug(`bot:settings`)
+type NextFunction = () => Promise<void>;
 
-const CANCEL                       = 'CANCEL_SETTINGS'
-const DONE                         = 'DONE_SETTINGS'
-const INPUT_FIREFLY_URL            = 'INPUT_FIREFLY_URL'
-const INPUT_FIREFLY_ACCESS_TOKEN   = 'INPUT_FIREFLY_ACCESS_TOKEN'
-const SELECT_DEFAULT_ASSET_ACCOUNT = 'SELECT_DEFAULT_ASSET_ACCOUNT'
-const SWITCH_LANGUAGE              = /^SWITCH_LANGUAGE=(.+)$/
-const TEST_CONNECTION              = 'TEST_CONNECTION'
+const rootLog = debug(`bot:settings`)
 
 const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 const settingsMenu = new Menu<MyContext>('settings')
-  // .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), inputFireflyUrlCbQH).row()
-  // .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), inputFireflyAccessTokenCbQH).row()
-  // .text(ctx => ctx.i18n.t('labels.TEST_CONNECTION'), testConnectionCbQH).row()
-  // .text(ctx => ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'), selectDefaultAssetAccountCbQH).row()
   .submenu(
-      ctx => ctx.i18n.t('labels.SWITCH_LANG'),
-      'switch-lang', // navigation target menu
-      ctx => ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'HTML', })
+    ctx => ctx.i18n.t('labels.SWITCH_LANG'),
+    'switch-lang',
+    ctx => ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
   ).row()
-  .text(ctx => ctx.i18n.t('labels.DONE'), doneCbQH)
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), inputFireflyUrlCbQH).row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), inputFireflyAccessTokenCbQH).row()
+  // Render test connection and default account buttons only if Firefly URL and
+  // Access token are set
+  .dynamic(async ctx => {
+    const range = new MenuRange<MyContext>()
+    const userSettings = ctx.session.userSettings
+    const { fireflyUrl, fireflyAccessToken } = userSettings
+
+    if (fireflyUrl && fireflyAccessToken) {
+      range
+        .text(ctx => ctx.i18n.t('labels.TEST_CONNECTION'), testConnectionCbQH).row()
+        .submenu(
+          ctx => ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'),
+          'set-default-account',
+          async ctx => {
+            const userSettings = ctx.session.userSettings
+            const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
+              1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+            // Take care of a case when no accounts are created yet
+            if (!accounts.length) {
+              ctx.editMessageText(ctx.i18n.t('settings.noAssetAccountsYet'))
+            } else {
+              ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), { parse_mode: 'Markdown' })
+            }
+          }
+        ).row()
+    }
+
+    return range
+  })
+  .text('🔙', doneCbQH);
 
 const langMenu = new Menu<MyContext>('switch-lang')
-  .text(ctx => `${ctx.i18n.t('labels.SWITCH_TO_RUSSIAN')}${ctx.i18n.languageCode === 'ru' ? ' ✅' : ''}`, switchLanguageToRu).row()
-  .text(ctx => `${ctx.i18n.t('labels.SWITCH_TO_ENGLISH')}${ctx.i18n.languageCode === 'en' ? ' ✅' : ''}`, switchLanguageToEn).row()
-  .text(ctx => `${ctx.i18n.t('labels.SWITCH_TO_ITALIAN')}${ctx.i18n.languageCode === 'it' ? ' ✅' : ''}`, switchLanguageToIt).row()
-  // .back('🔙');
-  // .back('⬅️');
-  .back('←', ctx => ctx.editMessageText(settingsText(ctx)));
-  // .back('↩');
-  // .back('◄');
+  .dynamic(() => {
+    const range = new MenuRange<MyContext>()
+    for (const locale of ['ru', 'it', 'en']) {
+      const langText = 'labels.' + `SWITCH_TO_${locale}`.toUpperCase()
+      range.text(
+        {
+          text: ctx => `${ctx.i18n.t(langText)}${ctx.i18n.languageCode === locale ? ' ✅' : ''}`,
+          payload: locale,
+        },
+        ctx => {
+          ctx.i18n.locale(locale)
+          dayjs.locale(locale)
+          ctx.session.userSettings.language = locale
+          ctx.menu.update();
+          ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
+        }
+      ).row()
+    }
+    range.back('🔙', ctx => ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' }));
+    return range
+  })
+
+const defaultAccountMenu = new Menu<MyContext>('set-default-account')
+  .dynamic(async ctx => {
+    const log = rootLog.extend('defaultAccountMenu:dynamic')
+    const range = new MenuRange<MyContext>()
+    const userSettings = ctx.session.userSettings
+    const { fireflyUrl } = userSettings
+
+    const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
+      1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+    log('accounts: %O', accounts)
+
+    // Take care of a case when no accounts are created yet
+    // FIXME: This can be probably optimized in order not to get accounts for
+    // the second time. The first time we get accounts when we check if a user has
+    // not created any accounts yet.
+    if (!accounts.length) {
+      return range
+        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${fireflyUrl}/accounts/asset`).row()
+        .back('🔙', ctx => ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' }));
+    }
+
+    for (const acc of accounts) {
+      range.text(
+        {
+          text: ctx =>
+            `${acc.attributes.name}${ctx.session.userSettings.defaultSourceAccount.id === acc.id.toString() ? ' ✅' : ''}`,
+          payload: acc.id
+        },
+        async ctx => {
+          log('Entered range middleware...')
+          if (ctx.session.userSettings.defaultSourceAccount.id.toString() === acc.id.toString()) return
+
+          const account = (await firefly(userSettings).Accounts.getAccount(acc.id)).data.data
+          log('account: %O', account)
+          ctx.session.userSettings.defaultSourceAccount = {
+            id: acc.id.toString(),
+            name: account.attributes.name,
+            type: account.attributes.type
+          }
+          ctx.menu.update();
+          ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), { parse_mode: 'Markdown' })
+        }
+      ).row()
+    }
+    range.back('🔙', ctx => ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' }));
+    return range
+  })
+
+const cancelMenu = new Menu<MyContext>('setting-cancel')
+  .back('🔙', ctx => {
+    ctx.session.step = 'IDLE'
+    ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
+  })
+// ← back arrow
 
 settingsMenu.register(langMenu)
+settingsMenu.register(defaultAccountMenu)
+settingsMenu.register(cancelMenu)
 bot.use(settingsMenu)
-
+bot.use(requireSettings())
 
 bot.command(command.SETTINGS, settingsCommandHandler)
 bot.hears(i18n.t('en', 'labels.SETTINGS'), settingsCommandHandler)
 bot.hears(i18n.t('ru', 'labels.SETTINGS'), settingsCommandHandler)
 bot.hears(i18n.t('it', 'labels.SETTINGS'), settingsCommandHandler)
-// bot.callbackQuery(INPUT_FIREFLY_URL, inputFireflyUrlCbQH)
-// bot.callbackQuery(INPUT_FIREFLY_ACCESS_TOKEN, inputFireflyAccessTokenCbQH)
-// bot.callbackQuery(TEST_CONNECTION, testConnectionCbQH)
-// bot.callbackQuery(SELECT_DEFAULT_ASSET_ACCOUNT, selectDefaultAssetAccountCbQH)
-// bot.callbackQuery(SWITCH_LANGUAGE, switchLanguageCbQH)
-// // TODO Pass account id rather than account name in callback query
-// bot.callbackQuery(/^!defaultAccount=(.+)$/, defaultAccountCbQH)
-// bot.callbackQuery(DONE, doneCbQH)
-// bot.callbackQuery(CANCEL, cancelCbQH)
-
 
 // Local routes and handlers
-// router.route('IDLE', ( _, next ) => next())
-// router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
-// router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
-// router.otherwise(ctx => ctx.reply('otherwise'))
-// bot.use(router)
+router.route('IDLE', (_, next) => next())
+router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
+router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
+router.otherwise(ctx => ctx.reply('otherwise'))
+bot.use(router)
 
 export default bot
 
@@ -87,7 +167,6 @@ function settingsText(ctx: MyContext) {
     fireflyUrl,
     fireflyAccessToken,
     defaultSourceAccount,
-    language
   } = ctx.session.userSettings
 
   // Grab only first 4 and last 4 chars of the token
@@ -97,25 +176,7 @@ function settingsText(ctx: MyContext) {
     fireflyUrl,
     accessToken,
     defaultSourceAccount,
-    language: getLanguageIcon(language)
   })
-}
-
-function settingsInlineKeyboard(ctx: MyContext) {
-  const inlineKeyboard = new InlineKeyboard()
-    .text(ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), INPUT_FIREFLY_URL).row()
-    .text(ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), INPUT_FIREFLY_ACCESS_TOKEN).row()
-    .text(ctx.i18n.t('labels.TEST_CONNECTION'), TEST_CONNECTION).row()
-    .text(ctx.i18n.t('labels.DEFAULT_ASSET_ACCOUNT_BUTTON'), SELECT_DEFAULT_ASSET_ACCOUNT).row()
-    .text(ctx.i18n.t('labels.SWITCH_TO_RUSSIAN'), 'SWITCH_LANGUAGE=ru').row()
-    .text(ctx.i18n.t('labels.SWITCH_TO_ENGLISH'), 'SWITCH_LANGUAGE=en').row()
-    .text(ctx.i18n.t('labels.SWITCH_TO_ITALIAN'), 'SWITCH_LANGUAGE=it').row()
-    .text(ctx.i18n.t('labels.DONE'), DONE)
-
-  return {
-    parse_mode: 'Markdown' as ParseMode,
-    reply_markup: inlineKeyboard
-  }
 }
 
 function settingsCommandHandler(ctx: MyContext) {
@@ -123,7 +184,10 @@ function settingsCommandHandler(ctx: MyContext) {
   log('Entered the settingsCommandHandler...')
   return ctx.reply(
     settingsText(ctx),
-    { reply_markup: settingsMenu }
+    {
+      parse_mode: 'Markdown',
+      reply_markup: settingsMenu
+    }
   )
 }
 
@@ -144,7 +208,7 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
 
     if (text.length < 500) {
       return ctx.reply(ctx.i18n.t('settings.badAccessToken'), {
-        reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
+        reply_markup: cancelMenu
       })
     }
 
@@ -153,12 +217,16 @@ async function fireflyAccessTokenRouteHandler(ctx: MyContext) {
 
     return ctx.reply(
       settingsText(ctx),
-      settingsInlineKeyboard(ctx)
+      {
+        parse_mode: 'Markdown',
+        reply_markup: settingsMenu
+      }
     )
   } catch (err: any) {
     return handleCallbackQueryError(err, ctx)
   }
 }
+
 async function fireflyUrlRouteHandler(ctx: MyContext) {
   const log = rootLog.extend('fireflyUrlRouteHandler')
   log('Entered fireflyUrlRouteHandler...')
@@ -173,7 +241,7 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
 
     if (!valid) {
       return ctx.reply(ctx.i18n.t('settings.badUrl'), {
-        reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
+        reply_markup: cancelMenu
       })
     }
 
@@ -183,7 +251,10 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
 
     return ctx.reply(
       settingsText(ctx),
-      settingsInlineKeyboard(ctx)
+      {
+        parse_mode: 'Markdown',
+        reply_markup: settingsMenu
+      }
     )
 
   } catch (err: any) {
@@ -193,14 +264,14 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
 
 async function inputFireflyUrlCbQH(ctx: MyContext) {
   const log = rootLog.extend('inputFireflyUrlCbQH')
-  log(`Entered the ${INPUT_FIREFLY_URL} action handler`)
+  log(`Entered the inputFireflyUrlCbQH action handler`)
 
   try {
     ctx.session.step = Route.FIREFLY_URL
 
     await ctx.editMessageText(ctx.i18n.t('settings.inputFireflyUrl'), {
       parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
+      reply_markup: cancelMenu
     })
   } catch (err: any) {
     log('Error occurred: %O', err)
@@ -209,120 +280,15 @@ async function inputFireflyUrlCbQH(ctx: MyContext) {
 
 async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
   const log = rootLog.extend('inputFireflyAccessTokenCbQH')
-  log(`Entered the ${INPUT_FIREFLY_ACCESS_TOKEN} action handler`)
+  log(`Entered the inputFireflyAccessTokenCbQH action handler`)
   try {
     ctx.session.step = Route.FIREFLY_ACCESS_TOKEN
     return ctx.editMessageText(ctx.i18n.t('settings.inputFireflyAccessToken'), {
       parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard().text(ctx.i18n.t('labels.CANCEL'), CANCEL)
+      reply_markup: cancelMenu
     })
   } catch (err: any) {
     log('Error occurred: %O', err)
-  }
-}
-
-async function selectDefaultAssetAccountCbQH(ctx: MyContext) {
-  const log = rootLog.extend('selectDefaultAssetAccountCbQH')
-  log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} callback query handler`)
-  try {
-    const userSettings = ctx.session.userSettings
-    const { fireflyUrl, fireflyAccessToken } = userSettings
-
-    if (!fireflyUrl) {
-      return ctx.answerCallbackQuery({
-        text: ctx.i18n.t('settings.specifySmthFirst', {
-          smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON')
-        }),
-        show_alert: true
-      })
-    }
-
-    if (!fireflyAccessToken) {
-      return ctx.answerCallbackQuery({
-        text: ctx.i18n.t('settings.specifySmthFirst', {
-          smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON')
-        }),
-        show_alert: true
-      })
-    }
-
-    const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
-    log('accounts: %O', accounts)
-
-    if (!accounts.length) {
-      const kb = new InlineKeyboard()
-        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${fireflyUrl}/accounts/asset`).row()
-
-      return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), {
-        reply_markup: kb
-      })
-    }
-
-    const accKeyboard = new InlineKeyboard()
-    accounts
-      .reverse() // we want top accounts be closer to the bottom of the screen
-      .forEach((acc: AccountRead) => {
-        return accKeyboard.text(
-          `${acc.attributes.name} ${acc.attributes.currency_symbol}${acc.attributes.current_balance}`,
-          `!defaultAccount=${acc.id}`
-        ).row()
-      })
-    accKeyboard.text(ctx.i18n.t('labels.CANCEL'), CANCEL)
-    log('accKeyboard: %O', accKeyboard)
-
-    return ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), {
-      reply_markup: accKeyboard
-    })
-  } catch (err: any) {
-    return handleCallbackQueryError(err, ctx)
-  }
-}
-
-async function defaultAccountCbQH(ctx: MyContext) {
-  const log = rootLog.extend('defaultAccountCbQH')
-  log(`Entered the ${SELECT_DEFAULT_ASSET_ACCOUNT} query handler`)
-  try {
-    log('ctx: %O', ctx)
-    const accountId = ctx.match![1]
-    log('accountId: %s', accountId)
-
-    const userSettings = ctx.session.userSettings
-
-    const account = (await firefly(userSettings).Accounts.getAccount(accountId)).data.data
-    log('account: %O', account)
-
-    userSettings.defaultSourceAccount = {
-      id: accountId.toString(),
-      name: account.attributes.name,
-      type: account.attributes.type
-    }
-
-    await ctx.answerCallbackQuery({ text: ctx.i18n.t('settings.defaultAssetAccountSet') })
-
-    return ctx.editMessageText(
-      settingsText(ctx),
-      settingsInlineKeyboard(ctx)
-    )
-  } catch (err: any) {
-    log('Error occurred: %O', err)
-  }
-}
-
-async function cancelCbQH(ctx: MyContext) {
-  const log = rootLog.extend('cancelCbQH')
-  try {
-    log('Cancelling...: ')
-
-    ctx.session.step = 'IDLE'
-
-    await ctx.deleteMessage()
-    return ctx.reply(
-      settingsText(ctx),
-      settingsInlineKeyboard(ctx)
-    )
-  } catch (err: any) {
-    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -335,90 +301,31 @@ async function testConnectionCbQH(ctx: MyContext) {
     const { fireflyUrl, fireflyAccessToken } = userSettings
 
     if (!fireflyUrl) {
-      return ctx.answerCallbackQuery({
-        text: ctx.i18n.t('settings.specifySmthFirst', {
-          smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON')
-        }),
-        show_alert: true
-      })
+      return ctx.reply(
+        ctx.i18n.t('settings.specifySmthFirst', { smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON') }),
+        { parse_mode: 'Markdown' }
+      )
     }
 
     if (!fireflyAccessToken) {
-      return ctx.answerCallbackQuery({
-        text: ctx.i18n.t('settings.specifySmthFirst', {
-          smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON')
-        }),
-        show_alert: true
-      })
+      return ctx.reply(
+        ctx.i18n.t('settings.specifySmthFirst', { smth: ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON') }),
+        { parse_mode: 'Markdown' }
+      )
     }
 
     const userInfo = (await firefly(userSettings).About.getCurrentUser()).data.data
     log('Firefly user info: %O', userInfo)
 
-    if (!userInfo) return ctx.answerCallbackQuery({
-      text: ctx.i18n.t('settings.connectionFailed'),
-      show_alert: true
-    })
+    if (!userInfo) return ctx.reply(
+      ctx.i18n.t('settings.connectionFailed'),
+    )
 
-    return ctx.answerCallbackQuery({
-      text: ctx.i18n.t('settings.connectionSuccess', { email: userInfo.attributes.email }),
-      show_alert: true
-    })
-
+    return ctx.reply(
+      ctx.i18n.t('settings.connectionSuccess', { email: userInfo.attributes.email }),
+    )
   } catch (err: any) {
-    return handleCallbackQueryError(err, ctx)
-  }
-}
-
-async function switchLanguageToEn(ctx: MyContext) {
-  ctx.i18n.locale('en')
-  dayjs.locale('en')
-  ctx.session.userSettings.language = 'en'
-  ctx.menu.update();
-  ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'))
-}
-async function switchLanguageToIt(ctx: MyContext) {
-  ctx.i18n.locale('it')
-  dayjs.locale('it')
-  ctx.session.userSettings.language = 'it'
-  ctx.menu.update();
-  ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'))
-}
-async function switchLanguageToRu(ctx: MyContext) {
-  ctx.i18n.locale('ru')
-  dayjs.locale('ru')
-  ctx.session.userSettings.language = 'ru'
-  ctx.menu.update();
-  ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'))
-}
-
-async function switchLanguageCbQH(ctx: MyContext) {
-  const log = rootLog.extend('switchLanguageCbQH')
-  log(`Entered the switch language query handler`)
-  try {
-    log('ctx: %O', ctx)
-    const language = ctx.match![1]
-    log('language: %O', language)
-
-    ctx.i18n.locale(language)
-    dayjs.locale(language)
-    ctx.session.userSettings.language = language
-
-    // const welcomeMessage = generateWelcomeMessage(ctx)
-
-    // ctx.reply(welcomeMessage, {
-    //   parse_mode: 'Markdown',
-    //   reply_markup: {
-    //     keyboard: createMainKeyboard(ctx).build(),
-    //     resize_keyboard: true
-    //   }
-    // })
-
-    // return ctx.editMessageText(
-    //   settingsText(ctx),
-    //   settingsInlineKeyboard(ctx)
-    // )
-  } catch (err: any) {
-    log('Error occurred: %O', err)
+    // TODO: Set user friendly error message in case if Firefly URL is bad
+    ctx.reply(err.toString())
   }
 }

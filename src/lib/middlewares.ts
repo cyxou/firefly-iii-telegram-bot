@@ -72,6 +72,7 @@ export function requireSettings() {
         ...Object.values(command)
       ]
       log('whiteList: %O', whiteList)
+      log('callbackQuery: %O', ctx.callbackQuery)
       const isCallbackQuery = !!ctx.callbackQuery
       log('isCallbackQuery: %O', isCallbackQuery)
       log('whiteList.includes(text): %O', whiteList.includes(text.replace(/^\//, '')))
