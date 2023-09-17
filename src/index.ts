@@ -2,7 +2,6 @@ import debug from 'debug'
 import * as dotenv from 'dotenv';
 import { Bot, GrammyError, HttpError, session } from 'grammy'
 import { FileAdapter } from '@grammyjs/storage-file';
-import { Menu } from "@grammyjs/menu";
 
 dotenv.config();
 
@@ -21,9 +20,6 @@ import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
 import { createInitialSessionData } from './types/SessionData'
-
-import { categoriesMenu } from './composers/categories'
-// import { settingsMenu } from './composers/settings'
 
 export const Route = {
   idle: 'IDLE'
@@ -45,25 +41,6 @@ bot.use(
 )
 bot.use(i18n.middleware());
 
-// Create a simple menu.
-const mainMenu = new Menu<MyContext>('main')
-  .submenu(
-    { text: i18n.t('ru', 'labels.CATEGORIES'), payload: `1` },
-    'my-categories', // navigation target menu
-    (ctx: MyContext) => ctx.reply('You pressed CATEGORIES!'))
-  .row()
-  .text(i18n.t('ru', 'labels.ACCOUNTS'), (ctx: MyContext) => ctx.reply('You pressed ACCOUNTS!'))
-  .text(i18n.t('ru', 'labels.TRANSACTIONS'), (ctx: MyContext) => ctx.reply('You pressed TRANSACTIONS!')).row()
-  .text(i18n.t('ru', 'labels.REPORTS'), (ctx: MyContext) => ctx.reply('You pressed REPORTS!'))
-  // .text(i18n.t('ru', 'labels.CATEGORIES'), (ctx: MyContext) => ctx.reply('You pressed CATEGORIES!')).row()
-  .text(i18n.t('ru', 'labels.SETTINGS'), (ctx: MyContext) => ctx.reply('You pressed SETTINGS!'))
-  // .text("B", (ctx: MyContext) => ctx.reply("You pressed B!"));
-
-mainMenu.register(categoriesMenu)
-// bot.use(mainMenu)
-// bot.use(settingsMenu)
-
-
 // Our custom middlewares
 bot.use(requireSettings())
 bot.use(cleanup())
@@ -74,18 +51,12 @@ bot.use(accounts)
 bot.use(settings)
 bot.use(categories)
 
-bot.command(command.START, replyWithMenu)
-// bot.command(command.START, startHandler)
+bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)
 bot.on('message:text', textHandler)
 
 bot.start()
 bot.catch(errorHandler)
-
-
-async function replyWithMenu(ctx: MyContext) {
-  await ctx.reply("Check out this menu:", { reply_markup: mainMenu })
-}
 
 async function startHandler(ctx: MyContext) {
   const log = rootLog.extend('startHandler')
