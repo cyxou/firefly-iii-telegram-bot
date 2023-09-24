@@ -48,7 +48,7 @@
     "dayjs": "1.11.7",
     "debug": "4.3.4",
     "dotenv": "16.0.3",
-    "grammy": "1.18.1",
+    "grammy": "1.19.0",
     "lodash.curry": "4.1.1",
     "lodash.flatten": "4.4.0",
     "lodash.isempty": "4.4.0",
