@@ -39,6 +39,8 @@ export interface AccountAttributes {
   name: string
   type: string
   id: string
+  currencyId?: string
+  currencySymbol?: string
 }
 
 export function createInitialSessionData() {

@@ -1,8 +1,6 @@
 import dayjs from 'dayjs'
 import debug from 'debug'
 import { Composer, InlineKeyboard } from 'grammy'
-import flatten from 'lodash.flatten'
-import { Menu, MenuRange } from '@grammyjs/menu'
 
 import type { MyContext } from '../../types/MyContext'
 import {
@@ -10,8 +8,6 @@ import {
   parseAmountInput,
   formatTransaction,
   formatTransactionKeyboard,
-  createCategoriesKeyboard,
-  createAccountsKeyboard
 } from '../helpers'
 
 import { addTransactionMenu } from './add-transactions-menus'
@@ -21,186 +17,15 @@ import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountAttributes } from '../../types/SessionData'
-import { AccountRead } from '../../lib/firefly/model/account-read'
-import { parseInt } from 'lodash'
-import { number } from 'mathjs'
 
 const rootLog = debug(`bot:transactions:add`)
 
 const bot = new Composer<MyContext>()
 
-// const addTransactionMenu = new Menu<MyContext>('add-new-transaction')
-//   .submenu(
-//     ctx => ctx.i18n.t('labels.TO_DEPOSITS'),
-//     'select-source-account',
-//     ctx => ctx.editMessageText(ctx.i18n.t('transactions.add.selectRevenueAccount', { amount: 1000 }))
-//   ).row()
-//   .text(ctx => ctx.i18n.t('labels.TO_TRANSFERS'), startCreatingTransferTransaction).row()
-  // .text(ctx.i18n.t('labels.CANCEL'), )
-  // .dynamic(async ctx => {
-  //   const log = rootLog.extend('addTransactionMenu.dynamic')
-  //   const range = new MenuRange<MyContext>()
-  //   const userSettings = ctx.session.userSettings
-  //   // log('ctx: %O', ctx)
-  //   let currentPage = 1
-  //   const match = ctx.match
-  //   if (typeof match === 'string') {
-  //     currentPage = parseInt(match, 10)
-  //   }
-  //   log('currentPage: %s', currentPage)
-  //
-  //   const resData = (await firefly(userSettings).Categories.listCategory(currentPage)).data
-  //   log('resData.meta: %O', resData.meta)
-  //
-  //   const categories = resData.data
-  //
-  //   for (let i = 0; i < categories.length; i++) {
-  //     const c = categories[i]
-  //     range.text(
-  //       {
-  //         text: c.attributes.name,
-  //         payload: c.id
-  //       },
-  //       async ctx => {
-  //         await ctx.reply(`You selected ${ctx.match}!`)
-  //         // ctx.menu.update()
-  //       }
-  //     )
-  //     const last = categories.length - 1
-  //     // Split categories keyboard into two columns so that every odd indexed
-  //     // category starts from new row as well as the last category in the list.
-  //     if (i % 2 !== 0 || i === last) range.row()
-  //   }
-  //
-  //   // range.append(createPaginationRange(resData.meta.pagination as Pagination))
-  //
-  //   return range
-  // })
-  // FIXME: This doesn't deletes the message immediately, but just navigates
-  // back through paginated results to the first page and only from there deletes
-  // the message.
-  //.text('🔙', cancelCbQH);
-  // .back('🔙', ctx => ctx.deleteMessage())
-
-const selectSourceAccountMenu = new Menu<MyContext>('select-source-account')
-  .dynamic(async ctx => {
-    const log = rootLog.extend('selectSourceAccountMenu:dynamic')
-    const range = new MenuRange<MyContext>()
-    const userSettings = ctx.session.userSettings
-
-    try {
-      const text: string = ctx.match![1] || ''
-      const amount = parseAmountInput(text)
-      log('amount: ', amount)
-      log('ctx.session: %O', ctx.session)
-
-      const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-        1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
-      log('accounts: %O', accounts)
-
-      ctx.session.newTransaction = {
-        type: TransactionTypeProperty.Deposit,
-        date: dayjs().toISOString(),
-        description: 'N/A',
-        amount: amount!.toString(),
-      }
-
-    for (const acc of accounts) {
-      range.text(
-        {
-          text: ctx =>
-            `${acc.attributes.name}${ctx.session.userSettings.defaultSourceAccount.id === acc.id.toString() ? ' ✅' : ''}`,
-          payload: acc.id
-        },
-        async ctx => {
-          log('Entered range middleware...')
-          if (ctx.session.userSettings.defaultSourceAccount.id.toString() === acc.id.toString()) return
-
-          const account = (await firefly(userSettings).Accounts.getAccount(acc.id)).data.data
-          log('account: %O', account)
-          ctx.session.userSettings.defaultSourceAccount = {
-            id: acc.id.toString(),
-            name: account.attributes.name,
-            type: account.attributes.type
-          }
-          ctx.menu.update();
-          ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), { parse_mode: 'Markdown' })
-        }
-      ).row()
-    }
-    range.back('🔙', ctx => ctx.editMessageText(ctx.i18n.t('transactions.add.selectCategory', {
-      amount: amount,
-      parse_mode: 'Markdown'
-    })))
-    return range
-
-    } catch (err) {
-      log('Error: %O', err)
-      console.error('Error occured creating deposit transaction: ', err)
-      throw err
-    }
-  })
-
-
-
-interface Pagination {
-  total: number
-  count: number
-  per_page: number
-  total_pages: number
-  current_page: number
-}
-
-function createPaginationRange(pagination: Pagination): MenuRange<MyContext> {
-  const log = rootLog.extend('createPaginationRange')
-  const range = new MenuRange<MyContext>()
-
-  if (pagination.total_pages! > 0) {
-    const prevPage = pagination.current_page! - 1
-    const nextPage = pagination.current_page! + 1
-    const hasNext = nextPage <= pagination.total_pages!
-    const hasPrev = prevPage > 0
-
-    log('prevPage: %s', prevPage)
-    log('hasPrev: %s', hasPrev)
-    log('nextPage: %s', nextPage)
-    log('hasNext: %s', hasNext)
-
-    if (hasPrev) {
-      range.submenu(
-        { text: '<<', payload: prevPage.toString() },
-        'add-new-transaction',
-      )
-    }
-
-    if (hasNext) {
-      range.submenu(
-        { text: '>>', payload: nextPage.toString() },
-        'add-new-transaction',
-      )
-    }
-
-    range.row()
-  }
-  return range
-}
-
 bot.use(addTransactionMenu)
 
 // Add Withdrawal and common handlers
-bot.callbackQuery(mapper.selectCategory.regex(), newTransactionCategoryCbQH)
-bot.callbackQuery(mapper.confirmWithoutCategory.regex(), newTransactionCategoryCbQH)
 bot.callbackQuery(mapper.delete.regex(), deleteTransactionActionHandler)
-
-// Add Deposit transactions handlers
-bot.callbackQuery(mapper.addDeposit.regex(), startCreatingDepositTransaction)
-bot.callbackQuery(mapper.selectRevenueAccount.regex(), selectDestAccount)
-bot.callbackQuery(mapper.selectAssetAccount.regex(), createTransaction)
-
-// Add Transfer transactions handlers
-bot.callbackQuery(mapper.addTransfer.regex(), startCreatingTransferTransaction)
-bot.callbackQuery(mapper.selectSourceAccount.regex(), selectDestAccount)
-bot.callbackQuery(mapper.selectDestAccount.regex(), createTransaction)
 
 export default bot
 
@@ -267,7 +92,7 @@ export async function addTransaction(ctx: MyContext) {
     }
 
     ctx.session.newTransaction = {
-      type: TransactionTypeProperty.Withdrawal,
+      type: undefined, // will be assigned based on the type of operation
       date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
       description: 'N/A',
       sourceAccount: defaultSourceAccount,
@@ -275,28 +100,6 @@ export async function addTransaction(ctx: MyContext) {
       categoryId: null,
       destAccount: null,
     }
-
-    // const keyboard = await createCategoriesKeyboard(
-    //   ctx,
-    //   mapper.selectCategory
-    // )
-    // log('Got a partial categories keyboard: %O', keyboard.inline_keyboard)
-    //
-    // // If inline_keyboard array does not contain anything, than user has no categories yet
-    // if (!flatten(keyboard.inline_keyboard).length) {
-    //   keyboard.text(ctx.i18n.t('labels.DONE'), mapper.confirmWithoutCategory.template())
-    //
-    //   return ctx.reply(ctx.i18n.t('transactions.add.noCategoriesYet'), {
-    //     parse_mode: 'Markdown',
-    //     reply_markup: keyboard
-    //   })
-    // }
-    //
-    // keyboard
-    //   .text(ctx.i18n.t('labels.TO_DEPOSITS'), mapper.addDeposit.template({ amount })).row()
-    //   .text(ctx.i18n.t('labels.TO_TRANSFERS'), mapper.addTransfer.template({ amount })).row()
-    //   .text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
-    // log('Full keyboard: %O', keyboard.inline_keyboard)
 
     return ctx.reply(ctx.i18n.t('transactions.add.selectCategory', { amount: amount }), {
       parse_mode: 'Markdown',
@@ -307,63 +110,6 @@ export async function addTransaction(ctx: MyContext) {
     console.error('Error occurred handling text message: ', err)
     return ctx.reply(err.message)
   }
-}
-
-async function newTransactionCategoryCbQH(ctx: MyContext) {
-  const log = rootLog.extend('newTransactionCategoryCbQH')
-  log('Entered the newTransactionCategory callback handler...')
-
-  try {
-    const categoryId = ctx.match![1]
-    log('categoryId: %s', categoryId)
-    const defaultSourceAccount = await getDefaultSourceAccount(ctx)
-    log('defaultSourceAccount: %O', defaultSourceAccount)
-    const defaultDestinationAccount = await getDefaultDestinationAccount(ctx)
-    log('defaultDestinationAccount: %O', defaultDestinationAccount)
-
-    const payload = {
-      transactions: [{
-        type: TransactionTypeProperty.Withdrawal,
-        date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
-        description: 'N/A',
-        source_id: defaultSourceAccount!.id.toString(),
-        amount: ctx.session.newTransaction.amount || '',
-        category_id: categoryId || '',
-        destination_id: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : null
-      }]
-    }
-
-    log('Transaction payload: %O', payload)
-
-    const tr = (await firefly(ctx.session.userSettings).Transactions.storeTransaction(payload)).data.data
-    log('Created transaction: %O', tr)
-    ctx.session.newTransaction = {}
-
-    await ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
-    )
-
-    return ctx.answerCallbackQuery({ text: ctx.i18n.t('transactions.add.created') })
-  } catch (err: any) {
-    await ctx.answerCallbackQuery({ text: ctx.i18n.t('common.errorOccurred') })
-    console.error('Error occurred in category action handler: ', err)
-    return ctx.editMessageText(
-      ctx.i18n.t('transactions.add.transactionError', { message: err.message })
-    )
-  }
-}
-
-function cancelCbQH(ctx: MyContext) {
-  const log = rootLog.extend('cancelCbQH')
-  // try {
-  log('Cancelling...: ')
-  // const userId = ctx.from!.id
-  // log('userId: %O', userId)
-  ctx.deleteMessage()
-  // } catch (err) {
-  //   console.error(err)
-  // }
 }
 
 async function deleteTransactionActionHandler(ctx: MyContext) {
@@ -473,173 +219,6 @@ async function getDefaultDestinationAccount(ctx: MyContext) {
     return defaultDestinationAccount
   } catch (err) {
     console.error('Error occurred getting Cash Account: ', err)
-    throw err
-  }
-}
-
-async function selectDestAccount(ctx: MyContext) {
-  const log = rootLog.extend('selectDestAccount')
-  try {
-    const sourceId = ctx.match![1]
-    log('sourceId: ', sourceId)
-
-    if (!sourceId) throw new Error('Source Account ID is bad!')
-
-    log('ctx.session: %O', ctx.session)
-
-    const sourceAccountData = (await firefly(ctx.session.userSettings).Accounts.getAccount(sourceId)).data.data
-    log('sourceAccountData: %O', sourceAccountData)
-
-    const tr = ctx.session.newTransaction
-    tr.sourceAccount = {
-      id: sourceId,
-      name: sourceAccountData.attributes.name,
-      type: sourceAccountData.attributes.type
-    }
-
-    const accountsKeyboard = await createAccountsKeyboard(
-      ctx,
-      [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
-      mapper.selectDestAccount,
-      { skipAccountId: tr.sourceAccount!.id }
-    )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
-    log('accountsKeyboard: %O', accountsKeyboard)
-
-    return ctx.editMessageText(
-      ctx.i18n.t('transactions.add.selectDestAccount', { amount: tr.amount }), {
-      parse_mode: 'Markdown',
-      reply_markup: accountsKeyboard
-    })
-
-  } catch (err) {
-    log('Error: %O', err)
-    console.error('Error occured creating deposit transaction: ', err)
-    throw err
-  }
-}
-
-async function startCreatingTransferTransaction(ctx: MyContext) {
-  const log = rootLog.extend('startCreatingTransferTransaction')
-  log('Entered the startCreatingTransferTransaction query handler...')
-  try {
-    const text: string = ctx.match![1] || ''
-    const amount = parseAmountInput(text)
-    log('amount: ', amount)
-    if (!amount) return ctx.reply('No amount specified')
-    log('ctx.session: %O', ctx.session)
-
-    ctx.session.newTransaction = {
-      type: TransactionTypeProperty.Transfer,
-      date: dayjs((ctx.message?.date || Date.now())).toISOString(),
-      description: 'N/A',
-      sourceAccount: { id: '', name: '', type: '' },
-      amount: amount.toString(),
-      destAccount: { id: '', name: '', type: '' }
-    }
-
-    const accountsKeyboard = await createAccountsKeyboard(
-      ctx,
-      [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
-      mapper.selectSourceAccount
-    )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
-    log('accountsKeyboard: %O', accountsKeyboard)
-
-    return ctx.editMessageText(
-      ctx.i18n.t('transactions.add.selectSourceAccount', { amount: amount }), {
-      parse_mode: 'Markdown',
-      reply_markup: accountsKeyboard
-    })
-
-  } catch (err) {
-    log('Error: %O', err)
-    console.error('Error occured creating transfer transaction: ', err)
-    throw err
-  }
-}
-
-async function createTransaction(ctx: MyContext) {
-  const log = rootLog.extend('createTransaction')
-  try {
-    const destAccountId = ctx.match![1]
-    log('destAccountId: ', destAccountId)
-    log('ctx.session: %O', ctx.session)
-
-    let transactionType: TransactionTypeProperty
-    const sourceAccountType = ctx.session.newTransaction.sourceAccount!.type
-    const destAccountData = (await firefly(ctx.session.userSettings).Accounts.getAccount(destAccountId)).data.data
-    log('destAccountData: %O', destAccountData)
-
-    if (sourceAccountType === 'liabilities' || sourceAccountType === 'revenue') {
-      transactionType = TransactionTypeProperty.Deposit
-    }
-    else if (sourceAccountType === 'asset' || destAccountData.attributes.type === 'asset') {
-      transactionType = TransactionTypeProperty.Transfer
-    }
-    else {
-      transactionType = TransactionTypeProperty.Withdrawal
-    }
-    log('transactionType: %s', transactionType)
-
-    const payload = {
-      transactions: [{
-        type: transactionType,
-        date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
-        description: 'N/A',
-        source_id: ctx.session.newTransaction.sourceAccount!.id || '',
-        amount: ctx.session.newTransaction.amount || '',
-        destination_id: destAccountId.toString()
-      }]
-    }
-    log('Transaction to create: %O', payload)
-
-    const tr = (await firefly(ctx.session.userSettings).Transactions.storeTransaction(payload)).data.data
-
-    return ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      formatTransactionKeyboard(ctx, tr)
-    )
-
-  } catch (err) {
-    log('Error: %O', err)
-    console.error('Error occured creating deposit transaction: ', err)
-    throw err
-  }
-}
-
-async function startCreatingDepositTransaction(ctx: MyContext) {
-  const log = rootLog.extend('startCreatingDepositTransaction')
-  try {
-    const text: string = ctx.match![1] || ''
-    const amount = parseAmountInput(text)
-    log('amount: ', amount)
-    log('ctx.session: %O', ctx.session)
-
-    ctx.session.newTransaction = {
-      type: TransactionTypeProperty.Deposit,
-      date: dayjs().toISOString(),
-      description: 'N/A',
-      amount: amount!.toString(),
-    }
-
-    const accountsKeyboard = await createAccountsKeyboard(
-      ctx,
-      AccountTypeFilter.Revenue,
-      mapper.selectRevenueAccount
-    )
-    accountsKeyboard.text(ctx.i18n.t('labels.CANCEL'), mapper.cancelAdd.template())
-    log('accountsKeyboard: %O', accountsKeyboard)
-
-    return ctx.editMessageText(
-      ctx.i18n.t('transactions.add.selectRevenueAccount', { amount: amount }), {
-      parse_mode: 'Markdown',
-      reply_markup: accountsKeyboard
-    })
-
-  } catch (err) {
-    log('Error: %O', err)
-    console.error('Error occured creating deposit transaction: ', err)
     throw err
   }
 }
