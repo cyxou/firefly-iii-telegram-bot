@@ -7,7 +7,7 @@ labels:
   ACCOUNTS: 💳 Cuentas
   ADD_CATEGORIES: ➕ Nueva Categoría
   CANCEL: ✖ Cancelar
-  CATEGORIES: 🔖 Categorias
+  CATEGORIES: 🔖 Categorías
   CHANGE_CATEGORY: 🔖 Categoría
   CHANGE_DATE: 📆 Fecha
   CHANGE_AMOUNT: 💸 Importe
@@ -41,12 +41,12 @@ labels:
   SWITCH_TO_SPANISH: 🇪🇸 Cambiar a Español
 
 welcome: >
-  👋 Hola! Este bot te ayudará a agregar trasacciones de forma rápida y cómoda a Firefly III.
+  👋 Hola! Este bot te ayudará a agregar transacciones de forma rápida y cómoda a Firefly III.
   También podrás gestionar algunas entidades de Firefly
 needToSet: 'Para empezar a usar el bot, necesitas indicar lo siguiente:'
 setFireflyUrl: '  - *🔗 URL de Firefly* - Dirección web de tu instancia Firefly III'
 setFireflyAccessToken: '  - *🔑 Token de Acceso* Creado en la interface web de Firefly III'
-navigateToSettings: 'Para continuar el proceso, ve a *🔧 Connfiguración*.'
+navigateToSettings: 'Para continuar el proceso, ve a *🔧 Configuración*.'
 
 help: >
   🤖 Por favor, ve a la sección de *🔧 Configuración* del bot y configura los requisitos para empezar a usar el bot.   
@@ -55,7 +55,7 @@ help: >
   por ejemplo `100-5*3`.
   Una vez recibido el monto o importe, el bot pedirá datos adicionales para los parámetros de la transacción.
     
-  También puedes agregar transacciones que no requiren datos adicionales,
+  También puedes agregar transacciones que no requieren datos adicionales,
   enviando la descripción y el importe, por ejemplo
     
   `Cafe 35`
@@ -63,7 +63,7 @@ help: >
   En este caso, se creará un nuevo retiro de la cuenta de activo por defecto
   con la descripción `Cafe` por un importe de 35`
 
-  ✨ Si requieres parametros o datos adicionales en la transacción, puedes usar la
+  ✨ Si requieres parámetros o datos adicionales en la transacción, puedes usar la
   funcionalidad de *Reglas* en Firefly III, la cual te permitirá complementar cualquier
   información requerida en al transacción.
 
@@ -72,7 +72,7 @@ common:
   noDefaultSourceAccountExist: |
     🙈 Recórcholis! No tienes ninguna cuenta de Activo de donde sacar dinero!  
        
-    🙏 Por favor, ve a tu pagina de Firefly III y crea al menos una cuenta de Activo.
+    🙏 Por favor, ve a tu página de Firefly III y crea al menos una cuenta de Activo.
 mdlwr:
   noFireflyURLFound: Para usar el bot, necesitas indicar una *🔗 URL de Firefly* válida en la *🔧 Configuración* del Bot.
   noFireflyAccessTokenFound: Para usar el bot, necesitas indicar un *🔑 Token de Acceso* válido en la *🔧 Configuración* del Bot.
@@ -80,13 +80,13 @@ settings:
   notSpecified: '🚨 <NO ESPECIFICADO>'
   inputFireflyUrl: >
     Indica la dirección web de tu instancia Firefly III.
-    Debe tener éste formato: *https://firefly.example.com*
+    Debe tener este formato: *https://firefly.example.com*
     o así: *http://localhost:8080*
   inputFireflyAccessToken: >
     Pega el testo de tu Token de Acceso
-    Puedes crearlo y copiarlo de la interface web de Firefly III
+    Puedes crearlo y copiarlo de la interfaz web de Firefly III
     *Opciones → Perfil →  OAuth → Crear nuevo token*
-  defaultAssetAccountSet: La cuenta de Activo pro defecto ha sido configurada!
+  defaultAssetAccountSet: La cuenta de Activo por defecto ha sido configurada!
   whatDoYouWantToChange: >
     🔧 *Configuración*  
        
@@ -100,31 +100,31 @@ settings:
 
     *🌐 Idioma*: ${language}
   selectDefaultAssetAccount: >
-    Choose an asset account which will be used as a default one for withdrawals.
-    If left unset, the very first asset account from the list below will be used by default:
-  specifySmthFirst: Specify ${smth} first.
-  connectionFailed: Connection has NOT been established!
-  connectionFailedUnauthenticated: Authentication error! Please make sure that specified Access Token is not malformed and not expired.
-  connectionFailedBadUrl: Error connecting to Firefly host! Please make sure that you specified the right Firefly URL.
+    Escoge una cuenta de Activo la cual será usada por defecto en los retiros.
+    Si se deja sin configurar, se usará por defecto la primera cuenta de Activo de la siguiente lista:
+  specifySmthFirst: Primero indica ${smth}.
+  connectionFailed: La conexión NO ha sido establecida!
+  connectionFailedUnauthenticated: Error de Autenticación! Por favor asegurate que el Token de Acceso indicado no ha expirado o adulterado.
+  connectionFailedBadUrl: Error al conectarse a la instancia de Firefly! Por favor, asegúrate que has indicar la direccion web (URL) correcta de Firefly.
   connectionSuccess: >
-    Connection established!
+    Conexión establecida!
 
-    Hi, ${email}!
-  badAccessToken: Entered text does not look like an Access Token. Try again, please.
+    Hola, ${email}!
+  badAccessToken: El texto indicado no parece ser un Token de Acceso. Por favor, intentalo de nuevo.
   badUrl: >
-    Entered text does not look like a URL address. Try again, please.
-    Type in the URL address of your Firefly III instance, for example https://firefly.example.com:
+    El texto indicado no parece ser una Dirección Web. Por favor, intentalo de nuevo.
+    Indicar la Dirección URL de tu instancia Firefly III, por ejemplo https://firefly.example.com:
 
 accounts:
   labels:
-    asset: Asset accounts
-    expense: Expense accounts
-    revenue: Revenue accounts
-    liability: Liabilities
+    asset: Cuentas de Activos
+    expense: Cuentas de Gastos
+    revenue: Cuentas de Ingresos
+    liability: Pasivos
   list:
-    noAccounts: No accounts yet🤷
+    noAccounts: No hay cuentas🤷
     asset: >
-      Balance of your asset accounts:
+      Saldo de tus cuentas de Activos:
        
       <pre>${accounts.replace(/\n$/, '')}
       
@@ -132,7 +132,7 @@ accounts:
       
       SUM: ${sums ? sums : '0'}</pre>
     expense: >
-      Balance of your expense accounts:
+      Saldo de tus cuentas de Gastos:
        
       <pre>${accounts.replace(/\n$/, '')}
       
@@ -140,7 +140,7 @@ accounts:
       
       SUM: ${sums ? sums : '0'}</pre>
     revenue: >
-      Balance of your revenue accounts:
+      Saldo de tus cuentas de Ingresos:
        
       <pre>${accounts.replace(/\n$/, '')}
       
@@ -148,7 +148,7 @@ accounts:
       
       SUM: ${sums ? sums : '0'}</pre>
     liability: >
-      Balance of your liabilities:
+      Saldo de tus cuentas de Pasivo:
        
       <pre>${accounts.replace(/\n$/, '')}
       
@@ -159,7 +159,7 @@ accounts:
 transactions:
   list:
     withdrawal: >
-      Your withdrawals for <b>${day}</b>:  
+      Tus Gastos al <b>${day}</b>:  
         
       <pre>${transactions.replace(/\n$/, '')}
       
@@ -167,7 +167,7 @@ transactions:
       
       SUM: ${sums ? sums : '0'}</pre>
     deposit: >
-      Your revenues for <b>${day}</b>:  
+      Tus Ingresos al <b>${day}</b>:  
         
       <pre>${transactions.replace(/\n$/, '')}
       
@@ -175,102 +175,102 @@ transactions:
       
       SUM: ${sums ? sums : '0'}</pre>
     transfer: >
-      Your transactions for <b>${day}</b>:  
+      Tus Transacciones al <b>${day}</b>:  
         
       <pre>${transactions.replace(/\n$/, '')}</pre>
-    noTransactions: 🤷 No transactions
+    noTransactions: 🤷 No hay transacciones
   add:
     dontUnderstand: >
-      🤖 I don't understand that.  
-      Enter a transaction amount, it needs to be a number! 😉
+      🤖 No entendí esto.  
+      Ingresa un importe para la transacción, debe ser un número! 😉
     withdrawalMessage: >
       📆 ${date}  
         
-      📤 Added ${description === 'N/A' ? '' : '*' + description + '*'}
-      *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}  
+      📤 Añadido ${description === 'N/A' ? '' : '*' + description + '*'}
+      *${amount}* *${currency}*${category ? ' a la categoría *' + category + '*' : ''}  
 
       ${source} ➡️ ${destination}
     depositMessage: >
       📆 ${date}  
        
-      📥 Added ${description === 'N/A' ? '' : '*' + description + '* '}
+      📥 Añadido ${description === 'N/A' ? '' : '*' + description + '* '}
       *${amount}* *${currency}*
       
       ${source} ➡️ ${destination}
     transferMessage: >
       📆 ${date}  
          
-      ↔️ Transfer *${amount}* *${currency}* from account *${source}* to account *${destination}*
-    selectCategory: In which category to add *${amount}*?
+      ↔️ Transferido *${amount}* *${currency}* de la Cuenta *${source}* a la Cuenta *${destination}*
+    selectCategory: A cual Categoría añadir *${amount}*?
     noCategoriesYet: |
-      🤷 You haven't created any categories yet.
-      The transaction will be created without a category. Continue?
+      🤷 Aún no has creado ninguna Categoría.
+      La transacción será creada sin Categoría. Seguir?
             
-      💡 You can ceasily create new categories from a corresponding *🔖 Categories* bot button.
-    transactionDeleted: Transaction deleted!
-    couldNotDelete: 'Could not delete transaction by id: ${id}'
-    selectRevenueAccount: 'Choose a revenue account to withdraw *${amount}*:'
-    selectAssetAccount: 'Choose an asset account to add *${amount}*:'
-    selectSourceAccount: 'Choose an account to transfer *${amount}* from:'
-    selectDestAccount: 'Choose an account to transfer to:'
-    transactionError: '❗😰 Ann error occurred during transaction creation: *${message}*'
-    created: Transaction created!
+      💡 Puedes crear Categorías fácilmente, usando el botón *🔖 Categorias*.
+    transactionDeleted: Transacción eliminada!
+    couldNotDelete: 'No se pudo eliminar la transacción con el id: ${id}'
+    selectRevenueAccount: 'Elige una cuenta de Ingreso para retirar *${amount}*:'
+    selectAssetAccount: 'Elige una cuenta de Activo para añadir *${amount}*:'
+    selectSourceAccount: 'Selecciona una cuenta desde donde se va a transferir *${amount}*:'
+    selectDestAccount: 'Selecciona una cuenta a la cual transferir:'
+    transactionError: '❗😰 Ocurrió un error durante la creación de la transacción: *${message}*'
+    created: Transacción creada!
 
   edit:
-    whatToEdit: ❓What do you want to change?
-    updated: Transaction updated!
-    badAmountTyped: 'An amount should be a number. Type in new amount please:'
-    badDescriptionTyped: 'Description needs to be text. Type in new description please:'
+    whatToEdit: ❓Que desea modificar?
+    updated: Transacción actualizada!
+    badAmountTyped: 'El Importe debe ser un número. Ingresa un nuevo Importe por favor:'
+    badDescriptionTyped: 'La Descripción debe ser un texto. Ingresa una nueva Descripción por favor:'
     typeNewAmount: >
-      Type in new amount.
+      Ingresa un nuevo importe.
 
-      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to perform the appropriate operation on the current value of the transaction.
+      💡 Puedes usar signos aritméticos para la suma, resta, multiplicación y división para que se realice el cálculo del importe de la transacción.
 
-      For example, "+35" would add 35 to existing amount of transaction.
+      Por ejemplo, "+35" sumará 35 al importe existente de la transacción.
     noCategoriesYet: |
-      🤷 You haven't created any categories yet.
+      🤷 Aún no has creado ninguna Categoría.
             
-      💡 You can easily create new categories from a corresponding *🔖 Categories* bot button.
-    typeNewDescription: 'Type in new description:'
-    chooseNewCategory: 'Choose new category:'
-    chooseNewSourceAccount: 'Choose new source account:'
-    chooseNewDestinationAccount: 'Choose new destination account:'
-    chooseNewRevenueAccount: 'Choose new revenue account:'
+      💡 Puedes agregar nuevas Categorías fácilmente usando el boton *🔖 Categorias* del bot.
+    typeNewDescription: 'Ingresa una nueva Descripción:'
+    chooseNewCategory: 'Elige una nueva Categoría:'
+    chooseNewSourceAccount: 'Elige una nueva Cuenta de origen:'
+    chooseNewDestinationAccount: 'Elige una nueva Cuenta de destino:'
+    chooseNewRevenueAccount: 'Elige una nueva Cuenta de Ingreso:'
     noSuchTransactionAnymore: |
-      🤖 This transaction (${id}) does not exist anymore!
-      It was probably deleted via the Firefly website.
+      🤖 La transacción (${id}) ya no existe!
+      Posiblemente ha sido borrado desde la página web de Firefly.
 
 categories:
-  listEmpty: No categories yet :(
+  listEmpty: Aún no hay Categorías :(
   list: >
-    To view transactions for a specific category, choose it from the list bellow.
-    You can also rename or delete a category once it is chosen.
+    Para ver las transacciones de una Categoría específica, selecciona de la lista debajo.
+    También puedes renombrar o borrar una categoría una vez que haya sido seleccionada.
   typeCategories: >
-    Type in your new categories so that each one would be on a separate line, for example: 
+    Ingresa tus nuevas Categorías, de tal manera que cada una esté en una línea por separado, por ejemplo:
        
-    💡 Utilities
+    💡 Servicios
 
-    👕 Clothes and shoes
+    👕 Ropa y Calzado
 
-    🥦 Groceries  
+    🥦 Comida  
        
-    *P.S.*: Category names can be changed later.
+    *Postdata*: Los nombres de las Categorías se pueden cambiar posteriormente.
 
-    *P.P.S.*: It's OK if a category with the same name already exists.
+    *Post-Postdata*: No hay problema si ya existe una Categoría con ese nombre.
   confirmCreation: >
-    ${categories.length} new category(s) will be created:   
+    ${categories.length} nueva(s) Categoría(s) serán creadas:   
        
     ${categories.join('\n')}  
        
-    Is that OK?
-  typeNewName: 'Type in new category name:'
+    Está bien?
+  typeNewName: 'Ingresa el nuevo nombre del a Categoría:'
   confirmDeletion: >
-    Are you sure that you want to delete this category?
-    Corresponding transactions won't be deleted. They can be found in *🔀 Transactions* section.
-  deleted: Category deleted!
-  noTransactions: No transactions
+    Estás seguro de que quieres eliminar ésta Categoría?
+    Las transacciones relacionadas no serán eliminadas. Éstas se puedes encontrar en la sección de *🔀 Transacciones*.
+  deleted: Categoría eliminada!
+  noTransactions: Sin transacciones
   transactionsList: >
-    <b>${categoryName}</b> withdrawals for the month of <b>${monthName}</b>:  
+    <b>${categoryName}</b> Gastos del mes de <b>${monthName}</b>:  
       
     <pre>${transactions.replace(/\n$/, '')}
     
