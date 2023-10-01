@@ -5,6 +5,8 @@ import { Route as CategoriesRoute } from '../composers/categories'
 import { Route as EditTransactionRoute } from '../composers/transactions/edit-transaction'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
+import { CategoryRead } from '../lib/firefly/model/category-read'
+import { MetaPagination } from '../lib/firefly/model/meta-pagination'
 
 type Step = 'IDLE' | CategoriesRoute | SettingsRoute | EditTransactionRoute
 
@@ -28,6 +30,8 @@ export interface SessionData {
     categoryId?: string | null
     destAccount?: AccountAttributes | null
   }
+  categories: CategoryRead[]
+  pagination: MetaPagination | undefined
   editTransaction: Partial<TransactionRead>
   category: any // TODO set proper type
   newCategories: string[]
@@ -58,5 +62,13 @@ export function createInitialSessionData() {
     editTransaction: {},
     category: {},
     newCategories: [],
+    categories: [],
+    pagination: {
+      total: 0,
+      count: 0,
+      per_page: 0,
+      total_pages: 0,
+      current_page: 0
+    }
   }
 }

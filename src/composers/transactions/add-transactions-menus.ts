@@ -17,20 +17,16 @@ import firefly from '../../lib/firefly'
 
 const rootLog = debug(`transactions:add:menus`)
 
+type MaybePromise<T> = T | Promise<T>;
+type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
+
 const MENUS = {
   NEW_TRANSACTION: 'new-transaction',
+  NEW_TRANSACTION__SELECT_CATEGORY: 'new-transaction--select-category',
   NEW_DEPOSIT: 'new-deposit',
   NEW_DEPOSIT__SELECT_TARGET_ACC: 'new-deposit--target-acc',
   NEW_TRANSFER: 'new-transfer',
   NEW_TRANSFER__SELECT_TARGET_ACC: 'new-deposit--target-acc',
-}
-
-interface Pagination {
-  total: number
-  count: number
-  per_page: number
-  total_pages: number
-  current_page: number
 }
 
 // This is the main Add New Transaction menu generation
@@ -39,14 +35,28 @@ export const addTransactionMenu = new Menu<MyContext>(MENUS.NEW_TRANSACTION)
   .append(createNewDepositSubmenu())
   .append(createNewTransferSubmenu())
   .text('🔙', ctx => ctx.deleteMessage())
-// FIXME: This doesn't deletes the message immediately, but just navigates
-// back through paginated results to the first page and only from there deletes
-// the message.
 
 addTransactionMenu.register([
+  createSelectCategoryMenu(),
   createNewDepositMenu(),
   createNewTransferMenu()
 ])
+
+export const call = new Menu<MyContext>("call").dynamic((_, range) => {
+  range.submenu({ text: "go", payload: "1" }, "callsub", (ctx1) => ctx1.editMessageText("ran"));
+});
+
+const callsub = new Menu<MyContext>("callsub")
+  .dynamic(ctx => {
+    console.log(`Payload in callsub:: ${ctx.match!.toString()}`);
+    return new MenuRange<MyContext>()
+      .text({
+        text: ctx.match!.toString(),
+        payload: `${ctx.match!.toString()}_1`
+      }, (ctx1) => ctx1.editMessageText("ran."));
+  });
+
+call.register(callsub)
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -255,7 +265,7 @@ function createNewTransferMenu() {
 
             log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
 
-            ctx.reply(`Destination account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
+            // ctx.reply(`Destination account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
 
             const tr = await createFireflyTransaction(ctx)
 
@@ -371,42 +381,92 @@ async function createFireflyTransaction(ctx: MyContext) {
   }
 }
 
-async function createCategoriesRange() {
+function createCategoriesRange() {
   const log = rootLog.extend('createCategoriesRange')
-  log(' Creating categories menu range...')
-  return new MenuRange<MyContext>()
-    .dynamic(async ctx => {
-      const log = rootLog.extend('addTransactionMenu.dynamic')
-      const range = new MenuRange<MyContext>()
-      const userSettings = ctx.session.userSettings
-      // log('ctx: %O', ctx)
-      // let currentPage = 1
-      // const match = ctx.match
-      // if (typeof match === 'string') currentPage = parseInt(match, 10)
-      // log('currentPage: %s', currentPage)
+  log(' Creating categories range...')
+  return new MenuRange<MyContext>().dynamic(async (ctx, range) => {
+    const log = rootLog.extend('1')
+    const categories = ctx.session.categories
 
-      // const resData = (await firefly(userSettings).Categories.listCategory(currentPage)).data
-      const resData = (await firefly(userSettings).Categories.listCategory()).data
-      log('resData.meta: %O', resData.meta)
+    // User might not have any categories yet
+    // TODO: Implement the case when a user has no categories.
+    //
+    // HINT: ctx.editMessageText(ctx.i18n.t('transactions.add.noCategoriesYet'))
 
-      const categories = resData.data
+    for (let i = 0; i < categories.length; i++) {
+      const c = categories[i]
+      range.text(
+        { text: c.attributes.name },
+        async ctx => {
 
-      ctx.session.newTransaction.type = TransactionTypeProperty.Withdrawal
+          ctx.session.newTransaction.categoryId = c.id
+          ctx.session.newTransaction.type = TransactionTypeProperty.Withdrawal
+          log('Setting new category id: %s', c.id)
+
+          // ctx.reply(`Selected category is *${c.attributes.name}*`, { parse_mode: 'Markdown' })
+
+          const tr = await createFireflyTransaction(ctx)
+
+          return ctx.editMessageText(
+            formatTransaction(ctx, tr),
+            formatTransactionKeyboard(ctx, tr)
+          )
+        }
+      )
+      const last = categories.length - 1
+      // Split categories keyboard into two columns so that every odd indexed
+      // category starts from new row as well as the last category in the list.
+      if (i % 2 !== 0 || i === last) range.row()
+    }
+
+    range.append(
+      createPaginationRange(
+        ctx,
+        // Previous page handler
+        async ctx => {
+          const userSettings = ctx.session.userSettings
+          const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! - 1)).data
+          log('resData.meta: %O', resData.meta)
+          ctx.session.pagination = resData.meta.pagination
+          ctx.session.categories = resData.data
+        },
+        // Next page handler
+        async ctx => {
+          const userSettings = ctx.session.userSettings
+          const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! + 1)).data
+          log('resData.meta: %O', resData.meta)
+          ctx.session.pagination = resData.meta.pagination
+          ctx.session.categories = resData.data
+        }
+      )
+    )
+
+    return range.row()
+  })
+}
+
+function createSelectCategoryMenu() {
+  const log = rootLog.extend('createSelectCategoryMenu:🔢')
+  log(' Creating categories menu...')
+  const selectCategoryMenu = new Menu<MyContext>(MENUS.NEW_TRANSACTION__SELECT_CATEGORY)
+    .dynamic(async (ctx, range) => {
+      const log = rootLog.extend('1')
+      const categories = ctx.session.categories
 
       // User might not have any categories yet
-      // TODO: Implement the case when user has no categories.
+      // TODO: Implement the case when a user has no categories.
       //
       // HINT: ctx.editMessageText(ctx.i18n.t('transactions.add.noCategoriesYet'))
 
       for (let i = 0; i < categories.length; i++) {
         const c = categories[i]
         range.text(
-          { text: c.attributes.name, payload: c.id },
+          { text: c.attributes.name },
           async ctx => {
 
             ctx.session.newTransaction.categoryId = c.id
-
-            // ctx.reply(`Selected category is *${c.attributes.name}*`, { parse_mode: 'Markdown' })
+            ctx.session.newTransaction.type = TransactionTypeProperty.Withdrawal
+            log('Setting new category id: %s', c.id)
 
             const tr = await createFireflyTransaction(ctx)
 
@@ -422,15 +482,45 @@ async function createCategoriesRange() {
         if (i % 2 !== 0 || i === last) range.row()
       }
 
-      // range.append(createPaginationRange(resData.meta.pagination as Pagination))
+      range.append(
+        createPaginationRange(
+          ctx,
+          // Previous page handler
+          async ctx => {
+            const userSettings = ctx.session.userSettings
+            const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! - 1)).data
+            log('resData.meta: %O', resData.meta)
+            ctx.session.pagination = resData.meta.pagination
+            ctx.session.categories = resData.data
+          },
+          // Next page handler
+          async ctx => {
+            const userSettings = ctx.session.userSettings
+            const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! + 1)).data
+            log('resData.meta: %O', resData.meta)
+            ctx.session.pagination = resData.meta.pagination
+            ctx.session.categories = resData.data
+          }
+        )
+      )
 
       return range
     })
+
+  return selectCategoryMenu
 }
 
-function createPaginationRange(pagination: Pagination): MenuRange<MyContext> {
+function createPaginationRange(
+  ctx: MyContext,
+  prevPageHandler: MenuMiddleware<MyContext>,
+  nextPageHandler: MenuMiddleware<MyContext>
+): MenuRange<MyContext> {
   const log = rootLog.extend('createPaginationRange')
   const range = new MenuRange<MyContext>()
+
+  const pagination = ctx.session.pagination
+
+  if (!pagination) return range
 
   if (pagination.total_pages! > 0) {
     const prevPage = pagination.current_page! - 1
@@ -445,15 +535,17 @@ function createPaginationRange(pagination: Pagination): MenuRange<MyContext> {
 
     if (hasPrev) {
       range.submenu(
-        { text: '<<', payload: prevPage.toString() },
-        'add-new-transaction',
+        { text: '⏪', payload: prevPage.toString() },
+        MENUS.NEW_TRANSACTION__SELECT_CATEGORY,
+        prevPageHandler
       )
     }
 
     if (hasNext) {
       range.submenu(
-        { text: '>>', payload: nextPage.toString() },
-        'add-new-transaction',
+        { text: '⏩', payload: nextPage.toString() },
+        MENUS.NEW_TRANSACTION__SELECT_CATEGORY,
+        nextPageHandler
       )
     }
 
@@ -461,4 +553,3 @@ function createPaginationRange(pagination: Pagination): MenuRange<MyContext> {
   }
   return range
 }
-

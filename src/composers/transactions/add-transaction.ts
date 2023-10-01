@@ -34,7 +34,7 @@ export async function addTransaction(ctx: MyContext) {
   log('Entered text handler')
   try {
     const text = ctx.message!.text as string
-    const { fireflyUrl } = ctx.session.userSettings
+    const { userSettings } = ctx.session
     log('ctx.message.text: %O', text)
 
     const validInput = /^(?<amountOnly>\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*)*$|(?<description>.+)\s(?<amount>\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*)$/
@@ -57,8 +57,10 @@ export async function addTransaction(ctx: MyContext) {
     log('defaultSourceAccount: %O', defaultSourceAccount)
 
     if (!defaultSourceAccount) {
-      const kb = new InlineKeyboard()
-        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${fireflyUrl}/accounts/asset`).row()
+      const kb = new InlineKeyboard().url(
+        ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'),
+        `${userSettings.fireflyUrl}/accounts/asset`
+      ).row()
 
       return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), {
         reply_markup: kb
@@ -100,6 +102,13 @@ export async function addTransaction(ctx: MyContext) {
       categoryId: null,
       destAccount: null,
     }
+
+    const page = 1
+    const resData = (await firefly(userSettings).Categories.listCategory(page)).data
+    log('resData.meta: %O', resData.meta)
+
+    ctx.session.categories = resData.data
+    ctx.session.pagination = resData.meta.pagination
 
     return ctx.reply(ctx.i18n.t('transactions.add.selectCategory', { amount: amount }), {
       parse_mode: 'Markdown',
