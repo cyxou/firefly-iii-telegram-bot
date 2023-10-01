@@ -39,23 +39,6 @@ addTransactionMenu.register([
   createNewTransferMenu()
 ])
 
-export const call = new Menu<MyContext>("call").dynamic((_, range) => {
-  range.submenu({ text: "go", payload: "1" }, "callsub", (ctx1) => ctx1.editMessageText("ran"));
-});
-
-const callsub = new Menu<MyContext>("callsub")
-  .dynamic(ctx => {
-    console.log(`Payload in callsub:: ${ctx.match!.toString()}`);
-    return new MenuRange<MyContext>()
-      .text({
-        text: ctx.match!.toString(),
-        payload: `${ctx.match!.toString()}_1`
-      }, (ctx1) => ctx1.editMessageText("ran."));
-  });
-
-call.register(callsub)
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Refactor the functions bellow in order to generalize them, because for
