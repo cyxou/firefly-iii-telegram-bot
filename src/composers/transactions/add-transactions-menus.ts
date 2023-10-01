@@ -22,7 +22,6 @@ type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
 
 const MENUS = {
   NEW_TRANSACTION: 'new-transaction',
-  NEW_TRANSACTION__SELECT_CATEGORY: 'new-transaction--select-category',
   NEW_DEPOSIT: 'new-deposit',
   NEW_DEPOSIT__SELECT_TARGET_ACC: 'new-deposit--target-acc',
   NEW_TRANSFER: 'new-transfer',
@@ -37,7 +36,6 @@ export const addTransactionMenu = new Menu<MyContext>(MENUS.NEW_TRANSACTION)
   .text('🔙', ctx => ctx.deleteMessage())
 
 addTransactionMenu.register([
-  createSelectCategoryMenu(),
   createNewDepositMenu(),
   createNewTransferMenu()
 ])
@@ -429,6 +427,7 @@ function createCategoriesRange() {
           log('resData.meta: %O', resData.meta)
           ctx.session.pagination = resData.meta.pagination
           ctx.session.categories = resData.data
+          await ctx.menu.update()
         },
         // Next page handler
         async ctx => {
@@ -437,77 +436,13 @@ function createCategoriesRange() {
           log('resData.meta: %O', resData.meta)
           ctx.session.pagination = resData.meta.pagination
           ctx.session.categories = resData.data
+          await ctx.menu.update()
         }
       )
     )
 
     return range.row()
   })
-}
-
-function createSelectCategoryMenu() {
-  const log = rootLog.extend('createSelectCategoryMenu:🔢')
-  log(' Creating categories menu...')
-  const selectCategoryMenu = new Menu<MyContext>(MENUS.NEW_TRANSACTION__SELECT_CATEGORY)
-    .dynamic(async (ctx, range) => {
-      const log = rootLog.extend('1')
-      const categories = ctx.session.categories
-
-      // User might not have any categories yet
-      // TODO: Implement the case when a user has no categories.
-      //
-      // HINT: ctx.editMessageText(ctx.i18n.t('transactions.add.noCategoriesYet'))
-
-      for (let i = 0; i < categories.length; i++) {
-        const c = categories[i]
-        range.text(
-          { text: c.attributes.name },
-          async ctx => {
-
-            ctx.session.newTransaction.categoryId = c.id
-            ctx.session.newTransaction.type = TransactionTypeProperty.Withdrawal
-            log('Setting new category id: %s', c.id)
-
-            const tr = await createFireflyTransaction(ctx)
-
-            return ctx.editMessageText(
-              formatTransaction(ctx, tr),
-              formatTransactionKeyboard(ctx, tr)
-            )
-          }
-        )
-        const last = categories.length - 1
-        // Split categories keyboard into two columns so that every odd indexed
-        // category starts from new row as well as the last category in the list.
-        if (i % 2 !== 0 || i === last) range.row()
-      }
-
-      range.append(
-        createPaginationRange(
-          ctx,
-          // Previous page handler
-          async ctx => {
-            const userSettings = ctx.session.userSettings
-            const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! - 1)).data
-            log('resData.meta: %O', resData.meta)
-            ctx.session.pagination = resData.meta.pagination
-            ctx.session.categories = resData.data
-          },
-          // Next page handler
-          async ctx => {
-            const userSettings = ctx.session.userSettings
-            const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! + 1)).data
-            log('resData.meta: %O', resData.meta)
-            ctx.session.pagination = resData.meta.pagination
-            ctx.session.categories = resData.data
-          }
-        )
-      )
-
-      return range
-    })
-
-  return selectCategoryMenu
 }
 
 function createPaginationRange(
@@ -534,19 +469,11 @@ function createPaginationRange(
     log('hasNext: %s', hasNext)
 
     if (hasPrev) {
-      range.submenu(
-        { text: '⏪', payload: prevPage.toString() },
-        MENUS.NEW_TRANSACTION__SELECT_CATEGORY,
-        prevPageHandler
-      )
+      range.text('⏪', prevPageHandler)
     }
 
     if (hasNext) {
-      range.submenu(
-        { text: '⏩', payload: nextPage.toString() },
-        MENUS.NEW_TRANSACTION__SELECT_CATEGORY,
-        nextPageHandler
-      )
+      range.text('⏩', nextPageHandler)
     }
 
     range.row()
