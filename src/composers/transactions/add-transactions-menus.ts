@@ -25,7 +25,7 @@ const MENUS = {
   NEW_DEPOSIT: 'new-deposit',
   NEW_DEPOSIT__SELECT_TARGET_ACC: 'new-deposit--target-acc',
   NEW_TRANSFER: 'new-transfer',
-  NEW_TRANSFER__SELECT_TARGET_ACC: 'new-deposit--target-acc',
+  NEW_TRANSFER__SELECT_TARGET_ACC: 'new-transfer--target-acc',
 }
 
 // This is the main Add New Transaction menu generation
