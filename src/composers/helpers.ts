@@ -2,8 +2,9 @@ import dayjs from 'dayjs'
 import Debug from 'debug'
 import flatten from 'lodash.flatten'
 import { evaluate } from 'mathjs'
-import { ParseMode } from '@grammyjs/types'
 import { Keyboard, InlineKeyboard } from 'grammy'
+import { ParseMode } from '@grammyjs/types'
+import { MenuRange } from '@grammyjs/menu'
 
 import firefly from '../lib/firefly'
 import Mapper from '../lib/Mapper'
@@ -16,6 +17,9 @@ import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
 const debug = Debug('bot:transactions:helpers')
+
+type MaybePromise<T> = T | Promise<T>;
+type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
 
 export {
   createAccountsMenuKeyboard,
@@ -31,7 +35,9 @@ export {
   createAccountsKeyboard,
   createEditMenuKeyboard,
   createMainKeyboard,
-  generateWelcomeMessage
+  generateWelcomeMessage,
+  createFireflyTransaction,
+  createPaginationRange,
 }
 
 const listAccountsMapper = {
@@ -372,4 +378,88 @@ function createMainKeyboard(ctx: MyContext) {
     .text(ctx.i18n.t('labels.REPORTS'))
     .text(ctx.i18n.t('labels.CATEGORIES')).row()
     .text(ctx.i18n.t('labels.SETTINGS'))
+}
+
+async function createFireflyTransaction(ctx: MyContext) {
+  const log = debug.extend('createDepositTransaction')
+  log(' Preparing payload to send to Firefly API...')
+
+  try {
+    log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
+
+    let transactionType = ctx.session.newTransaction.type!
+    const sourceAccountType = ctx.session.newTransaction.sourceAccount!.type
+    const destAccountType = ctx.session.newTransaction.destAccount?.type
+
+    if (!ctx.session.newTransaction.type) {
+      // Firefly has some weird rules of setting transaction type based on
+      // the account types used in transaction. Try to mimick them here:
+      if (sourceAccountType === 'asset' && destAccountType === 'liabilities') {
+        transactionType = TransactionTypeProperty.Withdrawal
+      }
+      else if (sourceAccountType === 'liabilities' || sourceAccountType === 'revenue') {
+        transactionType = TransactionTypeProperty.Deposit
+      }
+      else if (sourceAccountType === 'asset' || destAccountType === 'asset') {
+        transactionType = TransactionTypeProperty.Transfer
+      }
+      else {
+        transactionType = TransactionTypeProperty.Withdrawal
+      }
+    }
+    log('transactionType: %s', transactionType)
+
+    const payload = {
+      transactions: [{
+        type: transactionType,
+        date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
+        description: 'N/A',
+        source_id: ctx.session.newTransaction.sourceAccount!.id || '',
+        amount: ctx.session.newTransaction.amount || '',
+        category_id: ctx.session.newTransaction.categoryId || '',
+        destination_id: ctx.session.newTransaction.destAccount?.id
+      }]
+    }
+    log('Transaction payload to send: %O', payload)
+
+    return (await firefly(ctx.session.userSettings).Transactions.storeTransaction(payload)).data.data
+
+  } catch (err: any) {
+    log('Error: %O', err)
+    console.error('Error occured creating deposit transaction: ', err)
+    ctx.reply(err.message)
+    throw err
+  }
+}
+
+function createPaginationRange(
+  ctx: MyContext,
+  prevPageHandler: MenuMiddleware<MyContext>,
+  nextPageHandler: MenuMiddleware<MyContext>
+): MenuRange<MyContext> {
+  const log = debug.extend('createPaginationRange')
+  const range = new MenuRange<MyContext>()
+
+  const pagination = ctx.session.pagination
+
+  if (!pagination) return range
+
+  if (pagination.total_pages! > 0) {
+    const prevPage = pagination.current_page! - 1
+    const nextPage = pagination.current_page! + 1
+    const hasNext = nextPage <= pagination.total_pages!
+    const hasPrev = prevPage > 0
+
+    log('prevPage: %s', prevPage)
+    log('hasPrev: %s', hasPrev)
+    log('nextPage: %s', nextPage)
+    log('hasNext: %s', hasNext)
+
+    if (hasPrev) range.text('<<', prevPageHandler)
+
+    if (hasNext) range.text('>>', nextPageHandler)
+
+    range.row()
+  }
+  return range
 }

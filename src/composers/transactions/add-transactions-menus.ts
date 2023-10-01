@@ -11,14 +11,13 @@ import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-typ
 import {
   formatTransaction,
   formatTransactionKeyboard,
+  createFireflyTransaction,
+  createPaginationRange,
 } from '../helpers'
 
 import firefly from '../../lib/firefly'
 
 const rootLog = debug(`transactions:add:menus`)
-
-type MaybePromise<T> = T | Promise<T>;
-type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
 
 const MENUS = {
   NEW_TRANSACTION: 'new-transaction',
@@ -327,58 +326,6 @@ async function getAccounts(
   }
 }
 
-async function createFireflyTransaction(ctx: MyContext) {
-  const log = rootLog.extend('createDepositTransaction')
-  log(' Preparing payload to send to Firefly API...')
-
-  try {
-    log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
-
-    let transactionType = ctx.session.newTransaction.type!
-    const sourceAccountType = ctx.session.newTransaction.sourceAccount!.type
-    const destAccountType = ctx.session.newTransaction.destAccount?.type
-
-    if (!ctx.session.newTransaction.type) {
-      // Firefly has some weird rules of setting transaction type based on
-      // the account types used in transaction. Try to mimick them here:
-      if (sourceAccountType === 'asset' && destAccountType === 'liabilities') {
-        transactionType = TransactionTypeProperty.Withdrawal
-      }
-      else if (sourceAccountType === 'liabilities' || sourceAccountType === 'revenue') {
-        transactionType = TransactionTypeProperty.Deposit
-      }
-      else if (sourceAccountType === 'asset' || destAccountType === 'asset') {
-        transactionType = TransactionTypeProperty.Transfer
-      }
-      else {
-        transactionType = TransactionTypeProperty.Withdrawal
-      }
-    }
-    log('transactionType: %s', transactionType)
-
-    const payload = {
-      transactions: [{
-        type: transactionType,
-        date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
-        description: 'N/A',
-        source_id: ctx.session.newTransaction.sourceAccount!.id || '',
-        amount: ctx.session.newTransaction.amount || '',
-        category_id: ctx.session.newTransaction.categoryId || '',
-        destination_id: ctx.session.newTransaction.destAccount?.id
-      }]
-    }
-    log('Transaction payload to send: %O', payload)
-
-    return (await firefly(ctx.session.userSettings).Transactions.storeTransaction(payload)).data.data
-
-  } catch (err: any) {
-    log('Error: %O', err)
-    console.error('Error occured creating deposit transaction: ', err)
-    ctx.reply(err.message)
-    throw err
-  }
-}
-
 function createCategoriesRange() {
   const log = rootLog.extend('createCategoriesRange')
   log(' Creating categories range...')
@@ -421,7 +368,7 @@ function createCategoriesRange() {
       createPaginationRange(
         ctx,
         // Previous page handler
-        async ctx => {
+        async (ctx: MyContext)=> {
           const userSettings = ctx.session.userSettings
           const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! - 1)).data
           log('resData.meta: %O', resData.meta)
@@ -430,7 +377,7 @@ function createCategoriesRange() {
           await ctx.menu.update()
         },
         // Next page handler
-        async ctx => {
+        async (ctx: MyContext) => {
           const userSettings = ctx.session.userSettings
           const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! + 1)).data
           log('resData.meta: %O', resData.meta)
@@ -443,40 +390,4 @@ function createCategoriesRange() {
 
     return range.row()
   })
-}
-
-function createPaginationRange(
-  ctx: MyContext,
-  prevPageHandler: MenuMiddleware<MyContext>,
-  nextPageHandler: MenuMiddleware<MyContext>
-): MenuRange<MyContext> {
-  const log = rootLog.extend('createPaginationRange')
-  const range = new MenuRange<MyContext>()
-
-  const pagination = ctx.session.pagination
-
-  if (!pagination) return range
-
-  if (pagination.total_pages! > 0) {
-    const prevPage = pagination.current_page! - 1
-    const nextPage = pagination.current_page! + 1
-    const hasNext = nextPage <= pagination.total_pages!
-    const hasPrev = prevPage > 0
-
-    log('prevPage: %s', prevPage)
-    log('hasPrev: %s', hasPrev)
-    log('nextPage: %s', nextPage)
-    log('hasNext: %s', hasNext)
-
-    if (hasPrev) {
-      range.text('⏪', prevPageHandler)
-    }
-
-    if (hasNext) {
-      range.text('⏩', nextPageHandler)
-    }
-
-    range.row()
-  }
-  return range
 }
