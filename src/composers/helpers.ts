@@ -45,16 +45,7 @@ const listTransactionsMapper = {
 }
 
 const addTransactionsMapper = {
-  selectCategory: new Mapper('ADD|WITHDRAWAL|CATEGORY_ID=${categoryId}'),
-  confirmWithoutCategory: new Mapper('ADD|WITHDRAWAL'),
-  cancelAdd: new Mapper('ADD|CANCEL'),
   delete: new Mapper('DELETE|TRANSACTION_ID=${trId}'),
-  addTransfer: new Mapper('ADD|TRANSFER|AMOUNT=${amount}'),
-  addDeposit: new Mapper('ADD|DEPOSIT|AMOUNT=${amount}'),
-  selectRevenueAccount: new Mapper('ADD|DEPOSIT|REVENUE_ID=${accountId}'),
-  selectAssetAccount: new Mapper('ADD|DEPOSIT|ASSET_ID=${accountId}'),
-  selectSourceAccount: new Mapper('ADD|TRANSFER|SOURCE_ID=${accountId}'),
-  selectDestAccount: new Mapper('ADD|TRANSFER|DEST_ID=${accountId}')
 }
 
 const editTransactionsMapper = {
@@ -100,10 +91,6 @@ function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
     .text(
       ctx.i18n.t('labels.EDIT_TRANSACTION'),
       editTransactionsMapper.editMenu.template({ trId: tr.id })
-    )
-    .text(
-      ctx.i18n.t('labels.DELETE'),
-      addTransactionsMapper.delete.template({ trId: tr.id })
     )
 
   log('trKeyboard: %O', trKeyboard.inline_keyboard)
@@ -289,7 +276,8 @@ function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
     // .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({trId}))
     .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({trId})).row()
     .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${fireflyUrl}/transactions/show/${trId}`).row()
-    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.template({trId})).row()
+    .text(ctx.i18n.t('labels.DELETE'), addTransactionsMapper.delete.template({ trId: tr.id }))
+    .text('🔙', editTransactionsMapper.done.template({trId})).row()
 
   return keyboard
 }
