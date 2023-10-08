@@ -28,7 +28,7 @@ export {
   addTransactionsMapper,
   editTransactionsMapper,
   parseAmountInput,
-  formatTransaction,
+  formatTransactionText as formatTransaction,
   formatTransactionUpdate,
   formatTransactionKeyboard,
   createCategoriesKeyboard,
@@ -73,10 +73,11 @@ function parseAmountInput(amount: string, oldAmount?: string): number | null {
   const validInput = /^[-+/*]?\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*$/
   if (!validInput.exec(amount)) return null
 
+  // TODO: Replace commas with dots prior math evaluating
   if (oldAmount && (amount.startsWith('+') || amount.startsWith('-')
     || amount.startsWith('/') || amount.startsWith('*'))) {
-      return Math.abs(evaluate(`${oldAmount}${amount}`))
-    }
+    return Math.abs(evaluate(`${oldAmount}${amount}`))
+  }
 
   return Math.abs(evaluate(amount))
 }
@@ -107,7 +108,8 @@ function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
   }
 }
 
-function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
+// TODO: get rid of tr argumanet and grab transaction from ctx.session
+function formatTransactionText(ctx: MyContext, tr: Partial<TransactionRead>) {
   const trSplit = tr.attributes!.transactions[0]
   const baseProps: any = {
     amount: parseFloat(trSplit.amount),
@@ -241,21 +243,21 @@ function formatTransactionUpdate(
     let diffPart = '<b>Ваши изменения</b>:'
 
     if (newCategory && newCategory !== oldCategory)
-    diffPart = `<s>${oldCategory}</s> ${newCategory}`
+      diffPart = `<s>${oldCategory}</s> ${newCategory}`
 
     if (newAmount && newAmount !== oldAmount)
-    diffPart = `${diffPart}\nСумма: <s>${oldAmount}</s> <b>${newAmount}</b>`
+      diffPart = `${diffPart}\nСумма: <s>${oldAmount}</s> <b>${newAmount}</b>`
 
     if (newDescr && newDescr !== oldDescr)
-    diffPart = `${diffPart}\n<s>${oldDescr}</s> <b>${newDescr}</b>`
+      diffPart = `${diffPart}\n<s>${oldDescr}</s> <b>${newDescr}</b>`
 
     if (newDest && newDest !== oldDest)
-    diffPart = `${diffPart}\n<s>${oldDest}</s> <b>${newDest}</b>`
+      diffPart = `${diffPart}\n<s>${oldDest}</s> <b>${newDest}</b>`
 
     if (newDate && newDate !== oldDate)
-    diffPart = `${diffPart}\n<s>${oldDate}</s> <b>${newDate}</b>`
+      diffPart = `${diffPart}\n<s>${oldDate}</s> <b>${newDate}</b>`
 
-    return `${formatTransaction(ctx, trRead)}\n${diffPart}`
+    return `${formatTransactionText(ctx, trRead)}\n${diffPart}`
 
   } catch (err: any) {
     console.error(err)
