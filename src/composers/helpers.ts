@@ -4,7 +4,7 @@ import flatten from 'lodash.flatten'
 import { evaluate } from 'mathjs'
 import { Keyboard, InlineKeyboard } from 'grammy'
 import { ParseMode } from '@grammyjs/types'
-import { MenuRange } from '@grammyjs/menu'
+import { Menu, MenuRange } from '@grammyjs/menu'
 
 import firefly from '../lib/firefly'
 import Mapper from '../lib/Mapper'
@@ -15,6 +15,8 @@ import { TransactionSplit } from '../lib/firefly/model/transaction-split'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 // import { AccountTypeEnum } from '../lib/firefly/model/account'
 import { AccountRead } from '../lib/firefly/model/account-read'
+
+import { transactionMenu } from '../composers/transactions/add-transactions-menus'
 
 const debug = Debug('bot:transactions:helpers')
 
@@ -273,24 +275,24 @@ function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
   // Only withdrawal transactions may have category assigned
   if (tr.attributes.transactions[0].type === 'withdrawal') {
     keyboard
-      .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editTransactionsMapper.editCategory.template({trId})).row()
+      .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editTransactionsMapper.editCategory.template({ trId })).row()
   }
 
   keyboard
-    .text(ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), editTransactionsMapper.editSourceAccount.template({trId}))
-    .text(ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'), editTransactionsMapper.editDestinationAccount.template({trId})).row()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.template({trId}))
+    .text(ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), editTransactionsMapper.editSourceAccount.template({ trId }))
+    .text(ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'), editTransactionsMapper.editDestinationAccount.template({ trId })).row()
+    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.template({ trId }))
     // TODO Add functionality to change the date of a transaction
     // .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({trId}))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({trId})).row()
+    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({ trId })).row()
     .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${fireflyUrl}/transactions/show/${trId}`).row()
     .text(ctx.i18n.t('labels.DELETE'), addTransactionsMapper.delete.template({ trId: tr.id }))
-    .text('🔙', editTransactionsMapper.done.template({trId})).row()
+    .text('🔙', editTransactionsMapper.done.template({ trId })).row()
 
   return keyboard
 }
 
-function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeFilter) {
+function createAccountsMenuKeyboard(ctx: MyContext, accType: AccountTypeFilter) {
   const mapper = listAccountsMapper
   const keyboard = new InlineKeyboard()
 
@@ -464,4 +466,27 @@ function createPaginationRange(
     range.row()
   }
   return range
+}
+
+function createPaginatedCategoriesRange(
+  buttonsHandler: MenuMiddleware<MyContext>,
+  prevPageHandler: MenuMiddleware<MyContext>,
+  nextPageHandler: MenuMiddleware<MyContext>,
+) {
+  const log = debug.extend('createPaginatedCategoriesRange')
+  log(' Creating categories paginated range...')
+  return new MenuRange<MyContext>().dynamic(async (ctx, range) => {
+    const categories = ctx.session.categories
+    for (let i = 0; i < categories.length; i++) {
+      const c = categories[i]
+      range.text(c.attributes.name, buttonsHandler)
+      const last = categories.length - 1
+      // Split categories keyboard into two columns so that every odd indexed
+      // category starts from new row as well as the last category in the list.
+      if (i % 2 !== 0 || i === last) range.row()
+    }
+    range.append(createPaginationRange(ctx, prevPageHandler, nextPageHandler))
+    log(' Categories range is done. Returning...')
+    return range.row()
+  })
 }

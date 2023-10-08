@@ -22,6 +22,7 @@ export interface SessionData {
   },
   // transaction: Partial<TransactionStore> & Partial<TransactionRead>
   newTransaction: {
+    id?: string
     type?: TransactionTypeProperty
     date?: string
     description?: string
@@ -32,7 +33,9 @@ export interface SessionData {
   }
   categories: CategoryRead[]
   pagination: MetaPagination | undefined
-  editTransaction: Partial<TransactionRead>
+  // editTransaction: Partial<TransactionRead>
+  currentTransaction: TransactionRead | null
+  editTransactions: Partial<TransactionRead>[]
   category: any // TODO set proper type
   newCategories: string[]
   deleteBotsMessage?: () => Promise<boolean>,
@@ -59,7 +62,9 @@ export function createInitialSessionData() {
     },
     step: 'IDLE' as Step,
     newTransaction: {},
-    editTransaction: {},
+    // editTransaction: {},
+    currentTransaction: null,
+    editTransactions: [],
     category: {},
     newCategories: [],
     categories: [],

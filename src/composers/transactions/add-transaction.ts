@@ -4,13 +4,12 @@ import { Composer, InlineKeyboard } from 'grammy'
 
 import type { MyContext } from '../../types/MyContext'
 import {
-  addTransactionsMapper as mapper,
   parseAmountInput,
   formatTransaction,
-  formatTransactionKeyboard,
 } from '../helpers'
 
-import { addTransactionMenu } from './add-transactions-menus'
+import { transactionMenu, addTransactionMenu } from './add-transactions-menus'
+
 
 import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
@@ -22,10 +21,8 @@ const rootLog = debug(`bot:transactions:add`)
 
 const bot = new Composer<MyContext>()
 
+bot.use(transactionMenu)
 bot.use(addTransactionMenu)
-
-// Add Withdrawal and common handlers
-bot.callbackQuery(mapper.delete.regex(), deleteTransactionActionHandler)
 
 export default bot
 
@@ -87,9 +84,14 @@ export async function addTransaction(ctx: MyContext) {
         destinationAccountId: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : ''
       })
 
+      ctx.session.newTransaction.id = tr.id
+
       return ctx.reply(
         formatTransaction(ctx, tr),
-        formatTransactionKeyboard(ctx, tr)
+        {
+          parse_mode: 'Markdown',
+          reply_markup: transactionMenu
+        }
       )
     }
 
@@ -118,24 +120,6 @@ export async function addTransaction(ctx: MyContext) {
     log('Error: %O', err)
     console.error('Error occurred handling text message: ', err)
     return ctx.reply(err.message)
-  }
-}
-
-async function deleteTransactionActionHandler(ctx: MyContext) {
-  const log = rootLog.extend('deleteTransactionActionHandler')
-  log('Entered deleteTransaction action handler')
-  try {
-    const trId = ctx.match![1]
-
-    if (trId) await firefly(ctx.session.userSettings).Transactions.deleteTransaction(trId)
-    else return ctx.reply(
-      ctx.i18n.t('transactions.add.couldNotDelete', { id: trId })
-    )
-
-    await ctx.answerCallbackQuery({ text: ctx.i18n.t('transactions.add.transactionDeleted') })
-    return ctx.deleteMessage()
-  } catch (err) {
-    console.error(err)
   }
 }
 
