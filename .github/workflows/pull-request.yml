@@ -7,6 +7,7 @@ env:
   DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   GITHUB_REPO: cyxou/firefly-iii-telegram-bot
+  PR_NUMBER: ${{ github.event.number }}
   FORCE_COLOR: 1
 
 jobs:
@@ -37,3 +38,11 @@ jobs:
             --DOCKERHUB_REPO=$GITHUB_REPO \
             --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
             --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN
+
+      - name: Build PR Image
+        run: |
+          earthly --ci --push +buildImage \
+            --DOCKERHUB_REPO=$GITHUB_REPO \
+            --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
+            --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN \
+            --RELEASE_VERSION=$PR_NUMBER
