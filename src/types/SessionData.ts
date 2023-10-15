@@ -34,11 +34,12 @@ export interface SessionData {
   categories: CategoryRead[]
   pagination: MetaPagination | undefined
   // editTransaction: Partial<TransactionRead>
-  currentTransaction: TransactionRead | null
+  currentTransaction: Partial<TransactionRead> | null
   editTransactions: Partial<TransactionRead>[]
   category: any // TODO set proper type
   newCategories: string[]
-  deleteBotsMessage?: () => Promise<boolean>,
+  // deleteBotsMessage?: () => Promise<boolean>,
+  deleteBotsMessage?: { chatId?: number, messageId?: number }
   deleteKeyboardMenuMessage?: () => Promise<boolean>
 }
 

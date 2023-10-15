@@ -7,4 +7,6 @@ export const MENUS = {
   NEW_TRANSFER__SELECT_TARGET_ACC: 'new-transfer--target-acc',
   EDIT_TRANSACTION: 'edit-transaction',
   EDIT_TRANSACTION__EDIT_CATEGORY: 'edit-transaction--select-category',
+  EDIT_TRANSACTION__EDIT_AMOUNT: 'edit-transaction--edit-amount',
+  EDIT_TRANSACTION__EDIT_DESCRIPTION: 'edit-transaction--edit-description',
 }

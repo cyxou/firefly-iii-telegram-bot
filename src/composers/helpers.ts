@@ -40,6 +40,7 @@ export {
   generateWelcomeMessage,
   createFireflyTransaction,
   createPaginationRange,
+  cleanupSessionData,
 }
 
 const listAccountsMapper = {
@@ -489,4 +490,10 @@ function createPaginatedCategoriesRange(
     log(' Categories range is done. Returning...')
     return range.row()
   })
+}
+
+function cleanupSessionData(ctx: MyContext) {
+  ctx.session.newTransaction = {}
+  ctx.session.categories = []
+  ctx.session.editTransactions = []
 }

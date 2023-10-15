@@ -3,15 +3,19 @@ import debug from 'debug'
 import flatten from 'lodash.flatten'
 
 import { Menu, MenuRange } from '@grammyjs/menu'
+
 import type { MyContext } from '../../types/MyContext'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../../lib/firefly/model/account-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 
+import { Route } from './edit-transaction'
+
 import {
   formatTransaction,
   createPaginationRange,
   createFireflyTransaction,
+  cleanupSessionData
 } from '../helpers'
 
 import { MENUS } from '../constants'
@@ -50,10 +54,10 @@ const editTransactionMenu = new Menu<MyContext>(MENUS.EDIT_TRANSACTION).dynamic(
 transactionMenu.register([
   editTransactionMenu,
   createEditCategoryMenu(),
+  createEditAmountMenu(),
+  createEditDescriptionMenu(),
   // createEditSourceAccountMenu(),
   // createEditDestAccountMenu(),
-  // createEditAmountMenu(),
-  // createEditDescriptionMenu(),
   // createDeleteTransactionmenu(),
   // createEditTagsMenu(),
 ])
@@ -86,8 +90,6 @@ function createNewDepositMenu() {
       const log = menuLogger.extend('1')
       log(' Starting creation of deposit transaction')
       log(' Preparing accounts menu to select one as a source of deposit transaction...')
-
-      // ctx.session.newTransaction.type = TransactionTypeProperty.Deposit
 
       const accounts = await getAccounts(ctx, AccountTypeFilter.Revenue)
 
@@ -154,6 +156,8 @@ function createNewDepositMenu() {
             // ctx.reply(`Destination account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
 
             const tr = await createFireflyTransaction(ctx)
+
+            cleanupSessionData(ctx)
 
             ctx.session.currentTransaction = tr
 
@@ -272,6 +276,9 @@ function createNewTransferMenu() {
             // ctx.reply(`Destination account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
 
             const tr = await createFireflyTransaction(ctx)
+
+            cleanupSessionData(ctx)
+
             ctx.session.currentTransaction = tr
 
             return ctx.editMessageText(
@@ -387,31 +394,15 @@ function createCategoriesRange(onCategorySelectHandler: MenuMiddleware<MyContext
         )
       )
 
-      return range.row().back('🔙')
+      return range.row()
     })
   }
 }
 
 function createTransactionMenu() {
-  async function menuClickHandler(ctx: MyContext) {
-    const log = rootLog.extend('transactionMenuHandler')
-    try {
-      const userSettings = ctx.session.userSettings
-      const trId = ctx.match
-      if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
-      log('Transaction ID: %s', trId)
-      const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
-      log('Got transaction: %O', tr)
-      ctx.session.editTransactions.push(tr)
-    } catch (err) {
-      console.error(err)
-      log('Error occured handling menu click: %O', err)
-      ctx.reply((err as Error).toString())
-    }
-  }
   return new MenuRange<MyContext>().dynamic((ctx, range) => {
     // If transaction does not have a category, show button to specify one
-    if (!ctx.session.currentTransaction!.attributes.transactions[0].category_id) {
+    if (ctx.session.currentTransaction && !ctx.session.currentTransaction.attributes!.transactions[0].category_id) {
       range.submenu(
         {
           text: ctx.i18n.t('labels.CHANGE_CATEGORY'),
@@ -444,62 +435,73 @@ function createEditTransactionMenu(transactionId: string, ctx: MyContext) {
         payload: transactionId
       },
       MENUS.EDIT_TRANSACTION__EDIT_CATEGORY,
-    )
-    .row()
-    .text({
-      text: ctx => ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'),
-      payload: transactionId
-    },
-      ctx => ctx.reply(`Aloha! transactionId is ${ctx.match}`)
-    )
-    .text({
-      text: ctx => ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'),
-      payload: transactionId
-    },
-      ctx => ctx.reply(`Aloha! transactionId is ${ctx.match}`)
-    )
-    .row()
-    .text({
-      text: ctx => ctx.i18n.t('labels.CHANGE_DESCRIPTION'),
-      payload: transactionId
-    },
-      ctx => ctx.reply(`Aloha! transactionId is ${ctx.match}`)
-    )
-    // TODO: Add functionality to change the date of a transaction
-    // Try this repo: https://github.com/daniharo/grammy-calendar
-    // .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({trId}))
-    .text({
-      text: ctx => ctx.i18n.t('labels.CHANGE_AMOUNT'),
-      payload: transactionId
-    },
-      ctx => ctx.reply(`${ctx.session.newTransaction.id}`)
-    )
-    .row()
-    .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${fireflyUrl}/transactions/show/${transactionId}`)
-    .row()
+      setNewCategoryMiddleware).row()
+    .text(
+      {
+        text: ctx => ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'),
+        payload: transactionId
+      },
+      ctx => ctx.reply(`Aloha! transactionId is ${ctx.match}`))
+    .text(
+      {
+        text: ctx => ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'),
+        payload: transactionId
+      },
+      ctx => ctx.reply(`Aloha! transactionId is ${ctx.match}`)).row()
+    .submenu(
+      {
+        text: ctx => ctx.i18n.t('labels.CHANGE_DESCRIPTION'),
+        payload: transactionId
+      }, MENUS.EDIT_TRANSACTION__EDIT_DESCRIPTION, changeTransactionDescriptionMiddleware)
+    .submenu(
+      {
+        text: ctx => ctx.i18n.t('labels.CHANGE_AMOUNT'),
+        payload: transactionId
+      }, MENUS.EDIT_TRANSACTION__EDIT_AMOUNT, changeTransactionAmountMiddleware).row()
+    .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${fireflyUrl}/transactions/show/${transactionId}`).row()
     .text({ text: ctx => ctx.i18n.t('labels.DELETE'), payload: transactionId }, deleteTransactionMiddleware)
     .text({ text: '🔙', payload: transactionId }, closeEditTransactionMenu).row()
+  // TODO: Add functionality to change the date of a transaction
+  // Try this repo: https://github.com/daniharo/grammy-calendar
+  // .text(ctx.i18n.t('labels.CHANGE_DATE'), ctx => ctx.reply('Not implemented'))
 }
 
 function createEditCategoryMenu() {
   return new Menu<MyContext>(MENUS.EDIT_TRANSACTION__EDIT_CATEGORY)
     .dynamic(createCategoriesRange(editTransactionSelectCategoryHandler))
+    .text({ text: '🔙' }, closeEditTransactionMenu).row()
+}
+
+function createEditAmountMenu() {
+  return new Menu<MyContext>(MENUS.EDIT_TRANSACTION__EDIT_AMOUNT)
+    .text({ text: '🔙' }, closeEditTransactionMenu).row()
+}
+
+function createEditDescriptionMenu() {
+  return new Menu<MyContext>(MENUS.EDIT_TRANSACTION__EDIT_DESCRIPTION)
+    .text({ text: '🔙' }, closeEditTransactionMenu).row()
 }
 
 async function closeEditTransactionMenu(ctx: MyContext) {
   const log = rootLog.extend('closeEditTransactionMenu')
   try {
+    log(' Closing edit menu...')
     const userSettings = ctx.session.userSettings
     const trId = ctx.match
     if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
-    log('transaction id: %O', trId)
 
+    log(' Getting transaction with ID: %s', trId)
     const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
+    log(' Got transaction data for transaction %s', tr.id)
     ctx.session.currentTransaction = tr
 
-    const index = ctx.session.editTransactions.findIndex(t => t.id === trId)
-    ctx.session.editTransactions.splice(index, 1)
+    // log(' Removing transaction data from session...')
+    // const index = ctx.session.editTransactions.findIndex(t => t.id === trId)
+    // ctx.session.editTransactions.splice(index, 1)
 
+    // cleanupSessionData(ctx)
+
+    log(' Formatting transaction menu...')
     return ctx.editMessageText(
       formatTransaction(ctx, tr),
       {
@@ -548,6 +550,8 @@ async function newTransactionSelectCategoryHandler(ctx: MyContext) {
 
     ctx.session.currentTransaction = tr
 
+    cleanupSessionData(ctx)
+
     return ctx.editMessageText(
       formatTransaction(ctx, tr),
       {
@@ -565,46 +569,144 @@ async function newTransactionSelectCategoryHandler(ctx: MyContext) {
 async function editTransactionSelectCategoryHandler(ctx: MyContext) {
   const log = rootLog.extend('editTransactionSelectCategoryHandler')
   try {
+    const userSettings = ctx.session.userSettings
     const categoryId = ctx.match
     log('categoryId: %s', categoryId)
     if (typeof categoryId !== 'string') throw new Error('No categoryId supplied!')
+    if (!ctx.session.currentTransaction) throw new Error('No transaction supplied!')
 
-    // const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
-    // log('Setting new category id: %s', c.id)
+    const tr = ctx.session.currentTransaction
+    log('Transaction ID: %s', tr?.id)
+    log('New category ID: %s', categoryId)
 
-    // const update = {
-    //   transactions: [{
-    //     source_id: tr.attributes?.transactions[0].source_id,
-    //     destination_id: tr.attributes?.transactions[0].destination_id,
-    //     category_id: c.id
-    //   }]
-    // }
-    // log('Transaction update: %O', update)
+    const update = {
+      transactions: [{
+        source_id: tr.attributes?.transactions[0].source_id,
+        destination_id: tr.attributes?.transactions[0].destination_id,
+        category_id: categoryId
+      }]
+    }
+    log('Transaction update: %O', update)
 
-    // const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(tr.id, update)).data.data
-    // ctx.session.editTransaction = updatedTr
-    //
-    // ctx.session.editTransaction.attributes!.transactions[0].category_id = c.id
+    const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(tr.id!, update)).data.data
+    ctx.session.currentTransaction = updatedTr
 
-    // ctx.session.newTransaction.categoryId = categoryId
-    // ctx.session.newTransaction.type = TransactionTypeProperty.Withdrawal
-    // log('Setting new category id: %s', categoryId)
-    //
-    // const tr = await createFireflyTransaction(ctx)
-    // log('Got new transaction created: %O', tr.id)
-    //
-    // ctx.session.newTransaction.id = tr.id
-    //
-    // return ctx.editMessageText(
-    //   formatTransaction(ctx, tr),
-    //   {
-    //     parse_mode: 'Markdown',
-    //     reply_markup: transactionMenu
-    //   }
-    // )
+    return ctx.editMessageText(
+      formatTransaction(ctx, updatedTr),
+      {
+        parse_mode: 'Markdown',
+        reply_markup: transactionMenu
+      }
+    )
   } catch (err) {
     console.error(err)
     log('Error occured handling category selection: %O', err)
     return ctx.reply((err as Error).toString())
+  }
+}
+
+async function changeTransactionAmountMiddleware(ctx: MyContext) {
+  const log = rootLog.extend('changeTransactionAmount')
+  log('Entered changeTransactionAmount action handler')
+  try {
+    const trId = ctx.match
+    log('Transaction ID: %s', trId)
+
+    log('Setting route to %s...', Route.CHANGE_AMOUNT)
+    ctx.session.step = Route.CHANGE_AMOUNT
+    // ctx.session.currentTransaction = ctx.session.editTransactions.find(t => t.id === trId) || null
+
+    // Store data of the original message.
+    // We need it because having edited a transaction, we can not edit the
+    // message with updated transaction from the route handler function.
+    // Hence the workaround is to delete original message and then post
+    // another one with the updated transaction data. The deletion is meant to
+    // be called only from the route handler functions where a user types in
+    // things as opposed to clicking on inline keyboard buttons.
+    const messageId = ctx.update?.callback_query?.message!.message_id || 0
+    const chatId = ctx.update?.callback_query?.message!.chat.id || 0
+    log('deleteMessage: messageId: %s', messageId)
+    log('deleteMessage: chatId: %s', chatId)
+    ctx.session.deleteBotsMessage = { chatId, messageId }
+
+    return ctx.editMessageText(ctx.i18n.t('transactions.edit.typeNewAmount'))
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function changeTransactionDescriptionMiddleware(ctx: MyContext) {
+  const log = rootLog.extend('changeTransactionDescription')
+  log('Entered changeTransactionDescription action handler')
+  try {
+    const trId = ctx.match
+    log('Transaction ID: %s', trId)
+
+    log('Setting route to %s...', Route.CHANGE_DESCRIPTION)
+    ctx.session.step = Route.CHANGE_DESCRIPTION
+    // ctx.session.currentTransaction = ctx.session.editTransactions.find(t => t.id === trId) || null
+
+    const messageId = ctx.update?.callback_query?.message!.message_id || 0
+    const chatId = ctx.update?.callback_query?.message!.chat.id || 0
+    log('deleteMessage: messageId: %s', messageId)
+    log('deleteMessage: chatId: %s', chatId)
+    ctx.session.deleteBotsMessage = { chatId, messageId }
+
+    return ctx.editMessageText(ctx.i18n.t('transactions.edit.typeNewDescription'))
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function setNewCategoryMiddleware(ctx: MyContext) {
+  const log = rootLog.extend('setNewCategoryMiddleware')
+  log('Entered setNewCategoryMiddleware action handler')
+  try {
+    const trId = ctx.match
+    log('Transacrion ID: %s', trId)
+    const userSettings = ctx.session.userSettings
+    if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
+    log('Transaction ID: %s', trId)
+    const trResData = (await firefly(userSettings).Transactions.getTransaction(trId)).data
+    log('Got transaction data: %O', trResData)
+    ctx.session.currentTransaction = trResData.data
+
+    const page = 1
+    const catResData = (await firefly(userSettings).Categories.listCategory(page)).data
+    log('Got categories data: %O', catResData)
+    ctx.session.categories = catResData.data
+    ctx.session.pagination = catResData.meta.pagination
+
+    ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'))
+
+    // TODO: If inline_keyboard array does not contain anything, than user has no categories yet
+    // if (!flatten(categoriesKeyboard.inline_keyboard).length) {
+    //   categoriesKeyboard.text(ctx.i18n.t('labels.DONE'), mapper.editMenu.template({ trId }))
+    //
+    //   return ctx.editMessageText(ctx.i18n.t('transactions.edit.noCategoriesYet'), {
+    //     parse_mode: 'Markdown',
+    //     reply_markup:  categoriesKeyboard
+    //   })
+    // }
+
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function menuClickHandler(ctx: MyContext) {
+  const log = rootLog.extend('transactionMenuHandler')
+  try {
+    const userSettings = ctx.session.userSettings
+    const trId = ctx.match
+    if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
+    log('Transaction ID: %s', trId)
+    const resData = (await firefly(userSettings).Transactions.getTransaction(trId)).data
+    log('Got transaction data: %O', resData)
+    ctx.session.currentTransaction = resData.data
+  } catch (err) {
+    console.error(err)
+    log('Error occured handling menu click: %O', err)
+    ctx.reply((err as Error).toString())
   }
 }

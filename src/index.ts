@@ -19,7 +19,7 @@ import accounts from './composers/accounts'
 import categories from './composers/categories'
 
 import type { MyContext } from './types/MyContext'
-import { createInitialSessionData } from './types/SessionData'
+import { createInitialSessionData, SessionData } from './types/SessionData'
 
 export const Route = {
   idle: 'IDLE'
@@ -34,7 +34,7 @@ bot.use(
   session({
     getSessionKey,
     initial: createInitialSessionData,
-    storage: new FileAdapter({
+    storage: new FileAdapter<SessionData>({
       dirName: 'sessions',
     }),
   })

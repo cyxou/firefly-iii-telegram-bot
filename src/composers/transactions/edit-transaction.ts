@@ -11,12 +11,14 @@ import {
   formatTransactionKeyboard,
   createCategoriesKeyboard,
   createAccountsKeyboard,
+  cleanupSessionData,
   createEditMenuKeyboard
 } from '../helpers'
 
 import firefly from '../../lib/firefly'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { handleCallbackQueryError } from '../../lib/errorHandler'
+import { transactionMenu } from './add-transactions-menus'
 
 export enum Route {
   IDLE               = 'IDLE',
@@ -31,8 +33,8 @@ const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 // Common for all transaction types
 
-// router.route(Route.CHANGE_AMOUNT, changeAmountRouteHandler)
-// router.route(Route.CHANGE_DESCRIPTION, changeDescriptionRouteHandler)
+router.route(Route.CHANGE_AMOUNT, changeAmountRouteHandler)
+router.route(Route.CHANGE_DESCRIPTION, changeDescriptionRouteHandler)
 
 bot.use(router)
 
@@ -95,140 +97,118 @@ export default bot
 //   }
 // }
 
-async function changeTransactionAmountCbQH(ctx: MyContext) {
-  const log = rootLog.extend('changeTransactionAmount')
-  log('Entered changeTransactionAmount action handler')
+
+async function changeAmountRouteHandler(ctx: MyContext) {
+  const log = rootLog.extend('changeAmountRouteHandler')
+  log('Entered change amount route handler')
   try {
-    const trId = ctx.match![1]
+    const userSettings = ctx.session.userSettings
+    log('ctx.session: %O', ctx.session)
+    const text = ctx.msg?.text || ''
 
-    await ctx.answerCallbackQuery()
+    log('ctx.message: %O', ctx.message)
+    log('ctx.update: %O', ctx.update)
 
-    ctx.session.step = Route.CHANGE_AMOUNT
+    if (!ctx.session.currentTransaction) throw new Error('No current transaction in session data!')
 
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.typeNewAmount'), {
-      reply_markup: new InlineKeyboard()
-        .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
-    })
+    const currentAmount = ctx.session.currentTransaction.attributes?.transactions[0].amount
+    const amount = parseAmountInput(text, currentAmount)
+    log('amount: %O', amount)
+    
+    const tr = ctx.session.currentTransaction
+    log('tr.id: %O', tr.id)
+    const update = {
+      transactions: [{
+        source_id: tr.attributes?.transactions[0].source_id,
+        destination_id: tr.attributes?.transactions[0].destination_id,
+        amount: amount?.toString()
+      }]
+    }
+    
+    if (!amount) {
+      log('Bad amount supplied...')
+      return ctx.reply(ctx.i18n.t('transactions.edit.badAmountTyped'))
+    }
+
+    log('Updating transaction...')
+    const updatedTr = (await firefly(userSettings).Transactions.updateTransaction( tr.id!, update)).data.data
+    
+    if (ctx.session.deleteBotsMessage?.messageId) {
+      log('Deleting original message...')
+      await ctx.api.deleteMessage(ctx.session.deleteBotsMessage.chatId!, ctx.session.deleteBotsMessage.messageId)
+      ctx.session.deleteBotsMessage = {}
+    }
+
+    // Cleanup session
+    cleanupSessionData(ctx)
+    ctx.session.step = Route.IDLE
+    
+    return ctx.reply(
+      formatTransaction(ctx, updatedTr),
+      {
+        parse_mode: 'Markdown',
+        reply_markup: transactionMenu
+      }
+    )
   } catch (err) {
     console.error(err)
   }
 }
 
-async function changeTransactionDescriptionCbQH(ctx: MyContext) {
-  const log = rootLog.extend('changeTransactionDescription')
-  log('Entered changeTransactionDescription action handler')
+async function changeDescriptionRouteHandler(ctx: MyContext) {
+  const log = rootLog.extend('changeDescriptionRouteHandler')
+  log('Entered change description route handler')
   try {
-    const trId = ctx.match![1]
+    const userSettings = ctx.session.userSettings
+    log('ctx.session: %O', ctx.session)
+    const description = ctx.msg?.text || ''
+    log('description: %O', description)
+    log('ctx.message: %O', ctx.message)
+    log('ctx.update: %O', ctx.update)
 
-    await ctx.answerCallbackQuery()
+    if (!ctx.session.currentTransaction) throw new Error('No current transaction in session data!')
 
-    ctx.session.step = Route.CHANGE_DESCRIPTION
+    const tr = ctx.session.currentTransaction
+    log('tr.id: %O', tr.id)
+    const update = {
+      transactions: [{
+        source_id: tr.attributes?.transactions[0].source_id,
+        destination_id: tr.attributes?.transactions[0].destination_id,
+        description: description.trim()
+      }]
+    }
 
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.typeNewDescription'), {
-      reply_markup: new InlineKeyboard()
-        .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId }))
-    })
+    if (!description) {
+      return ctx.editMessageText(ctx.i18n.t('transactions.edit.badDescriptionTyped'))
+    }
+
+    log('Updating transaction...')
+    const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(
+      tr.id || '',
+      update
+    )).data.data
+
+    if (ctx.session.deleteBotsMessage?.messageId) {
+      log('Deleting original message...')
+      await ctx.api.deleteMessage(ctx.session.deleteBotsMessage.chatId!, ctx.session.deleteBotsMessage.messageId)
+      ctx.session.deleteBotsMessage = {}
+    }
+
+    // Cleanup session
+    cleanupSessionData(ctx)
+    ctx.session.step = Route.IDLE
+    
+    return ctx.reply(
+      formatTransaction(ctx, updatedTr),
+      {
+        parse_mode: 'Markdown',
+        reply_markup: transactionMenu
+      }
+    )
   } catch (err) {
     console.error(err)
   }
 }
-
-// async function changeAmountRouteHandler(ctx: MyContext) {
-//   const log = rootLog.extend('changeAmountRouteHandler')
-//   log('Entered change amount route handler')
-//   try {
-//     const userSettings = ctx.session.userSettings
-//     log('ctx.session: %O', ctx.session)
-//     const text = ctx.msg?.text || ''
-//
-//     const currentAmount = ctx.session.editTransaction.attributes?.transactions[0].amount
-//     const amount = parseAmountInput(text, currentAmount)
-//     log('amount: %O', amount)
-//
-//     const tr = ctx.session.editTransaction
-//     log('tr.id: %O', tr.id)
-//     const update = {
-//       transactions: [{
-//         source_id: tr.attributes?.transactions[0].source_id,
-//         destination_id: tr.attributes?.transactions[0].destination_id,
-//         amount: amount?.toString()
-//       }]
-//     }
-//
-//     if (!amount) {
-//       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badAmountTyped'), {
-//         reply_markup: new InlineKeyboard()
-//           .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId: tr.id || '' }))
-//       })
-//     }
-//
-//     ctx.session.step = 'IDLE'
-//
-//     if (ctx.session.deleteBotsMessage) {
-//       log('Deleting original message')
-//       await ctx.session.deleteBotsMessage()
-//     }
-//
-//     const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(
-//       tr.id || '',
-//       update
-//     )).data.data
-//
-//     return ctx.reply(
-//       formatTransaction(ctx, updatedTr),
-//       formatTransactionKeyboard(ctx, updatedTr)
-//     )
-//   } catch (err) {
-//     console.error(err)
-//   }
-// }
-
-// async function changeDescriptionRouteHandler(ctx: MyContext) {
-//   const log = rootLog.extend('changeDescriptionRouteHandler')
-//   log('Entered change description route handler')
-//   try {
-//     const userSettings = ctx.session.userSettings
-//     log('ctx.session: %O', ctx.session)
-//     const description = ctx.msg?.text || ''
-//     log('description: %O', description)
-//
-//     const tr = ctx.session.editTransaction
-//     log('tr.id: %O', tr.id)
-//     const update = {
-//       transactions: [{
-//         source_id: tr.attributes?.transactions[0].source_id,
-//         destination_id: tr.attributes?.transactions[0].destination_id,
-//         description: description.trim()
-//       }]
-//     }
-//
-//     if (!description) {
-//       return ctx.editMessageText(ctx.i18n.t('transactions.edit.badDescriptionTyped'), {
-//         reply_markup: new InlineKeyboard()
-//           .text(ctx.i18n.t('labels.CANCEL'), mapper.editMenu.template({ trId: tr.id || '' }))
-//       })
-//     }
-//
-//     ctx.session.step = 'IDLE'
-//
-//     if (ctx.session.deleteBotsMessage) {
-//       log('Deleting original message')
-//       await ctx.session.deleteBotsMessage()
-//     }
-//
-//     const updatedTr = (await firefly(userSettings).Transactions.updateTransaction(
-//       tr.id || '',
-//       update
-//     )).data.data
-//
-//     return ctx.reply(
-//       formatTransaction(ctx, updatedTr),
-//       formatTransactionKeyboard(ctx, updatedTr)
-//     )
-//   } catch (err) {
-//     console.error(err)
-//   }
-// }
 
 // async function assignCategory(ctx: MyContext) {
 //   const log = rootLog.extend('assignCategory')
