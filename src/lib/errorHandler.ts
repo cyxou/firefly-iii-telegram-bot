@@ -43,17 +43,11 @@ export function handleCallbackQueryError(err: Error, ctx: MyContext) {
   log('Unexpected error occured: %O', err)
 
   if (err instanceof HostNotFoundError) {
-    return ctx.answerCallbackQuery({
-      text: ctx.i18n.t('settings.connectionFailedBadUrl'),
-      show_alert: true
-    })
+    return ctx.reply(ctx.i18n.t('settings.connectionFailedBadUrl'))
   }
 
   if (err instanceof AuthenticationError) {
-    return ctx.answerCallbackQuery({
-      text: ctx.i18n.t('settings.connectionFailedUnauthenticated'),
-      show_alert: true
-    })
+    return ctx.reply(ctx.i18n.t('settings.connectionFailedUnauthenticated'))
   }
 
   if (err instanceof ResourceNotFoundError) {

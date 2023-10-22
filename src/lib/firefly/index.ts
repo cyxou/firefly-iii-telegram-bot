@@ -38,7 +38,13 @@ function resErrorInterceptor(axiosError: AxiosError) {
   log('Axios error: %O', axiosError)
   log('Axios response data: %O', axiosError.response?.data)
 
+  if ((axiosError.response?.data as any)?.message === 'Unauthenticated') {
+    log('Rejecting with AuthenticationError: Unauthenticated')
+    return Promise.reject(new AuthenticationError(axiosError?.code))
+  }
+
   if (axiosError.response?.status === 401 && axiosError.response.statusText === 'Unauthorized') {
+    log('Rejecting with AuthenticationError: Unauthorized')
     return Promise.reject(new AuthenticationError(axiosError?.code))
   }
 
@@ -46,16 +52,20 @@ function resErrorInterceptor(axiosError: AxiosError) {
     axiosError.code === 'ERR_BAD_REQUEST' &&
     axiosError.response?.data!['exception'] === 'NotFoundHttpException'
   ) {
+    log('Rejecting with ResourceNotFoundError exception')
     return Promise.reject(new ResourceNotFoundError(axiosError.code))
   }
 
   if (axiosError.code === 'ERR_BAD_REQUEST') {
+    log('Rejecting with BadRequestError')
     return Promise.reject(new BadRequestError(axiosError.code))
   }
 
   if (axiosError.code === 'ENOTFOUND') {
+    log('Rejecting with HostNotFoundError')
     return Promise.reject(new HostNotFoundError(axiosError.code))
   }
 
+  log('Rejecting with some other error kind')
   return Promise.reject(axiosError)
 }

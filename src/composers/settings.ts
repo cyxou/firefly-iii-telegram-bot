@@ -325,7 +325,6 @@ async function testConnectionCbQH(ctx: MyContext) {
       ctx.i18n.t('settings.connectionSuccess', { email: userInfo.attributes.email }),
     )
   } catch (err: any) {
-    // TODO: Set user friendly error message in case if Firefly URL is bad
-    ctx.reply(err.toString())
+    return handleCallbackQueryError(err, ctx)
   }
 }
