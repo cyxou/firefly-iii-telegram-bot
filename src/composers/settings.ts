@@ -18,8 +18,6 @@ export enum Route {
   FIREFLY_ACCESS_TOKEN = 'SETTINGS|FIREFLY_ACCESS_TOKEN'
 }
 
-type NextFunction = () => Promise<void>;
-
 const rootLog = debug(`bot:settings`)
 
 const bot = new Composer<MyContext>()
