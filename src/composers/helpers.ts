@@ -17,6 +17,7 @@ import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
 import { transactionMenu } from '../composers/transactions/add-transactions-menus'
+import { Route } from './transactions/edit-transaction'
 
 const debug = Debug('bot:transactions:helpers')
 
@@ -39,6 +40,7 @@ export {
   createMainKeyboard,
   generateWelcomeMessage,
   createFireflyTransaction,
+  getFireflyAccounts,
   createPaginationRange,
   cleanupSessionData,
 }
@@ -218,6 +220,44 @@ async function createAccountsKeyboard(
   } catch (err) {
     log('Error: %O', err)
     console.error('Error occurred creating acounts keyboard: ', err)
+    throw err
+  }
+}
+
+async function getFireflyAccounts(
+  ctx: MyContext,
+  accountType: AccountTypeFilter | AccountTypeFilter[],
+  opts?: { skipAccountId: string }
+) {
+  const log = debug.extend('getFireflyAccounts')
+  try {
+    let accounts: AccountRead[] = []
+    const now = dayjs().format('YYYY-MM-DD')
+
+    if (Array.isArray(accountType)) {
+      const promises: any = []
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accType)))
+      const responses = await Promise.all(promises)
+
+      log('Responses length: %s', responses.length)
+
+      accounts = flatten(responses.map(r => {
+        return r.data.data
+      }))
+    } else {
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accountType)).data.data
+    }
+
+    log('accounts: %O', accounts)
+
+    // Prevent from choosing same account when doing transfers
+    if (opts) accounts = accounts.filter(acc => opts.skipAccountId !== acc.id.toString())
+
+    return accounts.reverse() // we want top accounts be closer to the bottom of the screen
+
+  } catch (err) {
+    log('Error: %O', err)
+    console.error('Error occurred getting acounts: ', err)
     throw err
   }
 }
@@ -496,4 +536,5 @@ function cleanupSessionData(ctx: MyContext) {
   ctx.session.newTransaction = {}
   ctx.session.categories = []
   ctx.session.editTransactions = []
+  ctx.session.step = Route.IDLE
 }
