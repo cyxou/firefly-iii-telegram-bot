@@ -14,6 +14,7 @@ import {
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
+import { ACCOUNTS_PAGE_LIMIT } from './constants'
 
 const debug = Debug(`bot:accounts`)
 
@@ -51,7 +52,7 @@ async function showAccounts(ctx: MyContext) {
     log('accType: %O', accType)
 
     const accounts = (await firefly(userSettings).Accounts.listAccount(
-      page, balanceToDate, accType as AccountTypeFilter)).data.data
+      '', ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
     log('accounts: %O', accounts)
 
     const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeFilter)

@@ -7,7 +7,7 @@ dotenv.config();
 
 import i18n from './lib/i18n'
 import config from './config'
-import { command } from './lib/constants'
+import { command } from './composers/constants'
 import { requireSettings, cleanup } from './lib/middlewares'
 import { createMainKeyboard, generateWelcomeMessage } from './composers/helpers'
 

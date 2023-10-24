@@ -1,3 +1,9 @@
+export const command = {
+  START:    'start',
+  SETTINGS: 'settings',
+  HELP:     'help',
+}
+
 export const MENUS = {
   TRANSACTION: 'transaction',
   ADD_TRANSACTION: 'add-transaction',
@@ -12,3 +18,7 @@ export const MENUS = {
   EDIT_TRANSACTION__EDIT_AMOUNT: 'edit-transaction--edit-amount',
   EDIT_TRANSACTION__EDIT_DESCRIPTION: 'edit-transaction--edit-description',
 }
+
+export const CATEGORIES_PAGE_LIMIT = 20
+export const ACCOUNTS_PAGE_LIMIT = 100 // no pagination thus far
+export const TRANSACTIONS_PAGE_LIMIT = 100 // no pagination thus far

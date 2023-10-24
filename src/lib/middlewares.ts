@@ -1,7 +1,7 @@
 import debug from 'debug'
 
 import i18n from './i18n'
-import { command } from './constants'
+import { command } from '../composers/constants'
 import type { MyContext } from '../types/MyContext'
 
 const rootLog = debug(`bot:mdlwr`)

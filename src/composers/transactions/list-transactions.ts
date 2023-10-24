@@ -13,6 +13,7 @@ import firefly from '../../lib/firefly'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { TransactionTypeFilter } from '../../lib/firefly/model/transaction-type-filter'
+import { TRANSACTIONS_PAGE_LIMIT } from '../constants'
 
 const debug = Debug(`bot:transactions:list`)
 
@@ -57,6 +58,8 @@ async function showTransactions(ctx: MyContext) {
     log('end: %O', end)
 
     const transactions = (await firefly(userSettings).Transactions.listTransaction(
+      '',
+      TRANSACTIONS_PAGE_LIMIT,
       page,
       start,
       end,

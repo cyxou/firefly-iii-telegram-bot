@@ -9,7 +9,7 @@ import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../../lib/firefly/model/account-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { Route } from './edit-transaction'
-import { MENUS } from '../constants'
+import { MENUS, CATEGORIES_PAGE_LIMIT } from '../constants'
 import firefly from '../../lib/firefly'
 
 import {
@@ -308,7 +308,7 @@ async function getAccounts(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accType)))
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)
@@ -318,7 +318,7 @@ async function getAccounts(
       }))
 
     } else {
-      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accountType)).data.data
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accountType)).data.data
     }
 
     log('accounts: %O', accounts)
@@ -369,7 +369,11 @@ function createCategoriesRange(onCategorySelectedHandler: MenuMiddleware<MyConte
           // Previous page handler
           async (ctx: MyContext) => {
             const userSettings = ctx.session.userSettings
-            const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! - 1)).data
+            const resData = (await firefly(userSettings).Categories.listCategory(
+              '',
+              CATEGORIES_PAGE_LIMIT,
+              ctx.session.pagination?.current_page! - 1
+            )).data
             log('resData.meta: %O', resData.meta)
             ctx.session.pagination = resData.meta.pagination
             ctx.session.categories = resData.data
@@ -378,7 +382,11 @@ function createCategoriesRange(onCategorySelectedHandler: MenuMiddleware<MyConte
           // Next page handler
           async (ctx: MyContext) => {
             const userSettings = ctx.session.userSettings
-            const resData = (await firefly(userSettings).Categories.listCategory(ctx.session.pagination?.current_page! + 1)).data
+            const resData = (await firefly(userSettings).Categories.listCategory(
+              '',
+              CATEGORIES_PAGE_LIMIT,
+              ctx.session.pagination?.current_page! + 1
+            )).data
             log('resData.meta: %O', resData.meta)
             ctx.session.pagination = resData.meta.pagination
             ctx.session.categories = resData.data
@@ -833,7 +841,7 @@ function createEditCategorySubmenu(transactionId: string) {
         ctx.session.currentTransaction = trResData.data
 
         const page = 1
-        const catResData = (await firefly(userSettings).Categories.listCategory(page)).data
+        const catResData = (await firefly(userSettings).Categories.listCategory('', CATEGORIES_PAGE_LIMIT, page)).data
         log('Got categories data: %O', catResData)
         ctx.session.categories = catResData.data
         ctx.session.pagination = catResData.meta.pagination

@@ -6,7 +6,7 @@ import { Menu, MenuRange } from '@grammyjs/menu'
 
 import type { MyContext } from '../types/MyContext'
 import i18n, { getLanguageIcon } from '../lib/i18n';
-import { command } from '../lib/constants'
+import { command, ACCOUNTS_PAGE_LIMIT } from './constants'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
@@ -47,7 +47,7 @@ const settingsMenu = new Menu<MyContext>('settings')
           async ctx => {
             const userSettings = ctx.session.userSettings
             const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-              1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+              '', ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
             // Take care of a case when no accounts are created yet
             if (!accounts.length) {
               ctx.editMessageText(ctx.i18n.t('common.noDefaultSourceAccountExist'))
@@ -93,7 +93,7 @@ const defaultAccountMenu = new Menu<MyContext>('set-default-account')
     const { fireflyUrl } = userSettings
 
     const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-      1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+      '', ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     log('accounts: %O', accounts)
 
     // Take care of a case when no accounts are created yet

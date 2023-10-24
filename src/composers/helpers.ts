@@ -132,7 +132,8 @@ async function createAccountsKeyboard(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accType)))
+      // TODO: Implement pagination menu for Accounts
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)
@@ -141,7 +142,7 @@ async function createAccountsKeyboard(
         return r.data.data
       }))
     } else {
-      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accountType)).data.data
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accountType)).data.data
     }
 
     log('accounts: %O', accounts)
@@ -184,7 +185,7 @@ async function getFireflyAccounts(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accType)))
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)
@@ -193,7 +194,7 @@ async function getFireflyAccounts(
         return r.data.data
       }))
     } else {
-      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accountType)).data.data
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accountType)).data.data
     }
 
     log('accounts: %O', accounts)

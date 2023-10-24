@@ -9,6 +9,7 @@ import type { MyContext } from '../types/MyContext'
 import i18n from '../lib/i18n';
 import firefly from '../lib/firefly'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
+import { TRANSACTIONS_PAGE_LIMIT } from './constants'
 
 export enum Route {
   IDLE            = 'IDLE',
@@ -318,9 +319,9 @@ async function showCategoryDetails(ctx: MyContext) {
 
     const categoryPromise = firefly(userSettings).Categories.getCategory(categoryId)
     const categoryTransactionsPromise = firefly(userSettings).Categories
-      .listTransactionByCategory(categoryId, 1, start, end)
+      .listTransactionByCategory(categoryId, '', TRANSACTIONS_PAGE_LIMIT, 1, start, end)
     const expenseCategoriesPromise = firefly(userSettings).Insight
-      .insightExpenseCategory(start, end, [parseInt(categoryId, 10)])
+      .insightExpenseCategory(start, end, '', [parseInt(categoryId, 10)])
 
     // Resolve all the promises
     const [ category, categoryTransactions, expenseCategories ] =
