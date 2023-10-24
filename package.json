@@ -23,7 +23,7 @@
     "clean:api": "rm -rf src/lib/firefly/api",
     "clean:model": "ls ./src/lib/firefly/model/ | grep -v currency-update.ts | xargs -I {} rm ./src/lib/firefly/model/{}",
     "precodegen": "npm run clean:api && npm run clean:model",
-    "codegen": "openapi-generator-cli generate -i https://api-docs.firefly-iii.org/firefly-iii-1.5.6.yaml -o src/lib/firefly -g typescript-axios -c .openapi-generator-config.yaml"
+    "codegen": "openapi-generator-cli generate -i https://api-docs.firefly-iii.org/firefly-iii-2.0.10-v1.yaml -o src/lib/firefly -g typescript-axios -c .openapi-generator-config.yaml"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "2.5.2",
