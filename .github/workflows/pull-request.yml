@@ -14,6 +14,13 @@ jobs:
   validate_pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Set up QEMU for multiplatform builds
+        id: qemu
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+
       - uses: actions/checkout@v3
 
       - name: Put back the git branch into git (Earthly uses it for tagging)
@@ -38,6 +45,9 @@ jobs:
             --DOCKERHUB_REPO=$GITHUB_REPO \
             --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
             --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN
+
+      - name: Docker Login
+        run: docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_TOKEN
 
       - name: Build PR Image
         run: |
