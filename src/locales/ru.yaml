@@ -153,7 +153,7 @@ accounts:
       
       ИТОГО: ${sums ? sums : '0'}</pre>
     liability: >
-      Баланс ваших долговых счетов:'
+      Баланс ваших долговых счетов:
        
       <pre>${accounts.replace(/\n$/, '')}
       
@@ -283,3 +283,6 @@ categories:
     ──────────────────
     
     ИТОГО: ${sums ? sums : '0'}</pre>
+
+reports:
+  notImplemented: Извините, но отчеты пока не реализованы 😞

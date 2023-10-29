@@ -276,3 +276,6 @@ categories:
     ──────────────────
     
     SOMMA: ${sums ? sums : '0'}</pre>
+
+reports:
+  notImplemented: Siamo spiacenti, ma i rapporti non sono ancora stati implementati 😞

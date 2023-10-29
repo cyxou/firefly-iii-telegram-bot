@@ -282,3 +282,6 @@ categories:
     ──────────────────
     
     SUM: ${sums ? sums : '0'}</pre>
+
+reports:
+  notImplemented: Sorry, but reports are not implemented yet 😞
