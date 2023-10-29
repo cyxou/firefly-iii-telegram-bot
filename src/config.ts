@@ -9,6 +9,6 @@ export default {
   userId: parseInt(process.env.TG_USER_ID || '', 10),
   botToken: process.env.BOT_TOKEN || 'USE_YOUR_REAL_BOT_TOKEN',
   fireflyUrl: process.env.FIREFLY_URL || '',
-  fireflyApiUrl: process.env.FIREFLY_API_URL || process.env.FIREFLY_URL,
+  fireflyApiUrl: process.env.FIREFLY_API_URL || `${process.env.FIREFLY_URL}/api`,
   fireflyAccessToken: process.env.FIREFLY_ACCESS_TOKEN || ''
 }

@@ -1,6 +1,6 @@
 import debug from 'debug'
 import dayjs from 'dayjs'
-import { Composer } from 'grammy'
+import { Composer, Keyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 import { Menu, MenuRange } from '@grammyjs/menu'
 
@@ -12,9 +12,11 @@ import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 import { handleCallbackQueryError } from '../lib/errorHandler'
 import { requireSettings } from '../lib/middlewares'
+import { createMainKeyboard, generateWelcomeMessage } from './helpers'
 
 export enum Route {
   FIREFLY_URL = 'SETTINGS|FIREFLY_URL',
+  FIREFLY_API_URL = 'SETTINGS|FIREFLY_API_URL',
   FIREFLY_ACCESS_TOKEN = 'SETTINGS|FIREFLY_ACCESS_TOKEN'
 }
 
@@ -30,6 +32,7 @@ const settingsMenu = new Menu<MyContext>('settings')
     ctx => ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
   ).row()
   .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), inputFireflyUrlCbQH).row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_API_URL_BUTTON'), inputFireflyApiUrlCbQH).row()
   .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), inputFireflyAccessTokenCbQH).row()
   // Render test connection and default account buttons only if Firefly URL and
   // Access token are set
@@ -77,6 +80,8 @@ const langMenu = new Menu<MyContext>('switch-lang')
           dayjs.locale(locale)
           ctx.session.userSettings.language = locale
           ctx.menu.update();
+          const welcomeMessage = generateWelcomeMessage(ctx)
+          ctx.reply(welcomeMessage, { reply_markup: createMainKeyboard(ctx) })
           ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
         }
       ).row()
@@ -154,6 +159,7 @@ bot.hears(i18n.t('it', 'labels.SETTINGS'), settingsCommandHandler)
 // Local routes and handlers
 router.route('IDLE', (_, next) => next())
 router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
+router.route(Route.FIREFLY_API_URL, fireflyApiUrlRouteHandler)
 router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
 router.otherwise(ctx => ctx.reply('otherwise'))
 bot.use(router)
@@ -163,6 +169,7 @@ export default bot
 function settingsText(ctx: MyContext) {
   const {
     fireflyUrl,
+    fireflyApiUrl,
     fireflyAccessToken,
     defaultSourceAccount,
   } = ctx.session.userSettings
@@ -172,6 +179,7 @@ function settingsText(ctx: MyContext) {
 
   return ctx.i18n.t('settings.whatDoYouWantToChange', {
     fireflyUrl,
+    fireflyApiUrl,
     accessToken,
     defaultSourceAccount,
   })
@@ -244,6 +252,39 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
     }
 
     ctx.session.userSettings.fireflyUrl = text
+    ctx.session.userSettings.fireflyApiUrl = `${text}/api`
+    ctx.session.step = 'IDLE'
+
+    return ctx.reply(
+      settingsText(ctx),
+      {
+        parse_mode: 'Markdown',
+        reply_markup: settingsMenu
+      }
+    )
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
+  }
+}
+
+async function fireflyApiUrlRouteHandler(ctx: MyContext) {
+  const log = rootLog.extend('fireflyApiUrlRouteHandler')
+  log('Entered fireflyApiUrlRouteHandler...')
+  try {
+    log('ctx.msg: %O', ctx.msg)
+    const text = ctx.msg!.text as string
+    log('User entered text: %s', text)
+    log('ctx.session: %O', ctx.session)
+    const r = new RegExp(/^(http|https):\/\/[^ "]+$/i)
+    const valid = r.test(text)
+    log('URL is valid: %s', valid)
+
+    if (!valid) {
+      return ctx.reply(ctx.i18n.t('settings.badUrl'), {
+        reply_markup: cancelMenu
+      })
+    }
+
     ctx.session.userSettings.fireflyApiUrl = text
     ctx.session.step = 'IDLE'
 
@@ -254,9 +295,8 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
         reply_markup: settingsMenu
       }
     )
-
   } catch (err: any) {
-    log('Error occurred: %O', err)
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -272,7 +312,23 @@ async function inputFireflyUrlCbQH(ctx: MyContext) {
       reply_markup: cancelMenu
     })
   } catch (err: any) {
-    log('Error occurred: %O', err)
+    return handleCallbackQueryError(err, ctx)
+  }
+}
+
+async function inputFireflyApiUrlCbQH(ctx: MyContext) {
+  const log = rootLog.extend('inputFireflyApiUrlCbQH')
+  log(`Entered the inputFireflyApiUrlCbQH action handler`)
+
+  try {
+    ctx.session.step = Route.FIREFLY_API_URL
+
+    await ctx.editMessageText(ctx.i18n.t('settings.inputFireflyApiUrl'), {
+      parse_mode: 'Markdown',
+      reply_markup: cancelMenu
+    })
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -286,7 +342,7 @@ async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
       reply_markup: cancelMenu
     })
   } catch (err: any) {
-    log('Error occurred: %O', err)
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -296,9 +352,9 @@ async function testConnectionCbQH(ctx: MyContext) {
   log('ctx: %O', ctx)
   try {
     const userSettings = ctx.session.userSettings
-    const { fireflyUrl, fireflyAccessToken } = userSettings
+    const { fireflyUrl, fireflyApiUrl, fireflyAccessToken } = userSettings
 
-    if (!fireflyUrl) {
+    if (!fireflyUrl || !fireflyApiUrl) {
       return ctx.reply(
         ctx.i18n.t('settings.specifySmthFirst', { smth: ctx.i18n.t('labels.FIREFLY_URL_BUTTON') }),
         { parse_mode: 'Markdown' }

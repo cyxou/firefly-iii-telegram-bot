@@ -347,6 +347,7 @@ function createMainKeyboard(ctx: MyContext) {
     .text(ctx.i18n.t('labels.REPORTS'))
     .text(ctx.i18n.t('labels.CATEGORIES')).row()
     .text(ctx.i18n.t('labels.SETTINGS'))
+    .resized()
 }
 
 async function createFireflyTransaction(ctx: MyContext) {

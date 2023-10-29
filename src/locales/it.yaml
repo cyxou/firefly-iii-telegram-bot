@@ -25,6 +25,7 @@ labels:
   EDIT_TRANSACTION: ✏️ Modifica
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Token di  
   FIREFLY_URL_BUTTON: 🔗 Firefly URL
+  FIREFLY_API_URL_BUTTON: 🔗 Firefly API URL
   LIST_TAGS: 🏷️  Tag
   RENAME_CATEGORY: ✏️ Rinoimina
   REPORTS: 📈 Resoconti
@@ -78,6 +79,10 @@ settings:
     Tipo di Indirizzo URL della tua istanza Firefly III.
     Dovrebbe essere nel formato: *https://firefly.example.com*
     o: *http://localhost:8080*
+  inputFireflyApiUrl: >
+    Digitare l'indirizzo URL dell'endpoint API di Firefly III.
+    Di solito è lo stesso URL di base di Firefly III, ma con un sottopercorso */api* come questo:
+    *https://firefly.example.com/api* o *http://localhost:8080/api*
   inputFireflyAccessToken: >
     Incolla il tuo token di accesso personale.
     Puoi crearlo e copiarlo dall'interfaccia web di Firefly III:
@@ -89,6 +94,8 @@ settings:
     Cosa vuoi cambiare?  
        
     *🔗 Firefly URL*: ${fireflyUrl || '🚨 <NON SPECIFICATO>'}
+
+    *🔗 Firefly API URL*: ${fireflyApiUrl || '🚨 <NON SPECIFICATO>'}
 
     *🔑 Token di accesso*: ${accessToken || '🚨 <NON SPECIFICATO>'}
 
@@ -107,8 +114,9 @@ settings:
     Errore di connessione a Firefly!
     Per piacere verifica di aver specificato *🔗 Firefly API URL* corretto.
   connectionSuccess: >
-
-    Ciao, ${email}!
+   🎉 Connessione instaurata!
+      
+   👋 Ciao, ${email}!
   badAccessToken: Il testo inserito non sembra un Token di Accesso. Si prega di riprovare.
   badUrl: >
     Il testo inserito non sembra un indirizzo URL. Si prega di riprovare.

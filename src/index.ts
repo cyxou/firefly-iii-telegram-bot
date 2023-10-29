@@ -70,10 +70,7 @@ async function startHandler(ctx: MyContext) {
 
   return ctx.reply(welcomeMessage, {
     parse_mode: 'Markdown',
-    reply_markup: {
-      keyboard: createMainKeyboard(ctx).build(),
-      resize_keyboard: true
-    }
+    reply_markup: createMainKeyboard(ctx)
   })
 }
 
@@ -83,10 +80,7 @@ function helpHandler(ctx: MyContext) {
 
   return ctx.reply(ctx.i18n.t('help'), {
     parse_mode: 'Markdown',
-    reply_markup: {
-      keyboard: createMainKeyboard(ctx).build(),
-      resize_keyboard: true
-    }
+    reply_markup: createMainKeyboard(ctx)
   })
 }
 

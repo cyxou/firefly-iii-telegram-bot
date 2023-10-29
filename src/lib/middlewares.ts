@@ -22,11 +22,13 @@ export function cleanup() {
       i18n.t('ru', 'labels.ACCOUNTS'),
       i18n.t('ru', 'labels.REPORTS'),
       i18n.t('ru', 'labels.CATEGORIES'),
+
       i18n.t('en', 'labels.SETTINGS'),
       i18n.t('en', 'labels.TRANSACTIONS'),
       i18n.t('en', 'labels.ACCOUNTS'),
       i18n.t('en', 'labels.REPORTS'),
       i18n.t('en', 'labels.CATEGORIES'),
+
       i18n.t('it', 'labels.SETTINGS'),
       i18n.t('it', 'labels.TRANSACTIONS'),
       i18n.t('it', 'labels.ACCOUNTS'),
