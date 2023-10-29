@@ -34,6 +34,7 @@ const router = new Router<MyContext>((ctx) => ctx.session.step)
 
 bot.hears(i18n.t('ru', 'labels.CATEGORIES'), listCategoriesCommandHandler)
 bot.hears(i18n.t('en', 'labels.CATEGORIES'), listCategoriesCommandHandler)
+bot.hears(i18n.t('it', 'labels.CATEGORIES'), listCategoriesCommandHandler)
 bot.callbackQuery(CATEGORY_DETAILS, showCategoryDetails)
 bot.callbackQuery(ADD_CATEGORIES, addCategoriesCbQH)
 bot.callbackQuery(RENAME_CATEGORY, typeNewCategoryName)

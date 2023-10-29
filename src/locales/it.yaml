@@ -99,9 +99,14 @@ settings:
   specifySmthFirst: Specifica ${smth} prima.
   connectionFailed: Connessione non instaurata!
   connectionFailedUnauthenticated: Errore di autenticazione! Per piacere verifica che il Token di Accesso fornito errato o scaduto.
-  connectionFailedBadUrl: Errore di connessione a Firefly! Per piacere verifica di aver specificato l'URL Firefly corretto.
+  resourceNotFound: >
+    Risorsa non trovata!
+    Assicurarsi di aver specificato il giusto URL dell'API Firefly.
+    Questo può accadere anche se si sta cercando di ottenere o modificare una risorsa non esistente.
+  connectionFailedBadUrl: >
+    Errore di connessione a Firefly!
+    Per piacere verifica di aver specificato *🔗 Firefly API URL* corretto.
   connectionSuccess: >
-    Connessione instaurata!
 
     Ciao, ${email}!
   badAccessToken: Il testo inserito non sembra un Token di Accesso. Si prega di riprovare.

@@ -43,7 +43,7 @@ export function handleCallbackQueryError(err: Error, ctx: MyContext) {
   log('Unexpected error occured: %O', err)
 
   if (err instanceof HostNotFoundError) {
-    return ctx.reply(ctx.i18n.t('settings.connectionFailedBadUrl'))
+    return ctx.reply(ctx.i18n.t('settings.connectionFailedBadUrl'), { parse_mode: 'Markdown'})
   }
 
   if (err instanceof AuthenticationError) {
@@ -51,7 +51,14 @@ export function handleCallbackQueryError(err: Error, ctx: MyContext) {
   }
 
   if (err instanceof ResourceNotFoundError) {
-    return ctx.editMessageText(ctx.i18n.t('transactions.edit.noSuchTransactionAnymore', {id : ctx.match![1]}))
+    // can happen when manipulatin settings, or other entities
+    if (!ctx.match) return ctx.reply(ctx.i18n.t('settings.resourceNotFound'))
+    // Usually may happen when editing a transaction that got deleted
+    return ctx.reply(ctx.i18n.t('transactions.edit.noSuchTransactionAnymore', {id : ctx.match![1]}))
+  }
+
+  if (err instanceof BadRequestError) {
+    return ctx.reply(err.message)
   }
 
   return ctx.answerCallbackQuery({

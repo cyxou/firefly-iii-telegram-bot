@@ -10,6 +10,7 @@ import {
 } from '../helpers'
 
 import firefly from '../../lib/firefly'
+import { handleCallbackQueryError } from '../../lib/errorHandler'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { TransactionTypeFilter } from '../../lib/firefly/model/transaction-type-filter'
@@ -22,6 +23,7 @@ const bot = new Composer<MyContext>()
 // List transactions
 bot.hears(i18n.t('en', 'labels.TRANSACTIONS'), showTransactions)
 bot.hears(i18n.t('ru', 'labels.TRANSACTIONS'), showTransactions)
+bot.hears(i18n.t('it', 'labels.TRANSACTIONS'), showTransactions)
 bot.callbackQuery(mapper.list.regex(), showTransactions)
 bot.callbackQuery(mapper.close.regex(), closeHandler)
 
@@ -81,8 +83,8 @@ async function showTransactions(ctx: MyContext) {
         reply_markup: keyboard
       })
     }
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 

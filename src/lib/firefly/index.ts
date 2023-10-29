@@ -58,10 +58,12 @@ function resErrorInterceptor(axiosError: AxiosError) {
 
   if (axiosError.code === 'ERR_BAD_REQUEST') {
     log('Rejecting with BadRequestError')
-    return Promise.reject(new BadRequestError(axiosError.code))
+    return Promise.reject(new BadRequestError(
+      axiosError.response?.data!['message'] || axiosError.code
+    ))
   }
 
-  if (axiosError.code === 'ENOTFOUND') {
+  if (axiosError.code === 'ENOTFOUND' || axiosError.code === 'ECONNREFUSED') {
     log('Rejecting with HostNotFoundError')
     return Promise.reject(new HostNotFoundError(axiosError.code))
   }
