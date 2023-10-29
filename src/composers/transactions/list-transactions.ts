@@ -60,7 +60,7 @@ async function showTransactions(ctx: MyContext) {
     log('end: %O', end)
 
     const transactions = (await firefly(userSettings).Transactions.listTransaction(
-      '',
+      undefined,
       TRANSACTIONS_PAGE_LIMIT,
       page,
       start,

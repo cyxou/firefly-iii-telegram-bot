@@ -308,7 +308,7 @@ async function getAccounts(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accType)))
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(undefined, 100, 1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)
@@ -318,7 +318,7 @@ async function getAccounts(
       }))
 
     } else {
-      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount('', 100, 1, now, accountType)).data.data
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, 100, 1, now, accountType)).data.data
     }
 
     log('accounts: %O', accounts)
@@ -370,7 +370,7 @@ function createCategoriesRange(onCategorySelectedHandler: MenuMiddleware<MyConte
           async (ctx: MyContext) => {
             const userSettings = ctx.session.userSettings
             const resData = (await firefly(userSettings).Categories.listCategory(
-              '',
+              undefined,
               CATEGORIES_PAGE_LIMIT,
               ctx.session.pagination?.current_page! - 1
             )).data
@@ -383,7 +383,7 @@ function createCategoriesRange(onCategorySelectedHandler: MenuMiddleware<MyConte
           async (ctx: MyContext) => {
             const userSettings = ctx.session.userSettings
             const resData = (await firefly(userSettings).Categories.listCategory(
-              '',
+              undefined,
               CATEGORIES_PAGE_LIMIT,
               ctx.session.pagination?.current_page! + 1
             )).data
@@ -841,7 +841,7 @@ function createEditCategorySubmenu(transactionId: string) {
         ctx.session.currentTransaction = trResData.data
 
         const page = 1
-        const catResData = (await firefly(userSettings).Categories.listCategory('', CATEGORIES_PAGE_LIMIT, page)).data
+        const catResData = (await firefly(userSettings).Categories.listCategory(undefined, CATEGORIES_PAGE_LIMIT, page)).data
         log('Got categories data: %O', catResData)
         ctx.session.categories = catResData.data
         ctx.session.pagination = catResData.meta.pagination

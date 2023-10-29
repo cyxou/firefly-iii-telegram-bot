@@ -107,7 +107,7 @@ export async function addTransaction(ctx: MyContext) {
     }
 
     const page = 1
-    const resData = (await firefly(userSettings).Categories.listCategory('', CATEGORIES_PAGE_LIMIT, page)).data
+    const resData = (await firefly(userSettings).Categories.listCategory(undefined, CATEGORIES_PAGE_LIMIT, page)).data
     log('resData.meta: %O', resData.meta)
 
     ctx.session.categories = resData.data
@@ -165,7 +165,7 @@ async function getDefaultSourceAccount(ctx: MyContext): Promise<null | AccountAt
 
     if (!defaultSourceAccount.name) {
       const firstAccount = (await firefly(ctx.session.userSettings).Accounts.listAccount(
-        '', ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
+        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
       log('firstAccount: %O', firstAccount)
 
       // Looks like that a user has not created any Asset accounts yet
@@ -192,7 +192,7 @@ async function getDefaultDestinationAccount(ctx: MyContext) {
 
     if (!defaultDestinationAccount.name) {
       const cashAccount = (await firefly(ctx.session.userSettings).Accounts.listAccount(
-        '', ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data[0]
+        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data[0]
       log('cashAccount: %O', cashAccount)
 
       // For new user accounts there is no default CashAccount created.

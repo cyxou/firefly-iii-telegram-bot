@@ -320,9 +320,9 @@ async function showCategoryDetails(ctx: MyContext) {
 
     const categoryPromise = firefly(userSettings).Categories.getCategory(categoryId)
     const categoryTransactionsPromise = firefly(userSettings).Categories
-      .listTransactionByCategory(categoryId, '', TRANSACTIONS_PAGE_LIMIT, 1, start, end)
+      .listTransactionByCategory(categoryId, undefined, TRANSACTIONS_PAGE_LIMIT, 1, start, end)
     const expenseCategoriesPromise = firefly(userSettings).Insight
-      .insightExpenseCategory(start, end, '', [parseInt(categoryId, 10)])
+      .insightExpenseCategory(start, end, undefined, [parseInt(categoryId, 10)])
 
     // Resolve all the promises
     const [ category, categoryTransactions, expenseCategories ] =

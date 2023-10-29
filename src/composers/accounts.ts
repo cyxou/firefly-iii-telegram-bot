@@ -54,7 +54,7 @@ async function showAccounts(ctx: MyContext) {
     log('accType: %O', accType)
 
     const accounts = (await firefly(userSettings).Accounts.listAccount(
-      '', ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
+      undefined, ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
     log('accounts: %O', accounts)
 
     const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeFilter)

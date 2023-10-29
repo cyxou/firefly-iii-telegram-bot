@@ -47,7 +47,7 @@ const settingsMenu = new Menu<MyContext>('settings')
           async ctx => {
             const userSettings = ctx.session.userSettings
             const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-              '', ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+              undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
             // Take care of a case when no accounts are created yet
             if (!accounts.length) {
               ctx.editMessageText(ctx.i18n.t('common.noDefaultSourceAccountExist'))
@@ -93,7 +93,7 @@ const defaultAccountMenu = new Menu<MyContext>('set-default-account')
     const { fireflyUrl } = userSettings
 
     const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-      '', ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+      undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
     log('accounts: %O', accounts)
 
     // Take care of a case when no accounts are created yet
