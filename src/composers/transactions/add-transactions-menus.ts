@@ -214,7 +214,7 @@ function createNewTransferMenu() {
           async ctx => {
             log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
 
-            ctx.reply(`Source account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
+            // ctx.reply(`Source account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
 
             ctx.session.newTransaction.sourceAccount = {
               id: acc.id,
@@ -237,7 +237,7 @@ function createNewTransferMenu() {
     })
     .back('🔙')
 
-  const newTransferSelectTargetAccountMenu = new Menu<MyContext>(MENUS.NEW_DEPOSIT__SELECT_TARGET_ACC)
+  const newTransferSelectTargetAccountMenu = new Menu<MyContext>(MENUS.NEW_TRANSFER__SELECT_TARGET_ACC)
     .dynamic(async ctx => {
       const log = menuLogger.extend('1:2')
       log(' Continue creating a transfer transaction')

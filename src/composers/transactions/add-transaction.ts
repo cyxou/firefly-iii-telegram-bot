@@ -85,7 +85,7 @@ export async function addTransaction(ctx: MyContext) {
         destinationAccountId: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : ''
       })
 
-      ctx.session.newTransaction.id = tr.id
+      ctx.session.currentTransaction = tr
 
       return ctx.reply(
         formatTransaction(ctx, tr),
