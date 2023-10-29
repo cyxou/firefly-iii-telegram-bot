@@ -3,6 +3,8 @@ import debug from 'debug'
 import i18n from './i18n'
 import { command } from '../composers/constants'
 import type { MyContext } from '../types/MyContext'
+import { Keyboard } from 'grammy'
+import { createMainKeyboard } from '../composers/helpers'
 
 const rootLog = debug(`bot:mdlwr`)
 
@@ -94,14 +96,16 @@ export function requireSettings() {
       if (!fireflyUrl) {
         log('Replying with a message...')
         return await ctx.reply(ctx.i18n.t('mdlwr.noFireflyURLFound'), {
-          parse_mode: 'Markdown'
+          parse_mode: 'Markdown',
+          reply_markup: createMainKeyboard(ctx)
         })
       }
 
       if (!fireflyAccessToken) {
         log('Replying with a message...')
         return await ctx.reply(ctx.i18n.t('mdlwr.noFireflyAccessTokenFound'), {
-          parse_mode: 'Markdown'
+          parse_mode: 'Markdown',
+          reply_markup: createMainKeyboard(ctx)
         })
       }
 

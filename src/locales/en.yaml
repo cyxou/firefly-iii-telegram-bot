@@ -194,7 +194,10 @@ transactions:
   add:
     dontUnderstand: >
       🤖 I don't understand that.  
-      Enter a transaction amount, it needs to be a number! 😉
+        
+      Enter a transaction amount, it needs to be a number!  
+
+      Or you may type in a transaction description and an amount, i.e. `Groceries 25`.
     withdrawalMessage: >
       📆 ${date}  
         

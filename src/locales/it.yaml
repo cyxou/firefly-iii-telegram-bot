@@ -189,7 +189,10 @@ transactions:
   add:
     dontUnderstand: >
       🤖 Non ho capito.  
-      Inserisci l'importo della transazione. Deve essere un numero! 😉
+        
+      Inserisci l'importo della transazione. Deve essere un numero!  
+ 
+      Oppure si può digitare una descrizione della transazione e un importo, ad esempio `Grocery 25`.
     withdrawalMessage: >
       📆 ${date}  
         

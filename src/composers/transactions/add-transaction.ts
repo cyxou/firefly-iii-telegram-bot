@@ -39,17 +39,24 @@ export async function addTransaction(ctx: MyContext) {
     const match = validInput.exec(text)
     log('match: %O', match)
 
-    if (!match) return ctx.reply(ctx.i18n.t('transactions.add.dontUnderstand', {
-      parse_mode: 'Markdown'
-    }))
+    if (!match) {
+      log('No match... Replying with instruction')
+      await ctx.reply(ctx.i18n.t('transactions.add.dontUnderstand'), {
+        parse_mode: 'Markdown',
+      })
+      return 
+    }
 
     let amount: string | number | null = match.groups!.amount || match.groups!.amountOnly
     amount = parseAmountInput(amount)
     log('amount: ', amount)
 
-    if (!amount) return ctx.reply(ctx.i18n.t('transactions.add.dontUnderstand', {
-      parse_mode: 'Markdown'
-    }))
+    if (!amount) {
+      log('No amount provided... Replying with instruction')
+      return ctx.reply(ctx.i18n.t('transactions.add.dontUnderstand'), {
+        parse_mode: 'Markdown',
+      })
+    }
 
     const defaultSourceAccount = await getDefaultSourceAccount(ctx)
     log('defaultSourceAccount: %O', defaultSourceAccount)
