@@ -10,9 +10,9 @@ import i18n from '../lib/i18n';
 import firefly from '../lib/firefly'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TRANSACTIONS_PAGE_LIMIT } from './constants'
+import { cleanupSessionData } from './helpers'
 
 export enum Route {
-  IDLE            = 'IDLE',
   ADD_CATEGORIES  = 'CATEGORIES|ADD',
   RENAME_CATEGORY = 'CATEGORIES|RENAME'
 }
@@ -163,7 +163,7 @@ function addCategoriesRouteHandler(ctx: MyContext) {
     log('categories: %O', categories)
 
     ctx.session.newCategories = categories
-    ctx.session.step = Route.IDLE
+    ctx.session.step = 'IDLE'
 
     return ctx.reply(ctx.i18n.t('categories.confirmCreation', { categories }), {
       parse_mode: 'Markdown',
@@ -198,8 +198,7 @@ async function cancelCbQH(ctx: MyContext) {
   const log = rootLog.extend('cancelCbQH')
   try {
     log('Cancelling...: ')
-    ctx.session.step = Route.IDLE
-
+    cleanupSessionData(ctx)
     return replyWithListOfCategories(ctx)
   } catch (err) {
     console.error(err)
@@ -209,7 +208,7 @@ async function cancelCbQH(ctx: MyContext) {
 async function closeHandler(ctx: MyContext) {
   const log = rootLog.extend('closeHandler')
   log('ctx.session: %O', ctx.session)
-  ctx.session.step = Route.IDLE
+  cleanupSessionData(ctx)
   await ctx.answerCallbackQuery()
   ctx.session.deleteKeyboardMenuMessage &&
     await ctx.session.deleteKeyboardMenuMessage()

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import Debug from 'debug'
 import flatten from 'lodash.flatten'
-import { evaluate } from 'mathjs'
+import { evaluate, nthRoot } from 'mathjs'
 import { Keyboard, InlineKeyboard } from 'grammy'
 import { MenuRange } from '@grammyjs/menu'
 
@@ -14,7 +14,7 @@ import { TransactionSplit } from '../lib/firefly/model/transaction-split'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
-import { Route } from './transactions/edit-transaction'
+import { TransactionSplitStore } from '../lib/firefly/model/transaction-split-store'
 
 const debug = Debug('bot:transactions:helpers')
 
@@ -66,19 +66,21 @@ function formatTransactionText(ctx: MyContext, tr: Partial<TransactionRead>) {
   const trSplit = tr.attributes!.transactions[0]
   const baseProps: any = {
     amount: parseFloat(trSplit.amount),
+    foreignAmount: trSplit.foreign_amount ? parseFloat(trSplit.foreign_amount) : '',
+    foreignCurrencySymbol: trSplit.foreign_currency_symbol ?? '',
     source: trSplit.source_name,
     destination: trSplit.destination_name,
     description: trSplit.description,
     currency: trSplit.currency_symbol,
     date: dayjs(trSplit.date).format('LLL'),
-    trId: tr.id
+    trId: tr.id,
+    category: trSplit.category_name
   }
 
   let translationString: string
   switch (trSplit.type) {
     case TransactionTypeProperty.Withdrawal:
       translationString = 'transactions.add.withdrawalMessage'
-      baseProps.category = trSplit.category_name
       break
     case TransactionTypeProperty.Deposit:
       translationString = 'transactions.add.depositMessage'
@@ -351,45 +353,50 @@ function createMainKeyboard(ctx: MyContext) {
 }
 
 async function createFireflyTransaction(ctx: MyContext) {
-  const log = debug.extend('createDepositTransaction')
-  log(' Preparing payload to send to Firefly API...')
+  const log = debug.extend('createFireflyTransaction')
+  log(' Preparing transaction payload to send to Firefly API...')
+  const newTransaction = ctx.session.newTransaction
 
   try {
-    log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
+    log('ctx.session.newTransaction: %O', newTransaction)
 
-    let transactionType = ctx.session.newTransaction.type!
-    const sourceAccountType = ctx.session.newTransaction.sourceAccount!.type
-    const destAccountType = ctx.session.newTransaction.destAccount?.type
+    let transactionType = newTransaction.type!
+    const sourceAccountType = newTransaction.sourceAccount!.type
+    const destAccountType = newTransaction.destAccount?.type
 
-    if (!ctx.session.newTransaction.type) {
+    const transactionSplit: TransactionSplitStore = {
+      type: transactionType,
+      date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
+      description: 'N/A',
+      source_id: newTransaction.sourceAccount!.id || '',
+      amount: newTransaction.amount || '',
+      category_id: newTransaction.categoryId || '',
+      destination_id: newTransaction.destAccount?.id
+    }
+
+    if (!newTransaction.type) {
       // Firefly has some weird rules of setting transaction type based on
       // the account types used in transaction. Try to mimick them here:
       if (sourceAccountType === 'asset' && destAccountType === 'liabilities') {
-        transactionType = TransactionTypeProperty.Withdrawal
+        transactionSplit.type = TransactionTypeProperty.Withdrawal
       }
       else if (sourceAccountType === 'liabilities' || sourceAccountType === 'revenue') {
-        transactionType = TransactionTypeProperty.Deposit
+        transactionSplit.type = TransactionTypeProperty.Deposit
       }
       else if (sourceAccountType === 'asset' || destAccountType === 'asset') {
-        transactionType = TransactionTypeProperty.Transfer
+        transactionSplit.type = TransactionTypeProperty.Transfer
+        transactionSplit.foreign_amount = newTransaction.foreignAmount || undefined
+        // Firefly doesn't like when we pass foreign_currency_is without foreign_amount
+        if (transactionSplit.foreign_amount) {
+          transactionSplit.foreign_currency_id = newTransaction.destAccount?.currencyId
+        }
       }
       else {
-        transactionType = TransactionTypeProperty.Withdrawal
+        transactionSplit.type = TransactionTypeProperty.Withdrawal
       }
     }
-    log('transactionType: %s', transactionType)
 
-    const payload = {
-      transactions: [{
-        type: transactionType,
-        date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
-        description: 'N/A',
-        source_id: ctx.session.newTransaction.sourceAccount!.id || '',
-        amount: ctx.session.newTransaction.amount || '',
-        category_id: ctx.session.newTransaction.categoryId || '',
-        destination_id: ctx.session.newTransaction.destAccount?.id
-      }]
-    }
+    const payload = { transactions: [ transactionSplit ] }
     log('Transaction payload to send: %O', payload)
 
     return (await firefly(ctx.session.userSettings).Transactions.storeTransaction(payload)).data.data
@@ -435,8 +442,13 @@ function createPaginationRange(
 }
 
 function cleanupSessionData(ctx: MyContext) {
+  const log = debug.extend('cleanupSessionData')
+  log('Cleaning up session data...')
   ctx.session.newTransaction = {}
   ctx.session.categories = []
+  ctx.session.accounts = []
+  ctx.session.newCategories = []
   ctx.session.editTransactions = []
-  ctx.session.step = Route.IDLE
+  ctx.session.step = 'IDLE'
+  ctx.session.deleteBotsMessage = {}
 }

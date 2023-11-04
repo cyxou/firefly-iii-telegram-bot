@@ -1,14 +1,17 @@
 import dayjs from 'dayjs'
 import debug from 'debug'
 import { Composer, InlineKeyboard } from 'grammy'
+import { Router } from "@grammyjs/router"
 
 import type { MyContext } from '../../types/MyContext'
 import {
   parseAmountInput,
   formatTransaction,
+  createFireflyTransaction,
+  cleanupSessionData,
 } from '../helpers'
 
-import { transactionMenu, addTransactionMenu } from './add-transactions-menus'
+import { transactionRecordMenu, addTransactionMenu } from './add-transactions-menus'
 
 
 import firefly from '../../lib/firefly'
@@ -17,13 +20,22 @@ import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-typ
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountAttributes } from '../../types/SessionData'
 import { CATEGORIES_PAGE_LIMIT, ACCOUNTS_PAGE_LIMIT } from '../constants'
+import { handleCallbackQueryError } from '../../lib/errorHandler'
+
+export enum Route {
+  SET_FOREIGN_AMOUNT = 'NEW_TRANSACTION|FOREIGN_AMOUNT',
+}
 
 const rootLog = debug(`bot:transactions:add`)
 
 const bot = new Composer<MyContext>()
+const router = new Router<MyContext>((ctx) => ctx.session.step)
 
-bot.use(transactionMenu)
+router.route(Route.SET_FOREIGN_AMOUNT, setForeignAmountRouteHandler)
+
+bot.use(transactionRecordMenu)
 bot.use(addTransactionMenu)
+bot.use(router)
 
 export default bot
 
@@ -98,7 +110,7 @@ export async function addTransaction(ctx: MyContext) {
         formatTransaction(ctx, tr),
         {
           parse_mode: 'Markdown',
-          reply_markup: transactionMenu
+          reply_markup: transactionRecordMenu
         }
       )
     }
@@ -221,5 +233,54 @@ async function getDefaultDestinationAccount(ctx: MyContext) {
   } catch (err) {
     console.error('Error occurred getting Cash Account: ', err)
     throw err
+  }
+}
+
+async function setForeignAmountRouteHandler(ctx: MyContext) {
+  const log = rootLog.extend('setForeignAmountRouteHandler')
+  log('Entered set foreign amount route handler')
+  try {
+    log('ctx.session: %O', ctx.session)
+    const text = ctx.msg?.text || ''
+
+    log('ctx.message: %O', ctx.message)
+
+    if (!ctx.session.newTransaction) throw new Error('No current transaction in session data!')
+
+    const amount = ctx.session.newTransaction.amount
+    const foreignAmount = parseAmountInput(text, amount)
+    log('amount: %O', amount)
+    log('foreignAmount: %O', foreignAmount)
+
+    ctx.session.newTransaction.foreignAmount = foreignAmount?.toString()
+
+    if (!foreignAmount) {
+      log('Bad foreign amount supplied...')
+      return ctx.reply(ctx.i18n.t('transactions.edit.badAmountTyped'))
+    }
+
+    log('Creating transaction...')
+    const tr = await createFireflyTransaction(ctx)
+    
+    if (ctx.session.deleteBotsMessage?.messageId) {
+      log('Deleting original message...')
+      await ctx.api.deleteMessage(ctx.session.deleteBotsMessage.chatId!, ctx.session.deleteBotsMessage.messageId)
+    }
+
+    // Cleanup session
+    cleanupSessionData(ctx)
+
+    ctx.session.currentTransaction = tr
+
+    return ctx.reply(
+      formatTransaction(ctx, tr),
+      {
+        parse_mode: 'Markdown',
+        reply_markup: transactionRecordMenu
+      }
+    )
+  } catch (err: any) {
+    cleanupSessionData(ctx)
+    return handleCallbackQueryError(err, ctx)
   }
 }

@@ -207,18 +207,18 @@ transactions:
       📤 Added ${description === 'N/A' ? '' : '*' + description + '*'}
       *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}  
 
-      ${source} ➡️ ${destination}
+      ${source} → ${destination}
     depositMessage: >
       📆 ${date}  
        
       📥 Added ${description === 'N/A' ? '' : '*' + description + '* '}
-      *${amount}* *${currency}*
+      *${amount}* *${currency}*${category ? ' to category *' + category + '*' : ''}
       
-      ${source} ➡️ ${destination}
+      from ${source} → ${destination}
     transferMessage: >
       📆 ${date}  
          
-      ↔️ Transfer *${amount}* *${currency}* from account *${source}* to account *${destination}*
+      ↔️ Transfer *${amount}* *${currency}* from account *${source}* to account *${destination}*${foreignAmount ? " (" + foreignAmount + " " + foreignCurrencySymbol + ")" : ''}${category ? ' to category *' + category + '*' : ''}
     selectCategory: In which category to add *${amount}*?
     noCategoriesYet: |
       🤷 You haven't created any categories yet.
@@ -227,12 +227,20 @@ transactions:
       💡 You can ceasily create new categories from a corresponding *🔖 Categories* bot button.
     transactionDeleted: Transaction deleted!
     couldNotDelete: 'Could not delete transaction by id: ${id}'
-    selectRevenueAccount: 'Choose a revenue account to withdraw *${amount}*:'
-    selectAssetAccount: 'Choose an asset account to add *${amount}*:'
+    selectRevenueAccount: 'Choose a revenue account to withdraw *${amount}* from:'
+    selectAssetAccount: 'Choose an asset account to add *${amount}* to:'
     selectSourceAccount: 'Choose an account to transfer *${amount}* from:'
     selectDestAccount: 'Choose an account to transfer to:'
     transactionError: '❗😰 Ann error occurred during transaction creation: *${message}*'
     created: Transaction created!
+    typeForeignAmount: >
+      ⚠️ The destination account currency (*${destCurrency}*) is different than the source account currency (*${sourceCurrency}*)!
+      Type in the foreign amount i.e. the amount in the destination account currency.  
+        
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to
+      perform the appropriate operation on the source account amount of the transaction.  
+        
+      For example, `*15` would multiply the initial amount by 15 to get the foreign amount.
 
   edit:
     whatToEdit: ❓What do you want to change?

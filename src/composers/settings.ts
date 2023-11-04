@@ -1,6 +1,6 @@
 import debug from 'debug'
 import dayjs from 'dayjs'
-import { Composer, Keyboard } from 'grammy'
+import { Composer } from 'grammy'
 import { Router } from "@grammyjs/router"
 import { Menu, MenuRange } from '@grammyjs/menu'
 
@@ -12,7 +12,7 @@ import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 import { handleCallbackQueryError } from '../lib/errorHandler'
 import { requireSettings } from '../lib/middlewares'
-import { createMainKeyboard, generateWelcomeMessage } from './helpers'
+import { cleanupSessionData, createMainKeyboard, generateWelcomeMessage } from './helpers'
 
 export enum Route {
   FIREFLY_URL = 'SETTINGS|FIREFLY_URL',
@@ -161,7 +161,6 @@ router.route('IDLE', (_, next) => next())
 router.route(Route.FIREFLY_URL, fireflyUrlRouteHandler)
 router.route(Route.FIREFLY_API_URL, fireflyApiUrlRouteHandler)
 router.route(Route.FIREFLY_ACCESS_TOKEN, fireflyAccessTokenRouteHandler)
-router.otherwise(ctx => ctx.reply('otherwise'))
 bot.use(router)
 
 export default bot
@@ -263,6 +262,7 @@ async function fireflyUrlRouteHandler(ctx: MyContext) {
       }
     )
   } catch (err: any) {
+    cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
   }
 }
@@ -296,6 +296,7 @@ async function fireflyApiUrlRouteHandler(ctx: MyContext) {
       }
     )
   } catch (err: any) {
+    cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
   }
 }
@@ -312,6 +313,7 @@ async function inputFireflyUrlCbQH(ctx: MyContext) {
       reply_markup: cancelMenu
     })
   } catch (err: any) {
+    cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
   }
 }
@@ -328,6 +330,7 @@ async function inputFireflyApiUrlCbQH(ctx: MyContext) {
       reply_markup: cancelMenu
     })
   } catch (err: any) {
+    cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
   }
 }
@@ -342,6 +345,7 @@ async function inputFireflyAccessTokenCbQH(ctx: MyContext) {
       reply_markup: cancelMenu
     })
   } catch (err: any) {
+    cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
   }
 }

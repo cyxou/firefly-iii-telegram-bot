@@ -207,18 +207,18 @@ transactions:
       📤 Добавлено ${description === 'N/A' ? '' : '*' + description + '*'}
       *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}  
 
-      ${source} ➡️ ${destination}
+      ${source} → ${destination}
     depositMessage: >
       📆 ${date}  
        
       📥 Добавлено ${description === 'N/A' ? '' : '*' + description + '* '}
-      *${amount}* *${currency}*
+      *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}
       
-      ${source} ➡️ ${destination}
+      from ${source} → ${destination}
     transferMessage: >
       📆 ${date}  
          
-      ↔️ Перевод *${amount}* *${currency}* со счета *${source}* на счет *${destination}*
+      ↔️ Перевод *${amount}* *${currency}* со счета *${source}* на счет *${destination}*${foreignAmount ? " (" + foreignAmount + " " + foreignCurrencySymbol +  ")" : ''}${category ? ' в категорию *' + category + '*' : ''}
     selectCategory: В какую категорию добавить *${amount}*?
     noCategoriesYet: |
       🤷 Вы пока не создали ни одну категорию расходов.   
@@ -233,6 +233,14 @@ transactions:
     selectDestAccount: На какой счет произвести перевод?
     transactionError: '❗😰 Произошла ошибка при создании транзакции: *${message}*'
     created: Транзакция создана!
+    typeForeignAmount: >
+      ⚠️ The destination account currency (*${destCurrency}*) is different than the source account currency (*${sourceCurrency}*)!
+      Type in the foreign amount i.e. the amount in the destination account currency.  
+        
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to
+      perform the appropriate operation on the source account amount of the transaction.  
+        
+      For example, `*15` would multiply the initial amount by 15 to get the foreign amount.
 
   edit:
     whatToEdit: ❓Что вы хотите изменить?

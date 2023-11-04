@@ -3,14 +3,15 @@ import debug from 'debug'
 import i18n from './i18n'
 import { command } from '../composers/constants'
 import type { MyContext } from '../types/MyContext'
-import { Keyboard } from 'grammy'
 import { createMainKeyboard } from '../composers/helpers'
 
 const rootLog = debug(`bot:mdlwr`)
 
+type NextFunction = () => Promise<void>;
+
 // Add a method to delete the last user's message.
 export function cleanup() {
-  return async (ctx: MyContext, next: () => Promise<void>) => {
+  return async (ctx: MyContext, next: NextFunction) => {
     const log = rootLog.extend(`cleanup`)
     log('Entered the cleanup middleware')
 
@@ -59,7 +60,7 @@ export function cleanup() {
   }
 }
 export function requireSettings() {
-  return async (ctx: MyContext, next: () => Promise<void>) => {
+  return async (ctx: MyContext, next: NextFunction) => {
     const log = rootLog.extend(`requireSettings`)
     log('Entered the requireSettings middleware')
     // log('ctx: %O', ctx)

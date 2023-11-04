@@ -202,18 +202,18 @@ transactions:
       📤 Aggiunto ${description === 'N/A' ? '' : '*' + description + '*'}
       *${amount}* *${currency}*${category ? ' Nella categoria *' + category + '*' : ''}  
 
-      ${source} ➡️ ${destination}
+      ${source} → ${destination}
     depositMessage: >
       📆 ${date}  
        
       📥 Aggiunto ${description === 'N/A' ? '' : '*' + description + '* '}
-      *${amount}* *${currency}*
+      *${amount}* *${currency}*${category ? ' Nella categoria *' + category + '*' : ''}  
       
-      ${source} ➡️ ${destination}
+      from ${source} → ${destination}
     transferMessage: >
       📆 ${date}  
          
-      ↔️ Trasferimento *${amount}* *${currency}* dal conto *${source}* al conto *${destination}*
+      ↔️ Trasferimento *${amount}* *${currency}* dal conto *${source}* al conto *${destination}*${foreignAmount ? " (" + foreignAmount + " " + foreignCurrencySymbol + ")" : ''}${category ? ' Nella categoria *' + category + '*' : ''}  
     selectCategory: In che categoria aggiungere *${amount}*?
     noCategoriesYet: |
       🤷 Non hai ancora creato alcuna categoria.
@@ -228,6 +228,14 @@ transactions:
     selectDestAccount: 'Scegli un conto a cui trasferire:'
     transactionError: '❗😰 Ann error occurred during transaction creation: *${message}*'
     created: Transazione creata!
+    typeForeignAmount: >
+      ⚠️ The destination account currency (*${destCurrency}*) is different than the source account currency (*${sourceCurrency}*)!
+      Type in the foreign amount i.e. the amount in the destination account currency.  
+        
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to
+      perform the appropriate operation on the source account amount of the transaction.  
+        
+      For example, `*15` would multiply the initial amount by 15 to get the foreign amount.
 
   edit:
     whatToEdit: ❓Cosa vuoi modificare?

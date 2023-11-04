@@ -8,7 +8,8 @@ import type { MyContext } from '../../types/MyContext'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../../lib/firefly/model/account-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
-import { Route } from './edit-transaction'
+import { Route as AddRoute } from './add-transaction'
+import { Route as EditRoute } from './edit-transaction'
 import { MENUS, CATEGORIES_PAGE_LIMIT } from '../constants'
 import firefly from '../../lib/firefly'
 
@@ -22,6 +23,7 @@ import {
 
 const rootLog = debug(`transactions:add:menus`)
 
+type NextFunction = () => Promise<void>;
 type MaybePromise<T> = T | Promise<T>;
 type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
 type TransactionUpdate = {
@@ -49,13 +51,13 @@ addTransactionMenu.register([
 // This is the menu for every transaction created
 // NOTE: Make sure to set `ctx.session.currentTransaction = tr` everytime you
 // call the transactionMenu
-export const transactionMenu = new Menu<MyContext>(MENUS.TRANSACTION)
-  .dynamic(createTransactionMenu)
+export const transactionRecordMenu = new Menu<MyContext>(MENUS.TRANSACTION_RECORD)
+  .dynamic(createTransactionRecordMenu)
 
 const editTransactionMenu = new Menu<MyContext>(MENUS.EDIT_TRANSACTION)
   .dynamic(createEditTransactionMenu)
 
-transactionMenu.register([
+transactionRecordMenu.register([
   editTransactionMenu,
   createEditCategoryMenu(),
   createEditAmountMenu(),
@@ -169,7 +171,7 @@ function createNewDepositMenu() {
               formatTransaction(ctx, tr),
               {
                 parse_mode: 'Markdown',
-                reply_markup: transactionMenu
+                reply_markup: transactionRecordMenu
               }
             )
           }
@@ -211,7 +213,7 @@ function createNewTransferMenu() {
         range.submenu(
           { text: acc.attributes.name, payload: acc.id },
           MENUS.NEW_TRANSFER__SELECT_TARGET_ACC,
-          async ctx => {
+          ctx => {
             log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
 
             // ctx.reply(`Source account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
@@ -219,7 +221,9 @@ function createNewTransferMenu() {
             ctx.session.newTransaction.sourceAccount = {
               id: acc.id,
               name: acc.attributes.name,
-              type: acc.attributes.type
+              type: acc.attributes.type,
+              currencyId: acc.attributes.currency_id,
+              currencySymbol: acc.attributes.currency_symbol
             }
 
             return ctx.editMessageText(
@@ -255,30 +259,51 @@ function createNewTransferMenu() {
       for (let i = 0; i < accounts.length; i++) {
         const acc = accounts[i]
         const last = accounts.length - 1
-        range.text(
+        range.submenu(
           { text: acc.attributes.name, payload: acc.id },
+          MENUS.NEW_TRANSFER__TYPE_FOREIGN_AMOUNT,
           async ctx => {
-            ctx.session.newTransaction.destAccount = {
+            const newTransaction = ctx.session.newTransaction
+            newTransaction.destAccount = {
               id: acc.id,
               name: acc.attributes.name,
-              type: acc.attributes.type
+              type: acc.attributes.type,
+              currencyId: acc.attributes.currency_id,
+              currencySymbol: acc.attributes.currency_symbol
             }
 
             log('ctx.session.newTransaction: %O', ctx.session.newTransaction)
 
-            // ctx.reply(`Destination account ID is *${acc.attributes.name}*`, { parse_mode: 'Markdown' })
+            // If we have different currencies between account, ask a user for a foreign amount
+            if (newTransaction.sourceAccount?.currencyId != newTransaction.destAccount.currencyId) {
+              log('Source and destination accounts currencies are different')
+
+              ctx.session.step = AddRoute.SET_FOREIGN_AMOUNT
+
+              const messageId = ctx.update?.callback_query?.message!.message_id || 0
+              const chatId = ctx.update?.callback_query?.message!.chat.id || 0
+              log('deleteMessage: messageId: %s', messageId)
+              log('deleteMessage: chatId: %s', chatId)
+              ctx.session.deleteBotsMessage = { chatId, messageId }
+
+              return ctx.editMessageText(ctx.i18n.t('transactions.add.typeForeignAmount', {
+                destCurrency: newTransaction.destAccount.currencySymbol,
+                sourceCurrency: newTransaction.sourceAccount?.currencySymbol
+              }), { parse_mode: 'Markdown' })
+            }
 
             const tr = await createFireflyTransaction(ctx)
 
             cleanupSessionData(ctx)
 
             ctx.session.currentTransaction = tr
+            log('Looks like transaction got created. Returning transaction menu...')
 
             return ctx.editMessageText(
               formatTransaction(ctx, tr),
               {
                 parse_mode: 'Markdown',
-                reply_markup: transactionMenu
+                reply_markup: transactionRecordMenu
               }
             )
           }
@@ -292,7 +317,23 @@ function createNewTransferMenu() {
     })
     .back('🔙')
 
-  newTransferMenu.register(newTransferSelectTargetAccountMenu)
+  const newTransferTypeForeignAmountMenu = new Menu<MyContext>(MENUS.NEW_TRANSFER__TYPE_FOREIGN_AMOUNT)
+    .text('🔙', ctx => {
+      const log = rootLog.extend('typeForeignAmountBackButton')
+      log('Setting step back to idle...')
+      ctx.session.step = 'IDLE'
+      log('Returning newTransferSelectTargetAccountMenu menu...')
+      return ctx.editMessageText(
+        ctx.i18n.t('transactions.add.selectDestAccount', { amount: ctx.session.newTransaction.amount }), {
+        parse_mode: 'Markdown',
+        reply_markup: newTransferSelectTargetAccountMenu
+      })
+    })
+
+  newTransferMenu.register([
+    newTransferSelectTargetAccountMenu,
+    newTransferTypeForeignAmountMenu
+  ])
   return newTransferMenu
 }
 
@@ -400,27 +441,36 @@ function createCategoriesRange(onCategorySelectedHandler: MenuMiddleware<MyConte
   }
 }
 
-function createTransactionMenu() {
+function createTransactionRecordMenu() {
   return new MenuRange<MyContext>().dynamic((ctx, range) => {
+    const log = rootLog.extend('createTransactionMenu')
+
+    const currentTransaction = ctx.session.currentTransaction
+
+    log('currentTransaction: %O', currentTransaction)
+
     // If transaction does not have a category, show button to specify one
-    if (ctx.session.currentTransaction && !ctx.session.currentTransaction.attributes!.transactions[0].category_id) {
+    if (currentTransaction && !currentTransaction.attributes!.transactions[0].category_id) {
+      log('No category for the transaction. Adding category button to menu...')
       range.submenu(
         {
           text: ctx.i18n.t('labels.CHANGE_CATEGORY'),
-          payload: ctx.session.currentTransaction!.id
+          payload: currentTransaction!.id
         },
         MENUS.EDIT_TRANSACTION__EDIT_CATEGORY,
-        menuClickHandler
+        augmentSessionWithCurrentTransaction,
+        augmentSessionWithCategories,
       )
     }
 
+    log('Adding edit transaction button to menu...')
     range.submenu(
       {
         text: ctx => ctx.i18n.t('labels.EDIT_TRANSACTION'),
-        payload: ctx.session.currentTransaction!.id
+        payload: currentTransaction!.id
       },
       MENUS.EDIT_TRANSACTION,
-      menuClickHandler
+      augmentSessionWithCurrentTransaction
     )
 
     return range
@@ -518,7 +568,7 @@ function createEditSourceAccountSubmenu(transactionId: string) {
         )
 
         ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewSourceAccount'))
-      } catch(err) {
+      } catch (err) {
         // TODO: Handle error properly
         console.error(err)
         throw err
@@ -549,7 +599,7 @@ function createEditDestinationAccountSubmenu(transactionId: string) {
         )
 
         ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewSourceAccount'))
-      } catch(err) {
+      } catch (err) {
         // TODO: Handle error properly
         console.error(err)
         throw err
@@ -580,7 +630,7 @@ async function closeEditTransactionMenu(ctx: MyContext) {
       formatTransaction(ctx, tr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
   } catch (err) {
@@ -630,7 +680,7 @@ async function newTransactionSelectCategoryHandler(ctx: MyContext) {
       formatTransaction(ctx, tr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
   } catch (err) {
@@ -655,12 +705,13 @@ async function editTransactionSelectCategoryHandler(ctx: MyContext) {
     const update = { categoryId }
 
     const updatedTr = await updateFireflyTransaction(ctx, update)
+    ctx.session.currentTransaction = updatedTr
 
     return ctx.editMessageText(
       formatTransaction(ctx, updatedTr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
   } catch (err) {
@@ -697,7 +748,7 @@ async function editTransactionSelectSourceAccountHandler(ctx: MyContext) {
       formatTransaction(ctx, updatedTr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
   } catch (err) {
@@ -731,7 +782,7 @@ async function editTransactionSelectDestinationAccountHandler(ctx: MyContext) {
       formatTransaction(ctx, updatedTr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
   } catch (err) {
@@ -777,16 +828,9 @@ async function changeTransactionAmountMiddleware(ctx: MyContext) {
     const trId = ctx.match
     log('Transaction ID: %s', trId)
 
-    log('Setting route to %s...', Route.CHANGE_AMOUNT)
-    ctx.session.step = Route.CHANGE_AMOUNT
+    log('Setting route to %s...', EditRoute.CHANGE_AMOUNT)
+    ctx.session.step = EditRoute.CHANGE_AMOUNT
 
-    // Store data of the original message.
-    // We need it because having edited a transaction, we can not edit the
-    // message with updated transaction from the route handler function.
-    // Hence the workaround is to delete original message and then post
-    // another one with the updated transaction data. The deletion is meant to
-    // be called only from the route handler functions where a user types in
-    // things as opposed to clicking on inline keyboard buttons.
     const messageId = ctx.update?.callback_query?.message!.message_id || 0
     const chatId = ctx.update?.callback_query?.message!.chat.id || 0
     log('deleteMessage: messageId: %s', messageId)
@@ -806,8 +850,8 @@ async function changeTransactionDescriptionMiddleware(ctx: MyContext) {
     const trId = ctx.match
     log('Transaction ID: %s', trId)
 
-    log('Setting route to %s...', Route.CHANGE_DESCRIPTION)
-    ctx.session.step = Route.CHANGE_DESCRIPTION
+    log('Setting route to %s...', EditRoute.CHANGE_DESCRIPTION)
+    ctx.session.step = EditRoute.CHANGE_DESCRIPTION
 
     const messageId = ctx.update?.callback_query?.message!.message_id || 0
     const chatId = ctx.update?.callback_query?.message!.chat.id || 0
@@ -822,42 +866,42 @@ async function changeTransactionDescriptionMiddleware(ctx: MyContext) {
 }
 
 function createEditCategorySubmenu(transactionId: string) {
-  return new MenuRange<MyContext>().submenu({
+  return new MenuRange<MyContext>().submenu(
+    {
       text: ctx => ctx.i18n.t('labels.CHANGE_CATEGORY'),
       payload: transactionId
     },
     MENUS.EDIT_TRANSACTION__EDIT_CATEGORY,
-    async ctx => {
-      const log = rootLog.extend('createEditCategorySubmenu')
-      log('Entered createEditCategorySubmenu action handler')
-      try {
-        const trId = ctx.match
-        log('Transacrion ID: %s', trId)
-        const userSettings = ctx.session.userSettings
-        if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
-
-        const trResData = (await firefly(userSettings).Transactions.getTransaction(trId)).data
-        log('Got transaction data: %O', trResData)
-        ctx.session.currentTransaction = trResData.data
-
-        const page = 1
-        const catResData = (await firefly(userSettings).Categories.listCategory(undefined, CATEGORIES_PAGE_LIMIT, page)).data
-        log('Got categories data: %O', catResData)
-        ctx.session.categories = catResData.data
-        ctx.session.pagination = catResData.meta.pagination
-
-        // TODO: Handle a case when a user got no categories yet
-        ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'))
-      } catch (err) {
-        // TODO: Handle error properly
-        console.error(err)
-      }
-    }
+    augmentSessionWithCategories
   )
 }
 
-async function menuClickHandler(ctx: MyContext) {
-  const log = rootLog.extend('transactionMenuHandler')
+async function augmentSessionWithCategories(ctx: MyContext) {
+  const log = rootLog.extend('augmentSessionWithCategories')
+  log('Augmenting session with categories property...')
+  try {
+    const trId = ctx.match
+    log('Transacrion ID: %s', trId)
+    const userSettings = ctx.session.userSettings
+    if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
+
+    const page = 1
+    const catResData = (await firefly(userSettings).Categories.listCategory(undefined, CATEGORIES_PAGE_LIMIT, page)).data
+    log('Got categories data: %O', catResData)
+    ctx.session.categories = catResData.data
+    ctx.session.pagination = catResData.meta.pagination
+
+    // TODO: Handle a case when a user got no categories yet
+    ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'))
+  } catch (err) {
+    // TODO: Handle error properly
+    console.error(err)
+  }
+}
+
+async function augmentSessionWithCurrentTransaction(ctx: MyContext, next: NextFunction) {
+  const log = rootLog.extend('augmentSessionWithCurrentTransaction')
+  log('Augmenting session with currentTransaction property...')
   try {
     const userSettings = ctx.session.userSettings
     const trId = ctx.match
@@ -866,13 +910,13 @@ async function menuClickHandler(ctx: MyContext) {
     const resData = (await firefly(userSettings).Transactions.getTransaction(trId)).data
     log('Got transaction data: %O', resData)
     ctx.session.currentTransaction = resData.data
+    await next()
   } catch (err) {
     console.error(err)
     log('Error occured handling menu click: %O', err)
     ctx.reply((err as Error).toString())
   }
 }
-
 
 function createAccountsRange(onAccountSelectedHandler: MenuMiddleware<MyContext>) {
   return function() {

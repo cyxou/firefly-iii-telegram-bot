@@ -10,10 +10,10 @@ import {
 } from '../helpers'
 
 import firefly from '../../lib/firefly'
-import { transactionMenu } from './add-transactions-menus'
+import { transactionRecordMenu } from './add-transactions-menus'
+import { handleCallbackQueryError } from '../../lib/errorHandler'
 
 export enum Route {
-  IDLE               = 'IDLE',
   CHANGE_AMOUNT      = 'EDIT_TRANSACTION|AMOUNT',
   CHANGE_DESCRIPTION = 'EDIT_TRANSACTION|DESCRIPTION'
 }
@@ -70,22 +70,21 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     if (ctx.session.deleteBotsMessage?.messageId) {
       log('Deleting original message...')
       await ctx.api.deleteMessage(ctx.session.deleteBotsMessage.chatId!, ctx.session.deleteBotsMessage.messageId)
-      ctx.session.deleteBotsMessage = {}
     }
 
     // Cleanup session
     cleanupSessionData(ctx)
-    ctx.session.step = Route.IDLE
     
     return ctx.reply(
       formatTransaction(ctx, updatedTr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    cleanupSessionData(ctx)
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -125,21 +124,20 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
     if (ctx.session.deleteBotsMessage?.messageId) {
       log('Deleting original message...')
       await ctx.api.deleteMessage(ctx.session.deleteBotsMessage.chatId!, ctx.session.deleteBotsMessage.messageId)
-      ctx.session.deleteBotsMessage = {}
     }
 
     // Cleanup session
     cleanupSessionData(ctx)
-    ctx.session.step = Route.IDLE
     
     return ctx.reply(
       formatTransaction(ctx, updatedTr),
       {
         parse_mode: 'Markdown',
-        reply_markup: transactionMenu
+        reply_markup: transactionRecordMenu
       }
     )
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    cleanupSessionData(ctx)
+    return handleCallbackQueryError(err, ctx)
   }
 }

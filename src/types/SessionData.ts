@@ -2,6 +2,7 @@ import config from '../config'
 
 import { Route as SettingsRoute } from '../composers/settings'
 import { Route as CategoriesRoute } from '../composers/categories'
+import { Route as AddTransactionRoute } from '../composers/transactions/add-transaction'
 import { Route as EditTransactionRoute } from '../composers/transactions/edit-transaction'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
@@ -9,7 +10,7 @@ import { CategoryRead } from '../lib/firefly/model/category-read'
 import { MetaPagination } from '../lib/firefly/model/meta-pagination'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
-type Step = 'IDLE' | CategoriesRoute | SettingsRoute | EditTransactionRoute
+type Step = 'IDLE' | CategoriesRoute | SettingsRoute | AddTransactionRoute | EditTransactionRoute
 
 export interface SessionData {
   step: Step
@@ -29,6 +30,7 @@ export interface SessionData {
     description?: string
     sourceAccount?: AccountAttributes
     amount?: string
+    foreignAmount?: string
     categoryId?: string | null
     destAccount?: AccountAttributes | null
   }
