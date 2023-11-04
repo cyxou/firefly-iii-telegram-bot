@@ -172,23 +172,23 @@ function createTransactionsNavigationKeyboard(
   switch (trType) {
     case TransactionTypeFilter.Withdrawal:
       keyboard
-        .text(ctx.i18n.t('labels.TO_DEPOSITS'),
+        .text(ctx.i18n.t('labels.SHOW_DEPOSITS'),
           mapper.list.template({ type: TransactionTypeFilter.Deposit, start: curDay })).row()
-        .text(ctx.i18n.t('labels.TO_TRANSFERS'),
+        .text(ctx.i18n.t('labels.SHOW_TRANSFERS'),
           mapper.list.template({ type: TransactionTypeFilter.Transfer, start: curDay })).row()
       break
     case TransactionTypeFilter.Deposit:
       keyboard
-        .text(ctx.i18n.t('labels.TO_WITHDRAWALS'),
+        .text(ctx.i18n.t('labels.SHOW_WITHDRAWALS'),
           mapper.list.template({ type: TransactionTypeFilter.Withdrawal, start: curDay })).row()
-        .text(ctx.i18n.t('labels.TO_TRANSFERS'),
+        .text(ctx.i18n.t('labels.SHOW_TRANSFERS'),
           mapper.list.template({ type: TransactionTypeFilter.Withdrawal, start: curDay })).row()
       break
     case TransactionTypeFilter.Transfer:
       keyboard
-        .text(ctx.i18n.t('labels.TO_DEPOSITS'),
+        .text(ctx.i18n.t('labels.SHOW_DEPOSITS'),
           mapper.list.template({ type: TransactionTypeFilter.Deposit, start: curDay })).row()
-        .text(ctx.i18n.t('labels.TO_WITHDRAWALS'),
+        .text(ctx.i18n.t('labels.SHOW_WITHDRAWALS'),
           mapper.list.template({ type: TransactionTypeFilter.Withdrawal, start: curDay })).row()
       break
   }

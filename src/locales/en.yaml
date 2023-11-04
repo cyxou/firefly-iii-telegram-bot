@@ -34,6 +34,9 @@ labels:
   TO_WITHDRAWALS: 📤 To withdrawals
   TO_DEPOSITS: 📥 New deposit
   TO_TRANSFERS: ↔️ New transfer
+  SHOW_DEPOSITS: 📥 Deposits
+  SHOW_TRANSFERS: ↔️ Transfers
+  SHOW_WITHDRAWALS: 📤 Withdrawals
   TRANSACTIONS: 🔀 Transactions
   YES: ✅ Yes
   SWITCH_LANG: 🌐 Language
@@ -179,7 +182,7 @@ transactions:
       
       SUM: ${sums ? sums : '0'}</pre>
     deposit: >
-      Your revenues for <b>${day}</b>:  
+      Your deposits for <b>${day}</b>:  
         
       <pre>${transactions.replace(/\n$/, '')}
       

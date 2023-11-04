@@ -34,6 +34,9 @@ labels:
   TO_WITHDRAWALS: 📤 К расходам
   TO_DEPOSITS: 📥 Новый доход
   TO_TRANSFERS: ↔️ Новый перевод
+  SHOW_DEPOSITS: 📥 Доходы
+  SHOW_TRANSFERS: ↔️ Переводы
+  SHOW_WITHDRAWALS: 📤 Расходы
   TRANSACTIONS: 🔀 Транзакции
   YES: ✅ Да
   SWITCH_LANG: 🌐Язык 
