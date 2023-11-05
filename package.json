@@ -1,7 +1,7 @@
 {
   "name": "firefly-iii-telegram-bot",
   "description": "A Telegram bot for working with Firefly III with a supersonic speed",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "homepage": "https://github.com/cyxou/firefly-iii-telegram-bot#readme",
   "license": "GPL-3.0-or-later",
   "repository": {
@@ -23,7 +23,7 @@
     "clean:api": "rm -rf src/lib/firefly/api",
     "clean:model": "ls ./src/lib/firefly/model/ | grep -v currency-update.ts | xargs -I {} rm ./src/lib/firefly/model/{}",
     "precodegen": "npm run clean:api && npm run clean:model",
-    "codegen": "openapi-generator-cli generate -i https://api-docs.firefly-iii.org/firefly-iii-1.5.6.yaml -o src/lib/firefly -g typescript-axios -c .openapi-generator-config.yaml"
+    "codegen": "openapi-generator-cli generate -i https://api-docs.firefly-iii.org/firefly-iii-2.0.10-v1.yaml -o src/lib/firefly -g typescript-axios -c .openapi-generator-config.yaml"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "2.5.2",
@@ -41,14 +41,14 @@
   },
   "dependencies": {
     "@grammyjs/i18n": "0.5.1",
-    "@grammyjs/menu": "1.1.2",
+    "@grammyjs/menu": "1.2.1",
     "@grammyjs/router": "2.0.0",
-    "@grammyjs/storage-file": "2.1.0",
+    "@grammyjs/storage-file": "2.3.2",
     "axios": "1.2.6",
     "dayjs": "1.11.7",
     "debug": "4.3.4",
     "dotenv": "16.0.3",
-    "grammy": "1.13.1",
+    "grammy": "1.19.0",
     "lodash.curry": "4.1.1",
     "lodash.flatten": "4.4.0",
     "lodash.isempty": "4.4.0",

@@ -12,8 +12,10 @@ import {
 } from './helpers'
 
 import firefly from '../lib/firefly'
+import { handleCallbackQueryError } from '../lib/errorHandler'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
+import { ACCOUNTS_PAGE_LIMIT } from './constants'
 
 const debug = Debug(`bot:accounts`)
 
@@ -22,6 +24,7 @@ const bot = new Composer<MyContext>()
 // List transactions
 bot.hears(i18n.t('en', 'labels.ACCOUNTS'), showAccounts)
 bot.hears(i18n.t('ru', 'labels.ACCOUNTS'), showAccounts)
+bot.hears(i18n.t('it', 'labels.ACCOUNTS'), showAccounts)
 bot.callbackQuery(mapper.list.regex(), showAccounts)
 bot.callbackQuery(mapper.close.regex(), closeHandler)
 
@@ -51,7 +54,7 @@ async function showAccounts(ctx: MyContext) {
     log('accType: %O', accType)
 
     const accounts = (await firefly(userSettings).Accounts.listAccount(
-      page, balanceToDate, accType as AccountTypeFilter)).data.data
+      undefined, ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
     log('accounts: %O', accounts)
 
     const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeFilter)
@@ -68,8 +71,8 @@ async function showAccounts(ctx: MyContext) {
         reply_markup: keyboard
       })
     }
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 

@@ -14,6 +14,9 @@ build-and-release:
     BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
     BUILD +release
 
+build-and-push:
+    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+
 validatePR:
     BUILD +runTests
     BUILD +buildDist

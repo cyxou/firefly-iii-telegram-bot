@@ -1,14 +1,17 @@
 import debug from 'debug'
 
 import i18n from './i18n'
-import { command } from './constants'
+import { command } from '../composers/constants'
 import type { MyContext } from '../types/MyContext'
+import { createMainKeyboard } from '../composers/helpers'
 
 const rootLog = debug(`bot:mdlwr`)
 
+type NextFunction = () => Promise<void>;
+
 // Add a method to delete the last user's message.
 export function cleanup() {
-  return async (ctx: MyContext, next: () => Promise<void>) => {
+  return async (ctx: MyContext, next: NextFunction) => {
     const log = rootLog.extend(`cleanup`)
     log('Entered the cleanup middleware')
 
@@ -22,11 +25,13 @@ export function cleanup() {
       i18n.t('ru', 'labels.ACCOUNTS'),
       i18n.t('ru', 'labels.REPORTS'),
       i18n.t('ru', 'labels.CATEGORIES'),
+
       i18n.t('en', 'labels.SETTINGS'),
       i18n.t('en', 'labels.TRANSACTIONS'),
       i18n.t('en', 'labels.ACCOUNTS'),
       i18n.t('en', 'labels.REPORTS'),
       i18n.t('en', 'labels.CATEGORIES'),
+
       i18n.t('it', 'labels.SETTINGS'),
       i18n.t('it', 'labels.TRANSACTIONS'),
       i18n.t('it', 'labels.ACCOUNTS'),
@@ -55,7 +60,7 @@ export function cleanup() {
   }
 }
 export function requireSettings() {
-  return async (ctx: MyContext, next: () => Promise<void>) => {
+  return async (ctx: MyContext, next: NextFunction) => {
     const log = rootLog.extend(`requireSettings`)
     log('Entered the requireSettings middleware')
     // log('ctx: %O', ctx)
@@ -72,6 +77,7 @@ export function requireSettings() {
         ...Object.values(command)
       ]
       log('whiteList: %O', whiteList)
+      log('callbackQuery: %O', ctx.callbackQuery)
       const isCallbackQuery = !!ctx.callbackQuery
       log('isCallbackQuery: %O', isCallbackQuery)
       log('whiteList.includes(text): %O', whiteList.includes(text.replace(/^\//, '')))
@@ -91,14 +97,16 @@ export function requireSettings() {
       if (!fireflyUrl) {
         log('Replying with a message...')
         return await ctx.reply(ctx.i18n.t('mdlwr.noFireflyURLFound'), {
-          parse_mode: 'Markdown'
+          parse_mode: 'Markdown',
+          reply_markup: createMainKeyboard(ctx)
         })
       }
 
       if (!fireflyAccessToken) {
         log('Replying with a message...')
         return await ctx.reply(ctx.i18n.t('mdlwr.noFireflyAccessTokenFound'), {
-          parse_mode: 'Markdown'
+          parse_mode: 'Markdown',
+          reply_markup: createMainKeyboard(ctx)
         })
       }
 

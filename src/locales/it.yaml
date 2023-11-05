@@ -25,6 +25,7 @@ labels:
   EDIT_TRANSACTION: ✏️ Modifica
   FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Token di  
   FIREFLY_URL_BUTTON: 🔗 Firefly URL
+  FIREFLY_API_URL_BUTTON: 🔗 Firefly API URL
   LIST_TAGS: 🏷️  Tag
   RENAME_CATEGORY: ✏️ Rinoimina
   REPORTS: 📈 Resoconti
@@ -33,11 +34,15 @@ labels:
   TO_WITHDRAWALS: 📤 Nuovo prelievo
   TO_DEPOSITS: 📥 Nuovo deposito
   TO_TRANSFERS: ↔️ Nuovo trasferimento
+  SHOW_DEPOSITS: 📥 Depositi
+  SHOW_TRANSFERS: ↔️ Trasferimenti
+  SHOW_WITHDRAWALS: 📤 Prelievi
   TRANSACTIONS: 🔀 Transazioni
   YES: ✅ Si
-  SWITCH_TO_ENGLISH: 🇬🇧 Passa all'inglese
-  SWITCH_TO_RUSSIAN: 🇷🇺 Passa al russo
-  SWITCH_TO_ITALIAN: 🇮🇹 Passa all'italiano
+  SWITCH_LANG: 🌐 Lingua
+  SWITCH_TO_EN: 🇬🇧 Inglese
+  SWITCH_TO_RU: 🇷🇺 Russo
+  SWITCH_TO_IT: 🇮🇹 Italiano
 
 welcome: >
   👋 Ciao! Questo bot ti aiuta ad aggiungere velocemente transazioni a Firefly III.
@@ -71,11 +76,16 @@ mdlwr:
   noFireflyURLFound: Per utilizzare il bot, devi specificare *🔗 Firefly URL* nelle *🔧 Impostazioni* del bot.
   noFireflyAccessTokenFound: Per utilizzare il bot, devi specificare un *🔑 Token di accesso* valido nelle *🔧 Impostazioni* del bot.
 settings:
+  selectBotLang: 'Selezionare la lingua del bot:'
   notSpecified: '🚨 <NON SPECIFICATO>'
   inputFireflyUrl: >
     Tipo di Indirizzo URL della tua istanza Firefly III.
     Dovrebbe essere nel formato: *https://firefly.example.com*
     o: *http://localhost:8080*
+  inputFireflyApiUrl: >
+    Digitare l'indirizzo URL dell'endpoint API di Firefly III.
+    Di solito è lo stesso URL di base di Firefly III, ma con un sottopercorso */api* come questo:
+    *https://firefly.example.com/api* o *http://localhost:8080/api*
   inputFireflyAccessToken: >
     Incolla il tuo token di accesso personale.
     Puoi crearlo e copiarlo dall'interfaccia web di Firefly III:
@@ -88,22 +98,28 @@ settings:
        
     *🔗 Firefly URL*: ${fireflyUrl || '🚨 <NON SPECIFICATO>'}
 
+    *🔗 Firefly API URL*: ${fireflyApiUrl || '🚨 <NON SPECIFICATO>'}
+
     *🔑 Token di accesso*: ${accessToken || '🚨 <NON SPECIFICATO>'}
 
     *💳 Conto deposito predefinito*: ${defaultSourceAccount.name || '🚨 <NON SPECIFICATO>'}
-
-    *🌐 Lingua*: ${language}
   selectDefaultAssetAccount: >
     Scegli un conto deposito che verrà utilizzato come predefinito per i prelievi.
     Se lasciato vuoto, il primo conto deposito dalla lista sotto verrà utilizzato come predefinito:
   specifySmthFirst: Specifica ${smth} prima.
   connectionFailed: Connessione non instaurata!
   connectionFailedUnauthenticated: Errore di autenticazione! Per piacere verifica che il Token di Accesso fornito errato o scaduto.
-  connectionFailedBadUrl: Errore di connessione a Firefly! Per piacere verifica di aver specificato l'URL Firefly corretto.
+  resourceNotFound: >
+    Risorsa non trovata!
+    Assicurarsi di aver specificato il giusto URL dell'API Firefly.
+    Questo può accadere anche se si sta cercando di ottenere o modificare una risorsa non esistente.
+  connectionFailedBadUrl: >
+    Errore di connessione a Firefly!
+    Per piacere verifica di aver specificato *🔗 Firefly API URL* corretto.
   connectionSuccess: >
-    Connessione instaurata!
-
-    Ciao, ${email}!
+   🎉 Connessione instaurata!
+      
+   👋 Ciao, ${email}!
   badAccessToken: Il testo inserito non sembra un Token di Accesso. Si prega di riprovare.
   badUrl: >
     Il testo inserito non sembra un indirizzo URL. Si prega di riprovare.
@@ -176,25 +192,28 @@ transactions:
   add:
     dontUnderstand: >
       🤖 Non ho capito.  
-      Inserisci l'importo della transazione. Deve essere un numero! 😉
+        
+      Inserisci l'importo della transazione. Deve essere un numero!  
+ 
+      Oppure si può digitare una descrizione della transazione e un importo, ad esempio `Grocery 25`.
     withdrawalMessage: >
       📆 ${date}  
         
       📤 Aggiunto ${description === 'N/A' ? '' : '*' + description + '*'}
       *${amount}* *${currency}*${category ? ' Nella categoria *' + category + '*' : ''}  
 
-      ${source} ➡️ ${destination}
+      ${source} → ${destination}
     depositMessage: >
       📆 ${date}  
        
       📥 Aggiunto ${description === 'N/A' ? '' : '*' + description + '* '}
-      *${amount}* *${currency}*
+      *${amount}* *${currency}*${category ? ' Nella categoria *' + category + '*' : ''}  
       
-      ${source} ➡️ ${destination}
+      from ${source} → ${destination}
     transferMessage: >
       📆 ${date}  
          
-      ↔️ Trasferimento *${amount}* *${currency}* dal conto *${source}* al conto *${destination}*
+      ↔️ Trasferimento *${amount}* *${currency}* dal conto *${source}* al conto *${destination}*${foreignAmount ? " (" + foreignAmount + " " + foreignCurrencySymbol + ")" : ''}${category ? ' Nella categoria *' + category + '*' : ''}  
     selectCategory: In che categoria aggiungere *${amount}*?
     noCategoriesYet: |
       🤷 Non hai ancora creato alcuna categoria.
@@ -209,6 +228,14 @@ transactions:
     selectDestAccount: 'Scegli un conto a cui trasferire:'
     transactionError: '❗😰 Ann error occurred during transaction creation: *${message}*'
     created: Transazione creata!
+    typeForeignAmount: >
+      ⚠️ The destination account currency (*${destCurrency}*) is different than the source account currency (*${sourceCurrency}*)!
+      Type in the foreign amount i.e. the amount in the destination account currency.  
+        
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to
+      perform the appropriate operation on the source account amount of the transaction.  
+        
+      For example, `*15` would multiply the initial amount by 15 to get the foreign amount.
 
   edit:
     whatToEdit: ❓Cosa vuoi modificare?
@@ -271,3 +298,6 @@ categories:
     ──────────────────
     
     SOMMA: ${sums ? sums : '0'}</pre>
+
+reports:
+  notImplemented: Siamo spiacenti, ma i rapporti non sono ancora stati implementati 😞

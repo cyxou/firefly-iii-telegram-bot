@@ -4,4 +4,5 @@ import { I18nContext } from '@grammyjs/i18n';
 
 export type MyContext = Context & SessionFlavor<SessionData> & {
   readonly i18n: I18nContext;
+  readonly menu: any;
 }

@@ -1,9 +1,9 @@
 import dayjs from 'dayjs'
 import Debug from 'debug'
 import flatten from 'lodash.flatten'
-import { evaluate } from 'mathjs'
-import { ParseMode } from '@grammyjs/types'
+import { evaluate, nthRoot } from 'mathjs'
 import { Keyboard, InlineKeyboard } from 'grammy'
+import { MenuRange } from '@grammyjs/menu'
 
 import firefly from '../lib/firefly'
 import Mapper from '../lib/Mapper'
@@ -12,26 +12,30 @@ import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-property'
 import { TransactionSplit } from '../lib/firefly/model/transaction-split'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
-// import { AccountTypeEnum } from '../lib/firefly/model/account'
 import { AccountRead } from '../lib/firefly/model/account-read'
 
+import { TransactionSplitStore } from '../lib/firefly/model/transaction-split-store'
+
 const debug = Debug('bot:transactions:helpers')
+
+type MaybePromise<T> = T | Promise<T>;
+type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
 
 export {
   createAccountsMenuKeyboard,
   listAccountsMapper,
   listTransactionsMapper,
-  addTransactionsMapper,
-  editTransactionsMapper,
   parseAmountInput,
-  formatTransaction,
+  formatTransactionText as formatTransaction,
   formatTransactionUpdate,
-  formatTransactionKeyboard,
   createCategoriesKeyboard,
   createAccountsKeyboard,
-  createEditMenuKeyboard,
   createMainKeyboard,
-  generateWelcomeMessage
+  generateWelcomeMessage,
+  createFireflyTransaction,
+  getFireflyAccounts,
+  createPaginationRange,
+  cleanupSessionData,
 }
 
 const listAccountsMapper = {
@@ -44,93 +48,39 @@ const listTransactionsMapper = {
   close: new Mapper('LIST_TRANSACTIONS|DONE'),
 }
 
-const addTransactionsMapper = {
-  selectCategory: new Mapper('ADD|WITHDRAWAL|CATEGORY_ID=${categoryId}'),
-  confirmWithoutCategory: new Mapper('ADD|WITHDRAWAL'),
-  cancelAdd: new Mapper('ADD|CANCEL'),
-  delete: new Mapper('DELETE|TRANSACTION_ID=${trId}'),
-  addTransfer: new Mapper('ADD|TRANSFER|AMOUNT=${amount}'),
-  addDeposit: new Mapper('ADD|DEPOSIT|AMOUNT=${amount}'),
-  selectRevenueAccount: new Mapper('ADD|DEPOSIT|REVENUE_ID=${accountId}'),
-  selectAssetAccount: new Mapper('ADD|DEPOSIT|ASSET_ID=${accountId}'),
-  selectSourceAccount: new Mapper('ADD|TRANSFER|SOURCE_ID=${accountId}'),
-  selectDestAccount: new Mapper('ADD|TRANSFER|DEST_ID=${accountId}')
-}
-
-const editTransactionsMapper = {
-  assignCategory: new Mapper('ASSIGN_TRANSACTION_CATEGORY_ID=${trId}'),
-  editMenu: new Mapper('EDIT_TRANSACTION_ID=${trId}'),
-  done: new Mapper('DONE_EDIT_TRANSACTION_ID=${trId}'),
-  editDate: new Mapper('CHANGE_TRANSACTION_DATE_ID=${trId}'),
-  editAmount: new Mapper('CHANGE_TRANSACTION_AMOUNT_ID=${trId}'),
-  editDesc: new Mapper('CHANGE_TRANSACTION_DESCRIPTION_ID=${trId}'),
-  editCategory: new Mapper('CHANGE_TRANSACTION_CATEGORY_ID=${trId}'),
-  setCategory: new Mapper('SET_TRANSACTION_CATEGORY_ID=${categoryId}'),
-  editSourceAccount: new Mapper('CHANGE_SOURCE_ACCOUNT_ID=${trId}'),
-  setSourceAccount: new Mapper('SET_SOURCE_ACCOUNT_ID=${accountId}'),
-  editDestinationAccount: new Mapper('CHANGE_DESTINATION_ACCOUNT_ID=${trId}'),
-  setDestinationAccount: new Mapper('SET_DESTINATION_ACCOUNT_ID=${accountId}'),
-}
-
 function parseAmountInput(amount: string, oldAmount?: string): number | null {
   const validInput = /^[-+/*]?\d{1,}(?:[.,]\d+)?([-+/*^]\d{1,}(?:[.,]\d+)?)*$/
   if (!validInput.exec(amount)) return null
 
+  // TODO: Replace commas with dots prior math evaluating
   if (oldAmount && (amount.startsWith('+') || amount.startsWith('-')
     || amount.startsWith('/') || amount.startsWith('*'))) {
-      return Math.abs(evaluate(`${oldAmount}${amount}`))
-    }
+    return Math.abs(evaluate(`${oldAmount}${amount}`))
+  }
 
   return Math.abs(evaluate(amount))
 }
 
-function formatTransactionKeyboard(ctx: MyContext, tr: TransactionRead) {
-  const log = debug.extend('formatTransactionKeyboard')
-  const trKeyboard = new InlineKeyboard()
-  // If transaction does not have a category, show button to specify one
-  if (!tr.attributes.transactions[0].category_name) {
-    trKeyboard
-      .text(
-        ctx.i18n.t('labels.CHANGE_CATEGORY'),
-        editTransactionsMapper.assignCategory.template({ trId: tr.id })
-      )
-  }
-
-  trKeyboard
-    .text(
-      ctx.i18n.t('labels.EDIT_TRANSACTION'),
-      editTransactionsMapper.editMenu.template({ trId: tr.id })
-    )
-    .text(
-      ctx.i18n.t('labels.DELETE'),
-      addTransactionsMapper.delete.template({ trId: tr.id })
-    )
-
-  log('trKeyboard: %O', trKeyboard.inline_keyboard)
-
-  return {
-    parse_mode: 'Markdown' as ParseMode,
-    reply_markup: trKeyboard
-  }
-}
-
-function formatTransaction(ctx: MyContext, tr: Partial<TransactionRead>){
+// TODO: get rid of tr argumanet and grab transaction from ctx.session
+function formatTransactionText(ctx: MyContext, tr: Partial<TransactionRead>) {
   const trSplit = tr.attributes!.transactions[0]
   const baseProps: any = {
     amount: parseFloat(trSplit.amount),
+    foreignAmount: trSplit.foreign_amount ? parseFloat(trSplit.foreign_amount) : '',
+    foreignCurrencySymbol: trSplit.foreign_currency_symbol ?? '',
     source: trSplit.source_name,
     destination: trSplit.destination_name,
     description: trSplit.description,
     currency: trSplit.currency_symbol,
     date: dayjs(trSplit.date).format('LLL'),
-    trId: tr.id
+    trId: tr.id,
+    category: trSplit.category_name
   }
 
   let translationString: string
   switch (trSplit.type) {
     case TransactionTypeProperty.Withdrawal:
       translationString = 'transactions.add.withdrawalMessage'
-      baseProps.category = trSplit.category_name
       break
     case TransactionTypeProperty.Deposit:
       translationString = 'transactions.add.depositMessage'
@@ -184,7 +134,8 @@ async function createAccountsKeyboard(
 
     if (Array.isArray(accountType)) {
       const promises: any = []
-      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accType)))
+      // TODO: Implement pagination menu for Accounts
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(undefined, 100, 1, now, accType)))
       const responses = await Promise.all(promises)
 
       log('Responses length: %s', responses.length)
@@ -193,7 +144,7 @@ async function createAccountsKeyboard(
         return r.data.data
       }))
     } else {
-      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(1, now, accountType)).data.data
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, 100, 1, now, accountType)).data.data
     }
 
     log('accounts: %O', accounts)
@@ -224,6 +175,44 @@ async function createAccountsKeyboard(
   }
 }
 
+async function getFireflyAccounts(
+  ctx: MyContext,
+  accountType: AccountTypeFilter | AccountTypeFilter[],
+  opts?: { skipAccountId: string }
+) {
+  const log = debug.extend('getFireflyAccounts')
+  try {
+    let accounts: AccountRead[] = []
+    const now = dayjs().format('YYYY-MM-DD')
+
+    if (Array.isArray(accountType)) {
+      const promises: any = []
+      accountType.forEach(accType => promises.push(firefly(ctx.session.userSettings).Accounts.listAccount(undefined, 100, 1, now, accType)))
+      const responses = await Promise.all(promises)
+
+      log('Responses length: %s', responses.length)
+
+      accounts = flatten(responses.map(r => {
+        return r.data.data
+      }))
+    } else {
+      accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, 100, 1, now, accountType)).data.data
+    }
+
+    log('accounts: %O', accounts)
+
+    // Prevent from choosing same account when doing transfers
+    if (opts) accounts = accounts.filter(acc => opts.skipAccountId !== acc.id.toString())
+
+    return accounts.reverse() // we want top accounts be closer to the bottom of the screen
+
+  } catch (err) {
+    log('Error: %O', err)
+    console.error('Error occurred getting acounts: ', err)
+    throw err
+  }
+}
+
 function formatTransactionUpdate(
   ctx: MyContext,
   trRead: Partial<TransactionRead>,
@@ -248,21 +237,21 @@ function formatTransactionUpdate(
     let diffPart = '<b>Ваши изменения</b>:'
 
     if (newCategory && newCategory !== oldCategory)
-    diffPart = `<s>${oldCategory}</s> ${newCategory}`
+      diffPart = `<s>${oldCategory}</s> ${newCategory}`
 
     if (newAmount && newAmount !== oldAmount)
-    diffPart = `${diffPart}\nСумма: <s>${oldAmount}</s> <b>${newAmount}</b>`
+      diffPart = `${diffPart}\nСумма: <s>${oldAmount}</s> <b>${newAmount}</b>`
 
     if (newDescr && newDescr !== oldDescr)
-    diffPart = `${diffPart}\n<s>${oldDescr}</s> <b>${newDescr}</b>`
+      diffPart = `${diffPart}\n<s>${oldDescr}</s> <b>${newDescr}</b>`
 
     if (newDest && newDest !== oldDest)
-    diffPart = `${diffPart}\n<s>${oldDest}</s> <b>${newDest}</b>`
+      diffPart = `${diffPart}\n<s>${oldDest}</s> <b>${newDest}</b>`
 
     if (newDate && newDate !== oldDate)
-    diffPart = `${diffPart}\n<s>${oldDate}</s> <b>${newDate}</b>`
+      diffPart = `${diffPart}\n<s>${oldDate}</s> <b>${newDate}</b>`
 
-    return `${formatTransaction(ctx, trRead)}\n${diffPart}`
+    return `${formatTransactionText(ctx, trRead)}\n${diffPart}`
 
   } catch (err: any) {
     console.error(err)
@@ -270,31 +259,7 @@ function formatTransactionUpdate(
   }
 }
 
-function createEditMenuKeyboard(ctx: MyContext, tr: TransactionRead) {
-  const keyboard = new InlineKeyboard()
-  const trId = tr.id
-  const { fireflyUrl } = ctx.session.userSettings
-
-  // Only withdrawal transactions may have category assigned
-  if (tr.attributes.transactions[0].type === 'withdrawal') {
-    keyboard
-      .text(ctx.i18n.t('labels.CHANGE_CATEGORY'), editTransactionsMapper.editCategory.template({trId})).row()
-  }
-
-  keyboard
-    .text(ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), editTransactionsMapper.editSourceAccount.template({trId}))
-    .text(ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'), editTransactionsMapper.editDestinationAccount.template({trId})).row()
-    .text(ctx.i18n.t('labels.CHANGE_DESCRIPTION'), editTransactionsMapper.editDesc.template({trId}))
-    // TODO Add functionality to change the date of a transaction
-    // .text(ctx.i18n.t('labels.CHANGE_DATE'), editTransactionsMapper.editDate.template({trId}))
-    .text(ctx.i18n.t('labels.CHANGE_AMOUNT'), editTransactionsMapper.editAmount.template({trId})).row()
-    .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${fireflyUrl}/transactions/show/${trId}`).row()
-    .text(ctx.i18n.t('labels.DONE'), editTransactionsMapper.done.template({trId})).row()
-
-  return keyboard
-}
-
-function createAccountsMenuKeyboard( ctx: MyContext, accType: AccountTypeFilter) {
+function createAccountsMenuKeyboard(ctx: MyContext, accType: AccountTypeFilter) {
   const mapper = listAccountsMapper
   const keyboard = new InlineKeyboard()
 
@@ -384,4 +349,106 @@ function createMainKeyboard(ctx: MyContext) {
     .text(ctx.i18n.t('labels.REPORTS'))
     .text(ctx.i18n.t('labels.CATEGORIES')).row()
     .text(ctx.i18n.t('labels.SETTINGS'))
+    .resized()
+}
+
+async function createFireflyTransaction(ctx: MyContext) {
+  const log = debug.extend('createFireflyTransaction')
+  log(' Preparing transaction payload to send to Firefly API...')
+  const newTransaction = ctx.session.newTransaction
+
+  try {
+    log('ctx.session.newTransaction: %O', newTransaction)
+
+    let transactionType = newTransaction.type!
+    const sourceAccountType = newTransaction.sourceAccount!.type
+    const destAccountType = newTransaction.destAccount?.type
+
+    const transactionSplit: TransactionSplitStore = {
+      type: transactionType,
+      date: (ctx.message?.date ? dayjs.unix(ctx.message.date) : dayjs()).toISOString(),
+      description: 'N/A',
+      source_id: newTransaction.sourceAccount!.id || '',
+      amount: newTransaction.amount || '',
+      category_id: newTransaction.categoryId || '',
+      destination_id: newTransaction.destAccount?.id
+    }
+
+    if (!newTransaction.type) {
+      // Firefly has some weird rules of setting transaction type based on
+      // the account types used in transaction. Try to mimick them here:
+      if (sourceAccountType === 'asset' && destAccountType === 'liabilities') {
+        transactionSplit.type = TransactionTypeProperty.Withdrawal
+      }
+      else if (sourceAccountType === 'liabilities' || sourceAccountType === 'revenue') {
+        transactionSplit.type = TransactionTypeProperty.Deposit
+      }
+      else if (sourceAccountType === 'asset' || destAccountType === 'asset') {
+        transactionSplit.type = TransactionTypeProperty.Transfer
+        transactionSplit.foreign_amount = newTransaction.foreignAmount || undefined
+        // Firefly doesn't like when we pass foreign_currency_is without foreign_amount
+        if (transactionSplit.foreign_amount) {
+          transactionSplit.foreign_currency_id = newTransaction.destAccount?.currencyId
+        }
+      }
+      else {
+        transactionSplit.type = TransactionTypeProperty.Withdrawal
+      }
+    }
+
+    const payload = { transactions: [ transactionSplit ] }
+    log('Transaction payload to send: %O', payload)
+
+    return (await firefly(ctx.session.userSettings).Transactions.storeTransaction(payload)).data.data
+
+  } catch (err: any) {
+    log('Error: %O', err)
+    console.error('Error occured creating deposit transaction: ', err)
+    ctx.reply(err.message)
+    throw err
+  }
+}
+
+function createPaginationRange(
+  ctx: MyContext,
+  prevPageHandler: MenuMiddleware<MyContext>,
+  nextPageHandler: MenuMiddleware<MyContext>
+): MenuRange<MyContext> {
+  const log = debug.extend('createPaginationRange')
+  const range = new MenuRange<MyContext>()
+
+  const pagination = ctx.session.pagination
+
+  if (!pagination) return range
+
+  if (pagination.total_pages! > 0) {
+    const prevPage = pagination.current_page! - 1
+    const nextPage = pagination.current_page! + 1
+    const hasNext = nextPage <= pagination.total_pages!
+    const hasPrev = prevPage > 0
+
+    log('prevPage: %s', prevPage)
+    log('hasPrev: %s', hasPrev)
+    log('nextPage: %s', nextPage)
+    log('hasNext: %s', hasNext)
+
+    if (hasPrev) range.text('<<', prevPageHandler)
+
+    if (hasNext) range.text('>>', nextPageHandler)
+
+    range.row()
+  }
+  return range
+}
+
+function cleanupSessionData(ctx: MyContext) {
+  const log = debug.extend('cleanupSessionData')
+  log('Cleaning up session data...')
+  ctx.session.newTransaction = {}
+  ctx.session.categories = []
+  ctx.session.accounts = []
+  ctx.session.newCategories = []
+  ctx.session.editTransactions = []
+  ctx.session.step = 'IDLE'
+  ctx.session.deleteBotsMessage = {}
 }

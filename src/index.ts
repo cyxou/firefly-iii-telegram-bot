@@ -7,7 +7,7 @@ dotenv.config();
 
 import i18n from './lib/i18n'
 import config from './config'
-import { command } from './lib/constants'
+import { command } from './composers/constants'
 import { requireSettings, cleanup } from './lib/middlewares'
 import { createMainKeyboard, generateWelcomeMessage } from './composers/helpers'
 
@@ -17,10 +17,10 @@ import editTransaction from './composers/transactions/edit-transaction'
 import listTransactions from './composers/transactions/list-transactions'
 import accounts from './composers/accounts'
 import categories from './composers/categories'
+import reports from './composers/reports'
 
 import type { MyContext } from './types/MyContext'
-import type { SessionData } from './types/SessionData'
-import { initialSessionData } from './types/SessionData'
+import { createInitialSessionData, SessionData } from './types/SessionData'
 
 export const Route = {
   idle: 'IDLE'
@@ -34,8 +34,8 @@ const bot = new Bot<MyContext>(config.botToken)
 bot.use(
   session({
     getSessionKey,
-    initial: (): SessionData => ({ ...initialSessionData }),
-    storage: new FileAdapter({
+    initial: createInitialSessionData,
+    storage: new FileAdapter<SessionData>({
       dirName: 'sessions',
     }),
   })
@@ -51,6 +51,7 @@ bot.use(listTransactions)
 bot.use(accounts)
 bot.use(settings)
 bot.use(categories)
+bot.use(reports)
 
 bot.command(command.START, startHandler)
 bot.command(command.HELP, helpHandler)
@@ -69,10 +70,7 @@ async function startHandler(ctx: MyContext) {
 
   return ctx.reply(welcomeMessage, {
     parse_mode: 'Markdown',
-    reply_markup: {
-      keyboard: createMainKeyboard(ctx).build(),
-      resize_keyboard: true
-    }
+    reply_markup: createMainKeyboard(ctx)
   })
 }
 
@@ -82,10 +80,7 @@ function helpHandler(ctx: MyContext) {
 
   return ctx.reply(ctx.i18n.t('help'), {
     parse_mode: 'Markdown',
-    reply_markup: {
-      keyboard: createMainKeyboard(ctx).build(),
-      resize_keyboard: true
-    }
+    reply_markup: createMainKeyboard(ctx)
   })
 }
 

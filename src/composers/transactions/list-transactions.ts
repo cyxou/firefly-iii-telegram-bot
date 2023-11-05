@@ -10,9 +10,11 @@ import {
 } from '../helpers'
 
 import firefly from '../../lib/firefly'
+import { handleCallbackQueryError } from '../../lib/errorHandler'
 import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { TransactionTypeFilter } from '../../lib/firefly/model/transaction-type-filter'
+import { TRANSACTIONS_PAGE_LIMIT } from '../constants'
 
 const debug = Debug(`bot:transactions:list`)
 
@@ -21,6 +23,7 @@ const bot = new Composer<MyContext>()
 // List transactions
 bot.hears(i18n.t('en', 'labels.TRANSACTIONS'), showTransactions)
 bot.hears(i18n.t('ru', 'labels.TRANSACTIONS'), showTransactions)
+bot.hears(i18n.t('it', 'labels.TRANSACTIONS'), showTransactions)
 bot.callbackQuery(mapper.list.regex(), showTransactions)
 bot.callbackQuery(mapper.close.regex(), closeHandler)
 
@@ -57,6 +60,8 @@ async function showTransactions(ctx: MyContext) {
     log('end: %O', end)
 
     const transactions = (await firefly(userSettings).Transactions.listTransaction(
+      undefined,
+      TRANSACTIONS_PAGE_LIMIT,
       page,
       start,
       end,
@@ -78,8 +83,8 @@ async function showTransactions(ctx: MyContext) {
         reply_markup: keyboard
       })
     }
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    return handleCallbackQueryError(err, ctx)
   }
 }
 
@@ -167,23 +172,23 @@ function createTransactionsNavigationKeyboard(
   switch (trType) {
     case TransactionTypeFilter.Withdrawal:
       keyboard
-        .text(ctx.i18n.t('labels.TO_DEPOSITS'),
+        .text(ctx.i18n.t('labels.SHOW_DEPOSITS'),
           mapper.list.template({ type: TransactionTypeFilter.Deposit, start: curDay })).row()
-        .text(ctx.i18n.t('labels.TO_TRANSFERS'),
+        .text(ctx.i18n.t('labels.SHOW_TRANSFERS'),
           mapper.list.template({ type: TransactionTypeFilter.Transfer, start: curDay })).row()
       break
     case TransactionTypeFilter.Deposit:
       keyboard
-        .text(ctx.i18n.t('labels.TO_WITHDRAWALS'),
+        .text(ctx.i18n.t('labels.SHOW_WITHDRAWALS'),
           mapper.list.template({ type: TransactionTypeFilter.Withdrawal, start: curDay })).row()
-        .text(ctx.i18n.t('labels.TO_TRANSFERS'),
+        .text(ctx.i18n.t('labels.SHOW_TRANSFERS'),
           mapper.list.template({ type: TransactionTypeFilter.Withdrawal, start: curDay })).row()
       break
     case TransactionTypeFilter.Transfer:
       keyboard
-        .text(ctx.i18n.t('labels.TO_DEPOSITS'),
+        .text(ctx.i18n.t('labels.SHOW_DEPOSITS'),
           mapper.list.template({ type: TransactionTypeFilter.Deposit, start: curDay })).row()
-        .text(ctx.i18n.t('labels.TO_WITHDRAWALS'),
+        .text(ctx.i18n.t('labels.SHOW_WITHDRAWALS'),
           mapper.list.template({ type: TransactionTypeFilter.Withdrawal, start: curDay })).row()
       break
   }

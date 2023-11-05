@@ -3,7 +3,28 @@ This Telegram bot facilitates creating [Firefly III](https://www.firefly-iii.org
 as well as provides some capabilities to manage other Firefly's entities like
 Accounts, Categories, Reports, etc.
 
-<h1 align="center"><img src="https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/welcome-screen.png?raw=true" alt="screenshot" align="center"/></h1>
+<h1 align="center"><img src="https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/bot-v2.jpeg?raw=true" alt="screenshot" align="center"/></h1>
+
+## ⚠ Notice: Limited Firefly III Version Support
+
+This Telegram bot is developed for use with Firefly III finance manager.
+However, due to time constraints, the support for different Firefly III versions
+may be limited.
+
+Please be aware that I may not be able to promptly address issues or developments
+related to all Firefly III versions. Users are encouraged to consider this while
+using the bot with different versions of Firefly III.
+
+Your understanding and cooperation are appreciated. For the best experience,
+it's recommended to use this bot with supported Firefly III versions.
+
+### Version Compatibility
+
+- Version v2 of this bot has been tested with Firefly III v6.0.30.
+- All other versions of Firefly III might not work properly with this bot.
+
+Thank you for your understanding.
+
 
 ## Setup
 First you'll have to [generate a Telegram Bot token through BotFather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token). Once you generate the token, keep it safe.
@@ -18,10 +39,9 @@ docker run \
   cyxou/firefly-iii-telegram-bot:latest
 ```
 
-You may also provide additional environment variables via the _.env_ file.
-For this rename the _example.env_ to _.env_ and update it with your values.
-Then you can pass it to docker like so:
-
+You may also provide BOT_TOKEN via the .env file. For this just rename the
+_example.env_ file to _.env_ and update it with your values. Then you can pass it
+to docker like so:  
 ```shell
 docker run \
   --rm --it --init --name firefly-bot \
@@ -29,6 +49,10 @@ docker run \
   --env-file .env \
   cyxou/firefly-iii-telegram-bot:latest
 ```
+
+Once the bot is running, navigate to its **Settings** and provide all the
+necessary information to connect it to your Firefly III instance.
+
 
 ### Manual
 
@@ -58,6 +82,7 @@ docker stop earthly-buildkitd || true
 ```
 More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 
+
 ## TODO
 - [x] Add English translations and make it a default language
 - [x] Add transactions improvements (create transfers and deposits)
@@ -70,10 +95,10 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [x] Configure CI/CD so that it builds and pushes docker images on merges to master
 - [ ] Reports
 - [ ] Proper error handling
-- [ ] Tests
+- [ ] Firefly API tests
 - [x] Add JSON database for persistance (used @grammyjs/storage-file)
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
-- [ ] Migrate from home grown Mapper to Grammy's Menu plugin
+- [0] Migrate from home grown Mapper to Grammy's Menu plugin (partially done)
 
 ## Open API Code Generation
 
@@ -105,10 +130,11 @@ which is hard-coded in `codegen` npm task.
    created upon first creation of a transaction via the Firefly UI. Until that
    built-in "(cash)" account is created, the default Expense account will be an
    account without a name which is weird.
+ - Do not try to edit multiple transactions at once, because of the shared state of
+   the transaction under edit. Doing so will result in unexpected behavior.
 
 ## Feedback
-Join the 🔗 [Q&A Telegram group](https://t.me/firefly_iii_telegram_bot_group) if you have
-any questions, feedback or ideas to implement.
+Join our Telegram group: <a class="VPSocialLink" href="https://t.me/firefly_iii_telegram_bot_group" target="_blank" ><svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Telegram</title><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"></path></svg></a>
 
 ## License
 
