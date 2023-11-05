@@ -72,6 +72,6 @@ jobs:
           to: ${{ secrets.TELEGRAM_GROUP_ID }}
           token: ${{ secrets.TELEGRAM_RELEASE_NOTIFIER_BOT_TOKEN }}
           message: |
-            🚀 A new release has been published: ${GITHUB_REF:10}  
-              
-            ${{ github.event.repository.description }}
+            🚀 New version has just been released: ${{ github.ref }}  
+            
+            See changes here: https://github.com/cyxou/${{ github.repository }}/releases/tag/${{ github.ref }}
