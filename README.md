@@ -134,8 +134,9 @@ which is hard-coded in `codegen` npm task.
    the transaction under edit. Doing so will result in unexpected behavior.
 
 ## Feedback
-Join our Telegram group - any feedback is very appreciated!  
-[![Telegram Group](https://img.shields.io/endpoint?color=neon&label=Support%20Group&style=flat-square)](https://t.me/firefly_iii_telegram_bot_group)
+Please join our Telegram group - any feedback is very appreciated!  
+
+[![Telegram Group](https://img.shields.io/badge/Support%20Group-white?logo=telegram)](https://t.me/firefly_iii_telegram_bot_group)
 
 ## License
 
