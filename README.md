@@ -98,7 +98,8 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [ ] Firefly API tests
 - [x] Add JSON database for persistance (used @grammyjs/storage-file)
 - [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
-- [0] Migrate from home grown Mapper to Grammy's Menu plugin (partially done)
+- [x] Migrate from home grown Mapper to Grammy's Menu plugin (partially done)
+- [ ] Add tags support
 
 ## Open API Code Generation
 
@@ -125,7 +126,7 @@ which is hard-coded in `codegen` npm task.
 
 ## Known bugs and limitations
  - No support for multiple transaction splits. It is assumed that transactions
-     consist of only one transaction split.
+   consist of only one transaction split.
  - Looks like for a brand new user account the built-in "(cash)" account is
    created upon first creation of a transaction via the Firefly UI. Until that
    built-in "(cash)" account is created, the default Expense account will be an
@@ -137,8 +138,3 @@ which is hard-coded in `codegen` npm task.
 Please join our Telegram group - any feedback is very appreciated!  
 
 [![Telegram Group](https://img.shields.io/badge/Support%20Group-white?logo=telegram)](https://t.me/firefly_iii_telegram_bot_group)
-
-## License
-
-[license-url]: https://www.gnu.org/licenses/agpl-3.0.html
-[stars-url]: https://github.com/cyxou/firefly-iii-telegram-bot/stargazers
