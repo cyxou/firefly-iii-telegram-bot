@@ -65,3 +65,13 @@ jobs:
           password: ${{ env.DOCKERHUB_TOKEN }}
           repository: ${{ env.GITHUB_REPO }}
           short-description: ${{ github.event.repository.description }}
+
+      - name: Send telegram message on release
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_GROUP_ID }}
+          token: ${{ secrets.TELEGRAM_RELEASE_NOTIFIER_BOT_TOKEN }}
+          message: |
+            🚀 A new release has been published: ${GITHUB_REF:10}  
+              
+            ${{ github.event.repository.description }}
