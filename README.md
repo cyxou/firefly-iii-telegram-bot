@@ -3,7 +3,7 @@ This Telegram bot facilitates creating [Firefly III](https://www.firefly-iii.org
 as well as provides some capabilities to manage other Firefly's entities like
 Accounts, Categories, Reports, etc.
 
-<h1 align="center"><img src="https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/welcome-screen.png?raw=true" alt="screenshot" align="center"/></h1>
+<h1 align="center"><img src="https://github.com/cyxou/firefly-iii-telegram-bot/blob/master/assets/bot-v2.jpeg?raw=true" alt="screenshot" align="center"/></h1>
 
 ## ⚠ Notice: Limited Firefly III Version Support
 
