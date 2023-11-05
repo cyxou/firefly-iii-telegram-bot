@@ -15,15 +15,14 @@ Please be aware that I may not be able to promptly address issues or development
 related to all Firefly III versions. Users are encouraged to consider this while
 using the bot with different versions of Firefly III.
 
-Your understanding and cooperation are appreciated. For the best experience,
-it's recommended to use this bot with supported Firefly III versions.
+For the best experience, it's recommended to use this bot with supported Firefly III versions.
+Your understanding and cooperation are appreciated. 
+
 
 ### Version Compatibility
 
 - Version v2 of this bot has been tested with Firefly III v6.0.30.
 - All other versions of Firefly III might not work properly with this bot.
-
-Thank you for your understanding.
 
 
 ## Setup
