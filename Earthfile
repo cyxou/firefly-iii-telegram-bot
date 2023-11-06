@@ -99,5 +99,4 @@ release:
         --title "$(jq -r .name tmp-release-notes.json)" \
         --notes-file tmp-release-notes.md \
         --verify-tag \
-        --draft \
         "./firefly-iii-telegram-bot.tar.gz#firefly-iii-telegram-bot-dist"
