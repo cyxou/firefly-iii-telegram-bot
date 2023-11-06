@@ -243,7 +243,8 @@ async function replyWithListOfCategories(ctx: MyContext) {
   log('ctx: %O', ctx)
   try {
     const userSettings = ctx.session.userSettings
-    const categories = (await firefly(userSettings).Categories.listCategory()).data.data
+    // TODO: implement pagination of categories
+    const categories = (await firefly(userSettings).Categories.listCategory(undefined, 500)).data.data
     const categoriesNames = categories.map((c: any) => c.attributes.name)
     // log('categories: %O', categories)
 
@@ -275,7 +276,7 @@ export async function createCategoriesInlineKeyboard(ctx: MyContext): Promise<In
   const log = rootLog.extend('createCategoriesInlineKeyboard')
   try {
     const userSettings = ctx.session.userSettings
-    const categories = (await firefly(userSettings).Categories.listCategory()).data.data
+    const categories = (await firefly(userSettings).Categories.listCategory(undefined, 500)).data.data
     const keyboard = new InlineKeyboard()
     const nowDate = dayjs().format('YYYY-MM-DD')
 

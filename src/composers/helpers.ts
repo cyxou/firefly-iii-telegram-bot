@@ -97,7 +97,7 @@ function formatTransactionText(ctx: MyContext, tr: Partial<TransactionRead>) {
 async function createCategoriesKeyboard(ctx: MyContext, mapper: Mapper) {
   const log = debug.extend('createCategoriesKeyboard')
   try {
-    const categories = (await firefly(ctx.session.userSettings).Categories.listCategory()).data.data
+    const categories = (await firefly(ctx.session.userSettings).Categories.listCategory(undefined, 500)).data.data
     log('categories: %O', categories)
 
     const keyboard = new InlineKeyboard()
