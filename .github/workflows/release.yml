@@ -74,4 +74,4 @@ jobs:
           message: |
             🚀 New version has just been released: ${{ github.ref }}  
             
-            See changes here: https://github.com/cyxou/${{ github.repository }}/releases/tag/${{ github.ref }}
+            See changes here: https://github.com/cyxou/${{ github.repository }}/releases/tag/${{ github.ref_name }}
