@@ -5,7 +5,7 @@ import { Router } from "@grammyjs/router"
 import { Menu, MenuRange } from '@grammyjs/menu'
 
 import type { MyContext } from '../types/MyContext'
-import i18n, { getLanguageIcon, locales } from '../lib/i18n';
+import i18n, { locales } from '../lib/i18n';
 import { command, ACCOUNTS_PAGE_LIMIT } from './constants'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'

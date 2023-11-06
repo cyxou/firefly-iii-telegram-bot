@@ -30,13 +30,3 @@ const i18n = new I18n(params)
 export const locales = ['ru', 'it', 'en', 'es']
 
 export default i18n
-
-export function getLanguageIcon(language: string) {
-  const lang2icons = {
-    ru: '🇷🇺',
-    en: '🇬🇧',
-    es: '🇪🇸',
-    it: '🇮🇹'
-  }
-  return lang2icons[language]
-}
