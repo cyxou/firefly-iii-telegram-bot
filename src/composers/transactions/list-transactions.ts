@@ -4,7 +4,7 @@ import { Composer, InlineKeyboard } from 'grammy'
 import { table, getBorderCharacters } from 'table'
 
 import type { MyContext } from '../../types/MyContext'
-import i18n from '../../lib/i18n'
+import i18n, { locales } from '../../lib/i18n'
 import {
   listTransactionsMapper as mapper
 } from '../helpers'
@@ -21,10 +21,9 @@ const debug = Debug(`bot:transactions:list`)
 const bot = new Composer<MyContext>()
 
 // List transactions
-bot.hears(i18n.t('en', 'labels.TRANSACTIONS'), showTransactions)
-bot.hears(i18n.t('es', 'labels.TRANSACTIONS'), showTransactions)
-bot.hears(i18n.t('ru', 'labels.TRANSACTIONS'), showTransactions)
-bot.hears(i18n.t('it', 'labels.TRANSACTIONS'), showTransactions)
+for (const locale of locales) {
+  bot.hears(i18n.t(locale, 'labels.TRANSACTIONS'), showTransactions)
+}
 bot.callbackQuery(mapper.list.regex(), showTransactions)
 bot.callbackQuery(mapper.close.regex(), closeHandler)
 

@@ -5,7 +5,7 @@ import { table, getBorderCharacters } from 'table'
 import type { Alignment } from 'table'
 
 import type { MyContext } from '../types/MyContext'
-import i18n from '../lib/i18n'
+import i18n, { locales } from '../lib/i18n'
 import {
   listAccountsMapper as mapper,
   createAccountsMenuKeyboard
@@ -22,9 +22,9 @@ const debug = Debug(`bot:accounts`)
 const bot = new Composer<MyContext>()
 
 // List transactions
-bot.hears(i18n.t('en', 'labels.ACCOUNTS'), showAccounts)
-bot.hears(i18n.t('ru', 'labels.ACCOUNTS'), showAccounts)
-bot.hears(i18n.t('it', 'labels.ACCOUNTS'), showAccounts)
+for (const locale of locales) {
+  bot.hears(i18n.t(locale, 'labels.ACCOUNTS'), showAccounts)
+}
 bot.callbackQuery(mapper.list.regex(), showAccounts)
 bot.callbackQuery(mapper.close.regex(), closeHandler)
 

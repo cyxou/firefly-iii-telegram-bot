@@ -5,7 +5,7 @@ import { Router } from "@grammyjs/router"
 import { Menu, MenuRange } from '@grammyjs/menu'
 
 import type { MyContext } from '../types/MyContext'
-import i18n, { getLanguageIcon } from '../lib/i18n';
+import i18n, { getLanguageIcon, locales } from '../lib/i18n';
 import { command, ACCOUNTS_PAGE_LIMIT } from './constants'
 import firefly from '../lib/firefly'
 import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
@@ -68,7 +68,7 @@ const settingsMenu = new Menu<MyContext>('settings')
 const langMenu = new Menu<MyContext>('switch-lang')
   .dynamic(() => {
     const range = new MenuRange<MyContext>()
-    for (const locale of ['ru', 'it', 'en']) {
+    for (const locale of locales) {
       const langText = 'labels.' + `SWITCH_TO_${locale}`.toUpperCase()
       range.text(
         {
