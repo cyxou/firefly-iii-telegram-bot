@@ -59,9 +59,7 @@ export function requireSettings() {
       log('text: %O', text)
       // We allow only the commands routes to enter if Firefly URL or Firefly
       // Token are not set
-      const whiteList = [
-        ...Object.values(command)
-      ]
+      const whiteList = [ ...Object.values(command) ]
       for (const locale of locales) {
         whiteList.push(i18n.t(locale, 'labels.SETTINGS'))
       }
