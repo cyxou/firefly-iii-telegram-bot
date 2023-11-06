@@ -151,11 +151,10 @@ settingsMenu.register(cancelMenu)
 bot.use(settingsMenu)
 bot.use(requireSettings())
 
+for (const locale of locales) {
+  bot.hears(i18n.t(locale, 'labels.SETTINGS'), settingsCommandHandler)
+}
 bot.command(command.SETTINGS, settingsCommandHandler)
-bot.hears(i18n.t('en', 'labels.SETTINGS'), settingsCommandHandler)
-bot.hears(i18n.t('es', 'labels.SETTINGS'), settingsCommandHandler)
-bot.hears(i18n.t('ru', 'labels.SETTINGS'), settingsCommandHandler)
-bot.hears(i18n.t('it', 'labels.SETTINGS'), settingsCommandHandler)
 
 // Local routes and handlers
 router.route('IDLE', (_, next) => next())

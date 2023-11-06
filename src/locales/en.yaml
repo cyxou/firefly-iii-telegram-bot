@@ -41,6 +41,7 @@ labels:
   YES: ✅ Yes
   SWITCH_LANG: 🌐 Language
   SWITCH_TO_EN: 🇬🇧 English
+  SWITCH_TO_ES: 🇪🇸 Spanish
   SWITCH_TO_RU: 🇷🇺 Russian
   SWITCH_TO_IT: 🇮🇹 Italian
 

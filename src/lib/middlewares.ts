@@ -1,6 +1,6 @@
 import debug from 'debug'
 
-import i18n from './i18n'
+import i18n, { locales } from './i18n'
 import { command } from '../composers/constants'
 import type { MyContext } from '../types/MyContext'
 import { createMainKeyboard } from '../composers/helpers'
@@ -19,31 +19,14 @@ export function cleanup() {
     if (ctx.msg!.from!.is_bot) return next()
 
     const text = ctx.msg!.text || ''
-    const keyboardCommandList = [
-      i18n.t('ru', 'labels.SETTINGS'),
-      i18n.t('ru', 'labels.TRANSACTIONS'),
-      i18n.t('ru', 'labels.ACCOUNTS'),
-      i18n.t('ru', 'labels.REPORTS'),
-      i18n.t('ru', 'labels.CATEGORIES'),
-
-      i18n.t('en', 'labels.SETTINGS'),
-      i18n.t('en', 'labels.TRANSACTIONS'),
-      i18n.t('en', 'labels.ACCOUNTS'),
-      i18n.t('en', 'labels.REPORTS'),
-      i18n.t('en', 'labels.CATEGORIES'),
-
-      i18n.t('es', 'labels.SETTINGS'),
-      i18n.t('es', 'labels.TRANSACTIONS'),
-      i18n.t('es', 'labels.ACCOUNTS'),
-      i18n.t('es', 'labels.REPORTS'),
-      i18n.t('es', 'labels.CATEGORIES'),
-
-      i18n.t('it', 'labels.SETTINGS'),
-      i18n.t('it', 'labels.TRANSACTIONS'),
-      i18n.t('it', 'labels.ACCOUNTS'),
-      i18n.t('it', 'labels.REPORTS'),
-      i18n.t('it', 'labels.CATEGORIES'),
-    ]
+    const keyboardCommandList = []
+    for (const locale of locales) {
+      keyboardCommandList.push(i18n.t(locale, 'labels.SETTINGS'))
+      keyboardCommandList.push(i18n.t(locale, 'labels.TRANSACTIONS'))
+      keyboardCommandList.push(i18n.t(locale, 'labels.ACCOUNTS'))
+      keyboardCommandList.push(i18n.t(locale, 'labels.REPORTS'))
+      keyboardCommandList.push(i18n.t(locale, 'labels.CATEGORIES'))
+    }
     log('keyboardCommandList: %O', keyboardCommandList)
     log('keyboardCommandList.includes(text): %O', keyboardCommandList.includes(text))
 
@@ -77,11 +60,11 @@ export function requireSettings() {
       // We allow only the commands routes to enter if Firefly URL or Firefly
       // Token are not set
       const whiteList = [
-        i18n.t('ru', 'labels.SETTINGS'),
-        i18n.t('en', 'labels.SETTINGS'),
-        i18n.t('it', 'labels.SETTINGS'),
         ...Object.values(command)
       ]
+      for (const locale of locales) {
+        whiteList.push(i18n.t(locale, 'labels.SETTINGS'))
+      }
       log('whiteList: %O', whiteList)
       log('callbackQuery: %O', ctx.callbackQuery)
       const isCallbackQuery = !!ctx.callbackQuery
