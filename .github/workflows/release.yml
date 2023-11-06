@@ -56,7 +56,7 @@ jobs:
             --DOCKERHUB_REPO=$GITHUB_REPO \
             --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
             --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN \
-            --RELEASE_VERSION=${GITHUB_REF:10}
+            --RELEASE_VERSION=${{ github.ref_name }}
       
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v3
