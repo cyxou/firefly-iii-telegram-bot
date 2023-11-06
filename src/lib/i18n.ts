@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import 'dayjs/locale/ru'
 import 'dayjs/locale/en'
+import 'dayjs/locale/es'
 
 const defaultLanguage = 'en'
 
@@ -32,6 +33,7 @@ export function getLanguageIcon(language: string) {
   const lang2icons = {
     ru: '🇷🇺',
     en: '🇬🇧',
+    es: '🇪🇸',
     it: '🇮🇹'
   }
 

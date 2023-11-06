@@ -32,6 +32,12 @@ export function cleanup() {
       i18n.t('en', 'labels.REPORTS'),
       i18n.t('en', 'labels.CATEGORIES'),
 
+      i18n.t('es', 'labels.SETTINGS'),
+      i18n.t('es', 'labels.TRANSACTIONS'),
+      i18n.t('es', 'labels.ACCOUNTS'),
+      i18n.t('es', 'labels.REPORTS'),
+      i18n.t('es', 'labels.CATEGORIES'),
+
       i18n.t('it', 'labels.SETTINGS'),
       i18n.t('it', 'labels.TRANSACTIONS'),
       i18n.t('it', 'labels.ACCOUNTS'),

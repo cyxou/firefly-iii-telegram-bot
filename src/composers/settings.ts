@@ -153,6 +153,7 @@ bot.use(requireSettings())
 
 bot.command(command.SETTINGS, settingsCommandHandler)
 bot.hears(i18n.t('en', 'labels.SETTINGS'), settingsCommandHandler)
+bot.hears(i18n.t('es', 'labels.SETTINGS'), settingsCommandHandler)
 bot.hears(i18n.t('ru', 'labels.SETTINGS'), settingsCommandHandler)
 bot.hears(i18n.t('it', 'labels.SETTINGS'), settingsCommandHandler)
 

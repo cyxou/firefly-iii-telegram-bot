@@ -8,6 +8,7 @@ import type { MyContext } from '../types/MyContext'
 const bot = new Composer<MyContext>()
 
 bot.hears(i18n.t('en', 'labels.REPORTS'), reportsHandler)
+bot.hears(i18n.t('es', 'labels.REPORTS'), reportsHandler)
 bot.hears(i18n.t('ru', 'labels.REPORTS'), reportsHandler)
 bot.hears(i18n.t('it', 'labels.REPORTS'), reportsHandler)
 
