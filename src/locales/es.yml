@@ -87,7 +87,7 @@ settings:
   inputFireflyUrl: >
     Indica la dirección web de tu instancia Firefly III.
     Debe tener este formato: *https://firefly.example.com*
-	o así: *http://localhost:8080*
+    o así: *http://localhost:8080*
   inputFireflyApiUrl: >
     Indica la dirección web de la API de tu instancia Firefly III.
     Normalmente, es la misma URL de tu instancia Firefly III pero con un */api* al final, ejemplo:
@@ -103,7 +103,7 @@ settings:
     Que te gustaría modificar?  
        
     *🔗 URL de Firefly*: ${fireflyUrl || '🚨 <NO ESPECIFICADO>'}
-	
+      
     *🔗 URL de Firefly API*: ${fireflyApiUrl || '🚨 <NO ESPECIFICADO>'}
 
     *🔑 Token de Acceso*: ${accessToken || '🚨 <NO ESPECIFICADO>'}
@@ -196,10 +196,10 @@ transactions:
   add:
     dontUnderstand: >
       🤖 No entendí esto.
-	  
+        
       Ingresa un importe para la transacción, debe ser un número! 😉
-	  
-	  O, puedes ingresar la description e importe de la transacción, ejemplo, `Comida 25`
+        
+      O, puedes ingresar la description e importe de la transacción, ejemplo, `Comida 25`
     withdrawalMessage: >
       📆 ${date}  
         
@@ -235,12 +235,11 @@ transactions:
     typeForeignAmount: >
       ⚠️ La moneda de la cuenta destino (*${destCurrency}*) es diferente a la moneda de la cuenta origen (*${sourceCurrency}*)!
       Ingresa el importe en moneda foránea, ejemplo, el importe en la moneda de la cuenta destino.
-        
-		
+            
       💡 Puedes usar los signos aritméticos para sumar, restar, multiplicar o dividir
-	  para realizar la operacion deseada en la cuenta origen de la transacción.
-        
-	  Por ejemplo, `*15` puede multiplicar el importe inicial por 15 para obtener el importe en moneda foranea (donde 15 es el tipo de cambio).
+      para realizar la operacion deseada en la cuenta origen de la transacción.
+          
+      Por ejemplo, `*15` puede multiplicar el importe inicial por 15 para obtener el importe en moneda foranea (donde 15 es el tipo de cambio).
 
   edit:
     whatToEdit: ❓Que desea modificar?
