@@ -6,7 +6,7 @@ import { Composer, InlineKeyboard } from 'grammy'
 import { Router } from "@grammyjs/router"
 
 import type { MyContext } from '../types/MyContext'
-import i18n from '../lib/i18n';
+import i18n, { locales } from '../lib/i18n';
 import firefly from '../lib/firefly'
 import { TransactionRead } from '../lib/firefly/model/transaction-read'
 import { TRANSACTIONS_PAGE_LIMIT } from './constants'
@@ -32,9 +32,9 @@ const DECLINE_CATEGORIES_LIST = 'DECLINE_CATEGORIES_LIST'
 const bot = new Composer<MyContext>()
 const router = new Router<MyContext>((ctx) => ctx.session.step)
 
-bot.hears(i18n.t('ru', 'labels.CATEGORIES'), listCategoriesCommandHandler)
-bot.hears(i18n.t('en', 'labels.CATEGORIES'), listCategoriesCommandHandler)
-bot.hears(i18n.t('it', 'labels.CATEGORIES'), listCategoriesCommandHandler)
+for (const locale of locales) {
+  bot.hears(i18n.t(locale, 'labels.CATEGORIES'), listCategoriesCommandHandler)
+}
 bot.callbackQuery(CATEGORY_DETAILS, showCategoryDetails)
 bot.callbackQuery(ADD_CATEGORIES, addCategoriesCbQH)
 bot.callbackQuery(RENAME_CATEGORY, typeNewCategoryName)

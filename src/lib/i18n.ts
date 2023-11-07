@@ -3,8 +3,11 @@ import { I18n, pluralize } from '@grammyjs/i18n';
 
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
+
 import 'dayjs/locale/ru'
 import 'dayjs/locale/en'
+import 'dayjs/locale/es'
+import 'dayjs/locale/it'
 
 const defaultLanguage = 'en'
 
@@ -26,14 +29,6 @@ const params = {
 
 const i18n = new I18n(params)
 
+export const locales = ['ru', 'it', 'en', 'es']
+
 export default i18n
-
-export function getLanguageIcon(language: string) {
-  const lang2icons = {
-    ru: '🇷🇺',
-    en: '🇬🇧',
-    it: '🇮🇹'
-  }
-
-  return lang2icons[language]
-}
