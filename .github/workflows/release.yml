@@ -72,6 +72,6 @@ jobs:
           to: ${{ secrets.TELEGRAM_GROUP_ID }}
           token: ${{ secrets.TELEGRAM_RELEASE_NOTIFIER_BOT_TOKEN }}
           message: |
-            🚀 New version has just been released: ${{ github.ref }}  
+            🚀 New version has just been released: ${{ github.ref_name }}  
             
             See changes here: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
