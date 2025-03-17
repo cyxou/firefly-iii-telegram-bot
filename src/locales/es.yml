@@ -66,7 +66,7 @@ help: >
   `Cafe 35`
     
   En este caso, se creará un nuevo retiro de la cuenta de activo por defecto
-  con la descripción `Cafe` por un importe de 35`
+  con la descripción `Cafe` por un importe de `35`
 
   ✨ Si requieres parámetros o datos adicionales en la transacción, puedes usar la
   funcionalidad de *Reglas* en Firefly III, la cual te permitirá complementar cualquier
