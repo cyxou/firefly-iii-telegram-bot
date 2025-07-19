@@ -30,5 +30,6 @@ const params = {
 const i18n = new I18n(params)
 
 export const locales = ['ru', 'it', 'en', 'es']
+export { defaultLanguage }
 
 export default i18n

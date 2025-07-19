@@ -1,16 +1,16 @@
 # Development Progress & Status
 
 ## Working Features
-✅ Core Transaction Operations  
-✅ Account Management System  
-✅ Category Analytics  
-✅ Multi-language Support  
-✅ Session Persistence  
-✅ Docker Deployment  
+✅ Core Transaction Operations
+✅ Account Management System
+✅ Category Analytics
+✅ Multi-language Support
+✅ Session Persistence
+✅ Docker Deployment
+✅ MenuDatePicker (Grammy Menu Compatible)
 
 ## Known Limitations
 ⚠️ Single-split transactions only  
-⚠️ No transaction date editing  
 ⚠️ File-based session storage scalability  
 ⚠️ Basic error recovery mechanisms  
 

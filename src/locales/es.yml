@@ -257,6 +257,7 @@ transactions:
             
       💡 Puedes agregar nuevas Categorías fácilmente usando el boton *🔖 Categorias* del bot.
     typeNewDescription: 'Ingresa una nueva Descripción:'
+    typeNewDate: 'Selecciona una nueva fecha para la transacción:'
     chooseNewCategory: 'Elige una nueva Categoría:'
     chooseNewSourceAccount: 'Elige una nueva Cuenta de origen:'
     chooseNewDestinationAccount: 'Elige una nueva Cuenta de destino:'
@@ -306,3 +307,12 @@ categories:
 
 reports:
   notImplemented: Disculpe, pero los Reportes aún no se han implementado 😞
+
+datePicker:
+  selectDate: "Selecciona una fecha:"
+  backToMonth: "🔙 Atrás"
+  navigation:
+    prevMonth: "‹"
+    nextMonth: "›"
+    prevYear: "‹‹"
+    nextYear: "››"

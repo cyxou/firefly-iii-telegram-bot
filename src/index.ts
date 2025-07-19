@@ -1,7 +1,7 @@
 import debug from 'debug'
 import * as dotenv from 'dotenv';
 import { Bot, GrammyError, HttpError, session } from 'grammy'
-import { FileAdapter } from '@grammyjs/storage-file';
+import { FileAdapter } from '@grammyjs/storage-file'
 
 dotenv.config();
 

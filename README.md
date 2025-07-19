@@ -85,7 +85,7 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 ## TODO
 - [x] Add English translations and make it a default language
 - [x] Add transactions improvements (create transfers and deposits)
-- [x] Edit transactions (no date change thus far)
+- [x] Edit transactions
 - [x] Localization based on Firefly user's preferences
 - [x] Accounts management
 - [x] List transactions
@@ -95,8 +95,8 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [ ] Reports
 - [ ] Proper error handling
 - [ ] Firefly API tests
-- [x] Add JSON database for persistance (used @grammyjs/storage-file)
-- [ ] Add date picker when editing transaction (adopt https://github.com/gianlucaparadise/telegraf-calendar-telegram)
+- [x] Add JSON database for persistence (used @grammyjs/storage-file)
+- [x] Add date picker when editing transaction (adopt https://github.com/VDS13/telegram-inline-calendar)
 - [x] Migrate from home grown Mapper to Grammy's Menu plugin (partially done)
 - [ ] Add tags support
 

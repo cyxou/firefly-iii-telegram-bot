@@ -15,6 +15,7 @@
 ```mermaid
 timeline
     title Recent Updates
+    2025-07-19 : MenuDatePicker implementation (Grammy Menu compatible)
     2025-07-01 : Session encryption implementation
     2025-06-25 : Math.js security patch v11.5.1
     2025-06-18 : Russian locale updates
@@ -40,8 +41,18 @@ timeline
   }
   ```
 
+- **MenuDatePicker State Management**:
+  ```typescript
+  interface DatePickerState {
+    currentMonth: number;     // 0-11 (January = 0)
+    currentYear: number;
+    selectedDate?: string;    // YYYY-MM-DD format
+    mode: 'month' | 'year';   // Current picker mode
+  }
+  ```
+
 ## Pending Tasks
-- [ ] Implement transaction date editing
+- [x] Implement transaction date editing (completed with MenuDatePicker)
 - [ ] Add multi-split transaction support
 - [ ] Develop automated session cleanup
 

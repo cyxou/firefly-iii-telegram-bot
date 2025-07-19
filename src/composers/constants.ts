@@ -18,6 +18,7 @@ export const MENUS = {
   EDIT_TRANSACTION__EDIT_DESTINATION: 'edit-transaction--edit-destination-account',
   EDIT_TRANSACTION__EDIT_AMOUNT: 'edit-transaction--edit-amount',
   EDIT_TRANSACTION__EDIT_DESCRIPTION: 'edit-transaction--edit-description',
+  EDIT_TRANSACTION__EDIT_DATE: 'edit-transaction--edit-date',
 }
 
 export const CATEGORIES_PAGE_LIMIT = 20

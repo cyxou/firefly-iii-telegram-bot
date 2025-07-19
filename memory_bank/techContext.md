@@ -74,6 +74,22 @@ graph TD
     C --> E[Persistent File Storage]
 ```
 
+## Custom Library Implementations
+
+### MenuDatePicker Component (`src/lib/menu-date-picker/`)
+- **Purpose**: Grammy Menu-compatible date picker, TypeScript port of [telegram-inline-calendar](https://github.com/VDS13/telegram-inline-calendar)
+- **Reason**: Original calendar was incompatible with Grammy Menu dynamic ranges; needed stateless, deterministic implementation
+- **Migration Path**: Replaced legacy calendar implementation with purpose-built MenuDatePicker for Grammy Menu integration
+- **Current Status**: Production-ready TypeScript implementation with full Grammy Menu compatibility
+- **Key Features**:
+  - Grammy Menu dynamic range integration
+  - Stateless, deterministic rendering
+  - Session-based state management
+  - Multi-language support (EN/ES/IT/RU)
+  - Month/year navigation
+  - Date range restrictions
+  - TypeScript-first design
+
 ## Security Considerations
 - **Token Storage**: Encrypted in session files
 - **Input Validation**:
