@@ -259,6 +259,7 @@ transactions:
             
       💡 You can easily create new categories from a corresponding *🔖 Categories* bot button.
     typeNewDescription: 'Type in new description:'
+    typeNewDate: 'Select a new date for the transaction:'
     chooseNewCategory: 'Choose new category:'
     chooseNewSourceAccount: 'Choose new source account:'
     chooseNewDestinationAccount: 'Choose new destination account:'
@@ -307,3 +308,12 @@ categories:
 
 reports:
   notImplemented: Sorry, but reports are not implemented yet 😞
+
+datePicker:
+  selectDate: "Select a date:"
+  backToMonth: "🔙 Back"
+  navigation:
+    prevMonth: "‹"
+    nextMonth: "›"
+    prevYear: "‹‹"
+    nextYear: "››"

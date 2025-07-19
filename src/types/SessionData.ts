@@ -9,6 +9,7 @@ import { TransactionTypeProperty } from '../lib/firefly/model/transaction-type-p
 import { CategoryRead } from '../lib/firefly/model/category-read'
 import { MetaPagination } from '../lib/firefly/model/meta-pagination'
 import { AccountRead } from '../lib/firefly/model/account-read'
+import { DatePickerState } from '../lib/menu-date-picker'
 
 type Step = 'IDLE' | CategoriesRoute | SettingsRoute | AddTransactionRoute | EditTransactionRoute
 
@@ -45,6 +46,7 @@ export interface SessionData {
   // deleteBotsMessage?: () => Promise<boolean>,
   deleteBotsMessage?: { chatId?: number, messageId?: number }
   deleteKeyboardMenuMessage?: () => Promise<boolean>
+  datePickerState?: DatePickerState
 }
 
 export interface AccountAttributes {

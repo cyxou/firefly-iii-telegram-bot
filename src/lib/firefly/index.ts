@@ -50,7 +50,7 @@ function resErrorInterceptor(axiosError: AxiosError) {
 
   if (
     axiosError.code === 'ERR_BAD_REQUEST' &&
-    axiosError.response?.data!['exception'] === 'NotFoundHttpException'
+    (axiosError.response?.data as any)?.exception === 'NotFoundHttpException'
   ) {
     log('Rejecting with ResourceNotFoundError exception')
     return Promise.reject(new ResourceNotFoundError(axiosError.code))
@@ -59,7 +59,7 @@ function resErrorInterceptor(axiosError: AxiosError) {
   if (axiosError.code === 'ERR_BAD_REQUEST') {
     log('Rejecting with BadRequestError')
     return Promise.reject(new BadRequestError(
-      axiosError.response?.data!['message'] || axiosError.code
+      (axiosError.response?.data as any)?.message || axiosError.code
     ))
   }
 
