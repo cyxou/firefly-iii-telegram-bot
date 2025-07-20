@@ -168,7 +168,7 @@ function createNewDepositMenu() {
 
             cleanupSessionData(ctx)
 
-            ctx.session.currentTransaction = tr
+            ctx.session.newTransaction.id = tr.id
 
             return ctx.editMessageText(
               formatTransaction(ctx, tr),
@@ -448,23 +448,27 @@ function createTransactionRecordMenu() {
   return new MenuRange<MyContext>().dynamic((ctx, range) => {
     const log = rootLog.extend('createTransactionMenu')
 
-    const currentTransaction = ctx.session.currentTransaction
+    const currentTransaction: any = ctx.session.newTransaction.id
+      ? ctx.session.newTransaction
+      : ctx.session.currentTransaction
 
     log('currentTransaction: %O', currentTransaction)
 
-    // If transaction does not have a category, show button to specify one
-    if (currentTransaction && !currentTransaction.attributes!.transactions[0].category_id) {
-      log('No category for the transaction. Adding category button to menu...')
-      range.submenu(
-        {
-          text: ctx.i18n.t('labels.CHANGE_CATEGORY'),
-          payload: currentTransaction!.id
-        },
-        MENUS.EDIT_TRANSACTION__EDIT_CATEGORY,
-        augmentSessionWithCurrentTransaction,
-        augmentSessionWithCategories,
-      )
-    }
+    // FIXME: If transaction does not have a category, show button to specify one
+    // This is currently not working as expected
+    //
+    // if (currentTransaction && (!currentTransaction.categoryId || !currentTransaction.attributes!.transactions[0].category_id )) {
+    //   log('No category for the transaction. Adding category button to menu...')
+    //   range.submenu(
+    //     {
+    //       text: ctx.i18n.t('labels.CHANGE_CATEGORY'),
+    //       payload: currentTransaction!.id
+    //     },
+    //     MENUS.EDIT_TRANSACTION__EDIT_CATEGORY,
+    //     augmentSessionWithCurrentTransaction,
+    //     augmentSessionWithCategories,
+    //   )
+    // }
 
     log('Adding edit transaction button to menu...')
     range.submenu(
@@ -476,6 +480,7 @@ function createTransactionRecordMenu() {
       augmentSessionWithCurrentTransaction
     )
 
+    ctx.session.newTransaction = {}
     return range
   })
 }
@@ -487,6 +492,7 @@ function createEditTransactionMenu(ctx: MyContext) {
 
   return new MenuRange<MyContext>()
     .append(createEditCategorySubmenu(transactionId))
+    .append(createEditDateSubmenu(transactionId)).row()
     .row()
     .append(createEditSourceAccountSubmenu(transactionId))
     .append(createEditDestinationAccountSubmenu(transactionId))
@@ -501,7 +507,6 @@ function createEditTransactionMenu(ctx: MyContext) {
         text: ctx => ctx.i18n.t('labels.CHANGE_AMOUNT'),
         payload: transactionId
       }, MENUS.EDIT_TRANSACTION__EDIT_AMOUNT, changeTransactionAmountMiddleware).row()
-    .append(createEditDateSubmenu(transactionId)).row()
     .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${fireflyUrl}/transactions/show/${transactionId}`).row()
     .text({ text: ctx => ctx.i18n.t('labels.DELETE'), payload: transactionId }, deleteTransactionMiddleware)
     .text({ text: '🔙', payload: transactionId }, closeEditTransactionMenu).row()

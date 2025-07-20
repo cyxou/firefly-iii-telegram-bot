@@ -31,6 +31,6 @@ pie title Technical Debt Distribution
 | 2.0.0   | 2025-04-01 | Grammy.js migration        |
 
 ## Quality Metrics
-- **Test Coverage**: 68% (API layer)
+- **Test Coverage**: Paused (per directive to prioritize development)
 - **Mean Time to Recovery**: 2.1 hours
 - **Active Issues**: 12 open / 45 closed
