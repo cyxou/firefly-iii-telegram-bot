@@ -2,6 +2,7 @@ import debug from 'debug'
 import * as dotenv from 'dotenv';
 import { Bot, GrammyError, HttpError, session } from 'grammy'
 import { FileAdapter } from '@grammyjs/storage-file'
+import { limit } from "@grammyjs/ratelimiter";
 
 dotenv.config();
 
@@ -29,6 +30,26 @@ export const Route = {
 const rootLog = debug(`bot:root`)
 
 const bot = new Bot<MyContext>(config.botToken)
+
+bot.use(limit())
+
+// Middleware: restrict access to allowed user IDs if configured
+bot.use(async (ctx, next) => {
+  if (Array.isArray(config.allowedUserIds) && config.allowedUserIds.length > 0) {
+    if (!ctx.from || !config.allowedUserIds.includes(ctx.from.id)) {
+      if (!config.disableUnauthorizedUserLog) {
+        const user = ctx.from
+        const userInfo = user
+          ? `id=${user.id}` + (user.username ? `, username=@${user.username}` : '')
+          : 'unknown user'
+        console.log(`[ACCESS DENIED] Unauthorized user attempted to use the bot: ${userInfo}. To allow this user, add their Telegram ID to the ALLOWED_TG_USER_IDS environment variable.`)
+      }
+      return
+    }
+  }
+  await next()
+})
+
 
 // Attach a session middleware and specify the initial data
 bot.use(
