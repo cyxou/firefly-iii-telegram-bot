@@ -65,10 +65,15 @@ const initialSession: SessionData = {
    DEBUG='bot:*' npm start  # Enable all debug logging
    ```
 
+4. **Testing Protocol**:
+  - **Default Stance**: Suspend all automatic and proactive test-related tasks. Do not write new tests (unit, integration, etc.) or run existing ones unless explicitly requested.
+  - **Rationale**: Prioritize rapid development of functional code.
+  - **Overrides**: This directive is only overridden by a direct user request (e.g., "write unit tests," "how do I test this?").
+
 ## Deployment Architecture
 ```mermaid
 graph TD
-    A[Docker Container] --> B[Node.js Runtime]
+   A[Docker Container] --> B[Node.js Runtime]
     B --> C[Session Storage Volume]
     B --> D[Firefly III API]
     C --> E[Persistent File Storage]
