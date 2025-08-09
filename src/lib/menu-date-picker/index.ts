@@ -60,8 +60,6 @@ export class MenuDatePicker {
     ctx: MyContext,
     range: MenuRange<MyContext>
   ): MenuRange<MyContext> {
-    const currentDate = dayjs().year(state.currentYear).month(state.currentMonth);
-    
     // Header with navigation and month/year display
     this.addNavigationHeader(state, ctx, range);
     
@@ -92,7 +90,7 @@ export class MenuDatePicker {
         ctx.session.datePickerState = newState;
         await ctx.menu.update();
       })
-      .text(`${startYear}-${startYear + 9}`, async (ctx) => {
+      .text(`${startYear}-${startYear + 9}`, async () => {
         // No operation for display text
       })
       .text('››', async (ctx) => {
@@ -116,7 +114,7 @@ export class MenuDatePicker {
             await ctx.menu.update();
           });
         } else {
-          range.text(' ', async (ctx) => {
+          range.text(' ', async () => {
             // No operation for empty cells
           });
         }
@@ -170,7 +168,7 @@ export class MenuDatePicker {
     
     range.row();
     for (const day of weekDays) {
-      range.text(day, async (ctx) => {
+      range.text(day, async () => {
         // No operation for week day headers
       });
     }
@@ -207,28 +205,32 @@ export class MenuDatePicker {
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         if (weekCount === 0 && dayOfWeek < startWeekDay) {
           // Empty cells before first day of month
-          range.text(' ', async (ctx) => {
+          range.text(' ', async () => {
             // No operation for empty cells
           });
         } else if (currentDay > daysInMonth) {
           // Empty cells after last day of month
-          range.text(' ', async (ctx) => {
+          range.text(' ', async () => {
             // No operation for empty cells
           });
         } else {
           // Actual date button
           const dateStr = currentDate.date(currentDay).format('YYYY-MM-DD');
           const isSelectable = this.isDateSelectable(dateStr);
+          const isToday = this.isToday(dateStr);
           
           if (isSelectable) {
+            // Apply bold formatting for today's date
+            const displayText = isToday ? `${currentDay}*` : currentDay.toString();
+            
             range.text(
-              currentDay.toString(),
-              async (ctx) => {
+              displayText,
+              async () => {
                 await onDateSelect(dateStr);
               }
             );
           } else {
-            range.text(' ', async (ctx) => {
+            range.text(' ', async () => {
               // No operation for disabled dates
             });
           }
@@ -276,6 +278,16 @@ export class MenuDatePicker {
     }
     
     return true;
+  }
+
+  /**
+   * Checks if a date is today
+   */
+  private isToday(dateStr: string): boolean {
+    const date = dayjs(dateStr);
+    const today = dayjs();
+    
+    return date.isSame(today, 'day');
   }
 
   /**
@@ -383,14 +395,15 @@ export function handleDatePickerCallback(
   let state = ctx.session.datePickerState || MenuDatePicker.createDefaultState();
   
   switch (action) {
-    case 'date':
+    case 'date': {
       // Date selected
       const selectedDate = data.join('-');
       onDateSelect(selectedDate);
       delete ctx.session.datePickerState;
       return true;
+    }
       
-    case 'nav':
+    case 'nav': {
       // Navigation action
       const direction = data[0] as 'prev' | 'next';
       const type = data[1];
@@ -404,13 +417,15 @@ export function handleDatePickerCallback(
       
       ctx.session.datePickerState = state;
       return true;
+    }
       
-    case 'mode':
+    case 'mode': {
       // Mode toggle
       const newMode = data[0] as 'month' | 'year';
       state = { ...state, mode: newMode };
       ctx.session.datePickerState = state;
       return true;
+    }
       
     case 'select':
       // Year selection
