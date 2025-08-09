@@ -71,7 +71,7 @@ export class MenuDatePicker {
     // Calendar grid with dates
     this.addCalendarGrid(state, onDateSelect, ctx, range);
     
-    return range;
+    return range.row();
   }
 
   /**
