@@ -165,3 +165,10 @@ which is hard-coded in `codegen` npm task.
 Please join our Telegram group - any feedback is very appreciated!  
 
 [![Telegram Group](https://img.shields.io/badge/Support%20Group-white?logo=telegram)](https://t.me/firefly_iii_telegram_bot_group)
+
+## Contributors
+<a href="https://github.com/cyxou/firefly-iii-telegram-bot/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=cyxou/firefly-iii-telegram-bot" />
+</a>
+
+[contrib.rocks](https://contrib.rocks).
