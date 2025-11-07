@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General Support
+    url: https://github.com/cyxou/firefly-iii-telegram-bot/discussions
+    about: If your request is not a bug report or a feature request, please use Discussions.
