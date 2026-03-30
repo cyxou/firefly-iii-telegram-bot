@@ -49,8 +49,10 @@ const settingsMenu = new Menu<MyContext>('settings')
           'set-default-account',
           async ctx => {
             const userSettings = ctx.session.userSettings
-            const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
+            let accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
               undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+            // Filter accounts to show only active ones
+            accounts = accounts.filter(acc => acc.attributes.active !== false)
             // Take care of a case when no accounts are created yet
             if (!accounts.length) {
               ctx.editMessageText(ctx.i18n.t('common.noDefaultSourceAccountExist'))
@@ -97,8 +99,10 @@ const defaultAccountMenu = new Menu<MyContext>('set-default-account')
     const userSettings = ctx.session.userSettings
     const { fireflyUrl } = userSettings
 
-    const accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
+    let accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
       undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+    // Filter accounts to show only active ones
+    accounts = accounts.filter(acc => acc.attributes.active !== false)
     log('accounts: %O', accounts)
 
     // Take care of a case when no accounts are created yet

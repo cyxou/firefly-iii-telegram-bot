@@ -53,8 +53,10 @@ async function showAccounts(ctx: MyContext) {
     }
     log('accType: %O', accType)
 
-    const accounts = (await firefly(userSettings).Accounts.listAccount(
+    let accounts = (await firefly(userSettings).Accounts.listAccount(
       undefined, ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
+    // Filter accounts to show only active ones
+    accounts = accounts.filter(acc => acc.attributes.active !== false)
     log('accounts: %O', accounts)
 
     const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeFilter)

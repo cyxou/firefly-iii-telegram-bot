@@ -183,8 +183,11 @@ async function getDefaultSourceAccount(ctx: MyContext): Promise<null | AccountAt
     let { defaultSourceAccount } = ctx.session.userSettings
 
     if (!defaultSourceAccount.name) {
-      const firstAccount = (await firefly(ctx.session.userSettings).Accounts.listAccount(
-        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data[0]
+      let accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(
+        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+      // Filter accounts to show only active ones
+      accounts = accounts.filter(acc => acc.attributes.active !== false)
+      const firstAccount = accounts[0]
       log('firstAccount: %O', firstAccount)
 
       // Looks like that a user has not created any Asset accounts yet
@@ -210,8 +213,11 @@ async function getDefaultDestinationAccount(ctx: MyContext) {
     let { defaultDestinationAccount } = ctx.session.userSettings
 
     if (!defaultDestinationAccount.name) {
-      const cashAccount = (await firefly(ctx.session.userSettings).Accounts.listAccount(
-        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data[0]
+      let accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(
+        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data
+      // Filter accounts to show only active ones
+      accounts = accounts.filter(acc => acc.attributes.active !== false)
+      const cashAccount = accounts[0]
       log('cashAccount: %O', cashAccount)
 
       // For new user accounts there is no default CashAccount created.
