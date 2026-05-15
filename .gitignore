@@ -17,3 +17,4 @@
 .aider.conf.yml
 .aider.input.history
 .aider.model.settings.yml
+/.claude/settings.local.json
