@@ -17,7 +17,7 @@ build-and-push:
     BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
 
 build-latest:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --TAG_LATEST=true --RELEASE_VERSION=latest
+    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --RELEASE_VERSION=latest
 
 validatePR:
     BUILD +runTests
