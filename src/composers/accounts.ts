@@ -8,7 +8,8 @@ import type { MyContext } from '../types/MyContext'
 import i18n, { locales } from '../lib/i18n'
 import {
   listAccountsMapper as mapper,
-  createAccountsMenuKeyboard
+  createAccountsMenuKeyboard,
+  filterActiveAccounts,
 } from './helpers'
 
 import firefly from '../lib/firefly'
@@ -53,8 +54,10 @@ async function showAccounts(ctx: MyContext) {
     }
     log('accType: %O', accType)
 
-    const accounts = (await firefly(userSettings).Accounts.listAccount(
-      undefined, ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
+    const accounts = filterActiveAccounts(
+      (await firefly(userSettings).Accounts.listAccount(
+        undefined, ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
+    )
     log('accounts: %O', accounts)
 
     const keyboard = createAccountsMenuKeyboard(ctx, accType as AccountTypeFilter)
