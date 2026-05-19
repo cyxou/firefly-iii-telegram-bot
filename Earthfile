@@ -1,8 +1,8 @@
 VERSION 0.7
 
-ARG --global DOCKERHUB_REPO=cyxou/firefly-iii-telegram-bot
-ARG --global DOCKERHUB_USERNAME=cyxou
-ARG --global DOCKERHUB_ACCESS_TOKEN
+ARG --global GHCR_REPO=ghcr.io/cyxou/firefly-iii-telegram-bot
+ARG --global GHCR_USERNAME
+ARG --global GHCR_TOKEN
 ARG --global GITHUB_TOKEN
 ARG --global RELEASE_VERSION=latest
 
@@ -52,17 +52,15 @@ buildImage:
 
     CMD ["dist/index.js"]
 
-    SAVE IMAGE --push $DOCKERHUB_REPO:$RELEASE_VERSION
-    SAVE IMAGE --push $DOCKERHUB_REPO:latest
+    SAVE IMAGE --push $GHCR_REPO:$RELEASE_VERSION
+    SAVE IMAGE --push $GHCR_REPO:latest
 
 checkIfTagExist:
     FROM earthly/dind
 
-    # We do explicit login here since earthly/dind image does not infer login from the host
-    RUN docker login --username ${DOCKERHUB_USERNAME} \
-        --password ${DOCKERHUB_ACCESS_TOKEN}
+    RUN echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin
 
-    IF docker manifest inspect ${DOCKERHUB_REPO}:${RELEASE_VERSION} > /dev/null
+    IF docker manifest inspect ${GHCR_REPO}:${RELEASE_VERSION} > /dev/null
         RUN echo "👷 Docker image with tag ${RELEASE_VERSION} already exists! You should not override it. Please increment the app version number accordingly. Exiting..." \
             && exit 1
     END

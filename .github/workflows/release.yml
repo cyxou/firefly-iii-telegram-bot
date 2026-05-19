@@ -11,9 +11,7 @@ on:
       - master
 
 env:
-  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  GITHUB_REPO: cyxou/firefly-iii-telegram-bot
+  GHCR_REPO: ghcr.io/cyxou/firefly-iii-telegram-bot
   FORCE_COLOR: 1
 
 jobs:
@@ -46,25 +44,21 @@ jobs:
       - name: Earthly version
         run: earthly --version
 
-      - name: Docker Login
-        run: docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_TOKEN
-      
+      - name: Docker Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push docker image
         run: |
           earthly --ci --push +build-and-release \
             --GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            --DOCKERHUB_REPO=$GITHUB_REPO \
-            --DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
-            --DOCKERHUB_ACCESS_TOKEN=$DOCKERHUB_TOKEN \
+            --GHCR_REPO=$GHCR_REPO \
+            --GHCR_USERNAME=${{ github.actor }} \
+            --GHCR_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             --RELEASE_VERSION=${{ github.ref_name }}
-      
-      - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-          repository: ${{ env.GITHUB_REPO }}
-          short-description: ${{ github.event.repository.description }}
 
       - name: Send telegram message on release
         uses: appleboy/telegram-action@master
