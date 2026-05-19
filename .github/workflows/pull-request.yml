@@ -45,6 +45,7 @@ jobs:
             --GHCR_TOKEN=${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker Login to GHCR
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -52,6 +53,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build PR Image
+        if: github.event.pull_request.head.repo.full_name == github.repository
         run: |
           earthly --ci --push +build-and-push \
             --GHCR_REPO=$GHCR_REPO \
