@@ -35,7 +35,7 @@ docker run \
   --rm --it --init --name firefly-bot \
   --volume `pwd`/sessions:/home/node/app/sessions \
   --env BOT_TOKEN=<your-bot-token> \
-  cyxou/firefly-iii-telegram-bot:latest
+  ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
 
 You may also provide BOT_TOKEN via the .env file. For this just rename the
@@ -46,7 +46,7 @@ docker run \
   --rm --it --init --name firefly-bot \
   --volume `pwd`/sessions:/home/node/app/sessions \
   --env-file .env \
-  cyxou/firefly-iii-telegram-bot:latest
+  ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
 
 
@@ -82,7 +82,7 @@ docker run \
   --volume `pwd`/sessions:/home/node/app/sessions \
   --env BOT_TOKEN=<your-bot-token> \
   --env ALLOWED_TG_USER_IDS=123456,987654321 \
-  cyxou/firefly-iii-telegram-bot:latest
+  ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
 
 ### Logging Unauthorized Access Attempts
