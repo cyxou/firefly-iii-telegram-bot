@@ -19,7 +19,7 @@ jobs:
           image: tonistiigi/binfmt:latest
           platforms: all
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Put back the git branch into git (Earthly uses it for tagging)
         run: |
