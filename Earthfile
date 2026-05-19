@@ -10,7 +10,7 @@ FROM node:20-bullseye
 WORKDIR /home/node/app
 
 build-and-release:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --TAG_LATEST=true
     BUILD +release
 
 build-and-push:
@@ -46,13 +46,16 @@ runTests:
     RUN echo "😞 No tests yet..."
 
 buildImage:
+    ARG TAG_LATEST=false
     COPY +buildDist/dist ./dist
     COPY +deps/node_modules_prod ./node_modules
 
     CMD ["dist/index.js"]
 
     SAVE IMAGE --push $GHCR_REPO:$RELEASE_VERSION
-    SAVE IMAGE --push $GHCR_REPO:latest
+    IF [ "$TAG_LATEST" = "true" ]
+        SAVE IMAGE --push $GHCR_REPO:latest
+    END
 
 checkIfTagExist:
     FROM earthly/dind
