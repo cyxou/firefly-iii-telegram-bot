@@ -20,6 +20,7 @@ import {
   createFireflyTransaction,
   cleanupSessionData,
   getFireflyAccounts,
+  filterActiveAccounts,
 } from '../helpers'
 
 const rootLog = debug(`transactions:add:menus`)
@@ -366,8 +367,7 @@ async function getAccounts(
     }
 
     log('accounts: %O', accounts)
-    // Filter accounts to show only active ones
-    accounts = accounts.filter(acc => acc.attributes.active !== false)
+    accounts = filterActiveAccounts(accounts)
 
     // Prevent from choosing same account when doing transfers
     if (opts) accounts = accounts.filter(acc => opts.skipAccountId !== acc.id.toString())

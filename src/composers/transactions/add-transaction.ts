@@ -9,6 +9,7 @@ import {
   formatTransaction,
   createFireflyTransaction,
   cleanupSessionData,
+  filterActiveAccounts,
 } from '../helpers'
 
 import { transactionRecordMenu, addTransactionMenu } from './add-transactions-menus'
@@ -183,10 +184,10 @@ async function getDefaultSourceAccount(ctx: MyContext): Promise<null | AccountAt
     let { defaultSourceAccount } = ctx.session.userSettings
 
     if (!defaultSourceAccount.name) {
-      let accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(
-        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
-      // Filter accounts to show only active ones
-      accounts = accounts.filter(acc => acc.attributes.active !== false)
+      const accounts = filterActiveAccounts(
+        (await firefly(ctx.session.userSettings).Accounts.listAccount(
+          undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+      )
       const firstAccount = accounts[0]
       log('firstAccount: %O', firstAccount)
 
@@ -213,10 +214,10 @@ async function getDefaultDestinationAccount(ctx: MyContext) {
     let { defaultDestinationAccount } = ctx.session.userSettings
 
     if (!defaultDestinationAccount.name) {
-      let accounts = (await firefly(ctx.session.userSettings).Accounts.listAccount(
-        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data
-      // Filter accounts to show only active ones
-      accounts = accounts.filter(acc => acc.attributes.active !== false)
+      const accounts = filterActiveAccounts(
+        (await firefly(ctx.session.userSettings).Accounts.listAccount(
+          undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data
+      )
       const cashAccount = accounts[0]
       log('cashAccount: %O', cashAccount)
 

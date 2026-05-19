@@ -12,7 +12,7 @@ import { AccountTypeFilter } from '../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../lib/firefly/model/account-read'
 import { handleCallbackQueryError } from '../lib/errorHandler'
 import { requireSettings } from '../lib/middlewares'
-import { cleanupSessionData, createMainKeyboard, generateWelcomeMessage } from './helpers'
+import { cleanupSessionData, createMainKeyboard, generateWelcomeMessage, filterActiveAccounts } from './helpers'
 
 export enum Route {
   FIREFLY_URL = 'SETTINGS|FIREFLY_URL',
@@ -49,10 +49,10 @@ const settingsMenu = new Menu<MyContext>('settings')
           'set-default-account',
           async ctx => {
             const userSettings = ctx.session.userSettings
-            let accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-              undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
-            // Filter accounts to show only active ones
-            accounts = accounts.filter(acc => acc.attributes.active !== false)
+            const accounts: AccountRead[] = filterActiveAccounts(
+              (await firefly(userSettings).Accounts.listAccount(
+                undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+            )
             // Take care of a case when no accounts are created yet
             if (!accounts.length) {
               ctx.editMessageText(ctx.i18n.t('common.noDefaultSourceAccountExist'))
@@ -99,10 +99,10 @@ const defaultAccountMenu = new Menu<MyContext>('set-default-account')
     const userSettings = ctx.session.userSettings
     const { fireflyUrl } = userSettings
 
-    let accounts: AccountRead[] = (await firefly(userSettings).Accounts.listAccount(
-      undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
-    // Filter accounts to show only active ones
-    accounts = accounts.filter(acc => acc.attributes.active !== false)
+    const accounts: AccountRead[] = filterActiveAccounts(
+      (await firefly(userSettings).Accounts.listAccount(
+        undefined, ACCOUNTS_PAGE_LIMIT, 1, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+    )
     log('accounts: %O', accounts)
 
     // Take care of a case when no accounts are created yet

@@ -18,10 +18,15 @@ import { TransactionSplitStore } from '../lib/firefly/model/transaction-split-st
 
 const debug = Debug('bot:transactions:helpers')
 
+function filterActiveAccounts<T extends { attributes: { active?: boolean } }>(accounts: T[]): T[] {
+  return accounts.filter(acc => acc.attributes.active !== false)
+}
+
 type MaybePromise<T> = T | Promise<T>;
 type MenuMiddleware<MyContext> = (ctx: MyContext) => MaybePromise<unknown>;
 
 export {
+  filterActiveAccounts,
   createAccountsMenuKeyboard,
   listAccountsMapper,
   listTransactionsMapper,
@@ -148,8 +153,7 @@ async function createAccountsKeyboard(
     }
 
     log('accounts: %O', accounts)
-    // Filter accounts to show only active ones
-    accounts = accounts.filter(acc => acc.attributes.active !== false)
+    accounts = filterActiveAccounts(accounts)
     const keyboard = new InlineKeyboard()
 
     // Prevent from choosing same account when doing transfers
@@ -202,8 +206,7 @@ async function getFireflyAccounts(
     }
 
     log('accounts: %O', accounts)
-    // Filter accounts to show only active ones
-    accounts = accounts.filter(acc => acc.attributes.active !== false)
+    accounts = filterActiveAccounts(accounts)
 
     // Prevent from choosing same account when doing transfers
     if (opts) accounts = accounts.filter(acc => opts.skipAccountId !== acc.id.toString())
