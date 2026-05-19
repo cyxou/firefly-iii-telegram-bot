@@ -3,7 +3,6 @@ VERSION 0.7
 ARG --global GHCR_REPO=ghcr.io/cyxou/firefly-iii-telegram-bot
 ARG --global GHCR_USERNAME
 ARG --global GHCR_TOKEN
-ARG --global GITHUB_TOKEN
 ARG --global RELEASE_VERSION=latest
 
 FROM node:20-bullseye
@@ -66,8 +65,9 @@ checkIfTagExist:
     END
 
 release:
-  ARG --required GITHUB_TOKEN
+  ARG --required GHCR_TOKEN
   ARG --required RELEASE_VERSION
+  ENV GITHUB_TOKEN=${GHCR_TOKEN}
   ENV OUT_BASE="./dist"
   ENV REPO="cyxou/firefly-iii-telegram-bot"
 
