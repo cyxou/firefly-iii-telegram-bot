@@ -73,3 +73,6 @@
 
 sync:
     remote: "git+ssh://git@github.com/cyxou/firefly-iii-telegram-bot.git"
+
+dolt:
+  port: 3306
