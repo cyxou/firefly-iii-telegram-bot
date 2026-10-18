@@ -25,6 +25,7 @@ export * from './api/categories-api';
 export * from './api/charts-api';
 // export * from './api/configuration-api';
 export * from './api/currencies-api';
+export * from './api/currency-exchange-rates-api';
 export * from './api/data-api';
 export * from './api/insight-api';
 export * from './api/links-api';
@@ -39,5 +40,6 @@ export * from './api/summary-api';
 export * from './api/tags-api';
 export * from './api/transactions-api';
 export * from './api/users-api';
+export * from './api/user-groups-api';
 export * from './api/webhooks-api';
 
