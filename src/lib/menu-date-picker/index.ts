@@ -7,6 +7,7 @@ export interface DatePickerState {
   currentYear: number;
   selectedDate?: string;   // YYYY-MM-DD format
   mode: 'month' | 'year';  // Current picker mode
+  transactionId?: string;  // transaction the calendar was opened for (edit flow)
 }
 
 export interface DatePickerOptions {
@@ -18,7 +19,7 @@ export interface DatePickerOptions {
 }
 
 export interface DateSelectCallback {
-  (date: string): void | Promise<void>;
+  (date: string): unknown;
 }
 
 export class MenuDatePicker {

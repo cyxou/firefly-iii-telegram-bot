@@ -549,13 +549,26 @@ function createEditDateMenu() {
       return picker.createDatePicker(
         state,
         async (selectedDate) => {
-          // Handle date selection for transaction editing
-          if (!ctx.session.currentTransaction) {
-            // Session lost (e.g. bot restart) — this calendar can no longer
-            // apply the date; replace it with an error instead of a dead keyboard.
+          // The calendar was opened for a specific transaction (pinned on
+          // entry, carried through month/year navigation). The shared session
+          // copy of currentTransaction may point elsewhere or be gone.
+          const trId = ctx.session.datePickerState?.transactionId
+          if (!trId) {
+            // Stale calendar whose state was lost — it can no longer apply
+            // the date. The explicit empty keyboard is required: a bare
+            // editMessageText would get this calendar re-injected by
+            // @grammyjs/menu, leaving a live keyboard under the error.
             delete ctx.session.datePickerState
-            await ctx.editMessageText(ctx.i18n.t('common.errorOccurred'))
-            return
+            return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), {
+              reply_markup: { inline_keyboard: [] }
+            })
+          }
+
+          // Make sure the update below and the re-render target the
+          // calendar's transaction, not whatever the session points at.
+          if (ctx.session.currentTransaction?.id !== trId) {
+            ctx.session.currentTransaction =
+              (await firefly(ctx.session.userSettings).Transactions.getTransaction(trId)).data.data
           }
 
           // Update the transaction date
@@ -566,7 +579,7 @@ function createEditDateMenu() {
           // Clear picker state and return to transaction menu
           delete ctx.session.datePickerState;
 
-          await replyWithTransactionMenu(ctx, updatedTr, true)
+          return replyWithTransactionMenu(ctx, updatedTr, true)
         },
         ctx
       );
@@ -613,13 +626,15 @@ function createEditSourceAccountSubmenu(transactionId: string) {
 
         log('Current transaction: %O', ctx.session.currentTransaction)
 
+        // Skip the transaction's current destination account so a transfer
+        // can't be re-pointed onto itself (source == destination).
         ctx.session.accounts = await getFireflyAccounts(
           ctx,
           [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
-          { skipAccountId: ctx.session.currentTransaction?.id! }
+          { skipAccountId: ctx.session.currentTransaction?.attributes?.transactions[0]?.destination_id || '' }
         )
 
-        ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewSourceAccount'))
+        return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewSourceAccount'))
       } catch (err) {
         // TODO: Handle error properly
         console.error(err)
@@ -650,7 +665,7 @@ function createEditDestinationAccountSubmenu(transactionId: string) {
           [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities, AccountTypeFilter.Expense]
         )
 
-        ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewDestinationAccount'))
+        return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewDestinationAccount'))
       } catch (err) {
         // TODO: Handle error properly
         console.error(err)
@@ -672,7 +687,15 @@ async function closeEditTransactionMenu(ctx: MyContext) {
     const trId = (typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined)
       ?? ctx.session.currentTransaction?.id
     log('trId: %O', trId)
-    if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
+    if (typeof trId !== 'string') {
+      // Neither the payload nor the session identifies a transaction (stale
+      // message after a session loss). Show it instead of throwing past the
+      // catch and leaving an unanswered callback; the explicit empty keyboard
+      // opts out of grammy's menu auto-injection.
+      return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), {
+        reply_markup: { inline_keyboard: [] }
+      })
+    }
 
     log(' Getting transaction with ID: %s', trId)
     const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
@@ -903,6 +926,14 @@ async function changeTransactionDateMiddleware(ctx: MyContext) {
     const trId = ctx.match
     log('Transaction ID: %s', trId)
 
+    // Reset the calendar and pin the transaction it was opened for, so a
+    // date tap targets this transaction even if the shared session copy of
+    // currentTransaction points elsewhere (or is gone) by then.
+    ctx.session.datePickerState = {
+      ...MenuDatePicker.createDefaultState(),
+      transactionId: typeof trId === 'string' ? trId : undefined
+    }
+
     const messageId = ctx.update?.callback_query?.message!.message_id || 0
     const chatId = ctx.update?.callback_query?.message!.chat.id || 0
     log('deleteMessage: messageId: %s', messageId)
@@ -943,7 +974,7 @@ async function augmentSessionWithCategories(ctx: MyContext) {
     ctx.session.pagination = catResData.meta.pagination
 
     // TODO: Handle a case when a user got no categories yet
-    ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'))
+    return ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewCategory'))
   } catch (err) {
     // TODO: Handle error properly
     console.error(err)

@@ -104,6 +104,10 @@ export async function addTransaction(ctx: MyContext) {
         destinationAccountId: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : ''
       })
 
+      // Drop any half-finished add flow, otherwise its menu message can
+      // later silently resume with a stale amount/date.
+      cleanupSessionData(ctx)
+
       return replyWithTransactionMenu(ctx, tr)
     }
 
