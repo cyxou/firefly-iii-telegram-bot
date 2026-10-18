@@ -55,8 +55,7 @@ async function showAccounts(ctx: MyContext) {
     log('accType: %O', accType)
 
     const accounts = filterActiveAccounts(
-      (await firefly(userSettings).Accounts.listAccount(
-        undefined, ACCOUNTS_PAGE_LIMIT, page, balanceToDate, accType as AccountTypeFilter)).data.data
+      (await firefly(userSettings).Accounts.listAccount(undefined, ACCOUNTS_PAGE_LIMIT, page, undefined, balanceToDate, accType as AccountTypeFilter)).data.data
     )
     log('accounts: %O', accounts)
 
