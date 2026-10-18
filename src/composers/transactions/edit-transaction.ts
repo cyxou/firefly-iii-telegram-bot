@@ -104,8 +104,8 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
       }]
     }
 
-    if (!description) {
-      return ctx.editMessageText(ctx.i18n.t('transactions.edit.badDescriptionTyped'))
+    if (!description.trim()) {
+      return ctx.reply(ctx.i18n.t('transactions.edit.badDescriptionTyped'))
     }
 
     log('Updating transaction...')

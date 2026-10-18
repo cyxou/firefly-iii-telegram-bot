@@ -61,8 +61,12 @@ export function handleCallbackQueryError(err: Error, ctx: MyContext) {
     return ctx.reply(err.message)
   }
 
-  return ctx.answerCallbackQuery({
-    text: err.message,
-    show_alert: true
-  })
+  // answerCallbackQuery throws on contexts without a callback query (e.g.
+  // the text-message route handlers that route their catch through here).
+  return ctx.callbackQuery
+    ? ctx.answerCallbackQuery({
+        text: err.message,
+        show_alert: true
+      })
+    : ctx.reply(err.message)
 }
