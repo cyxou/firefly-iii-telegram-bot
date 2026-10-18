@@ -185,7 +185,7 @@ async function getDefaultSourceAccount(ctx: MyContext): Promise<null | AccountAt
 
     if (!defaultSourceAccount.name) {
       const accounts = filterActiveAccounts(
-        (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, ACCOUNTS_PAGE_LIMIT, 1, undefined, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
+        (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, ACCOUNTS_PAGE_LIMIT, 1, undefined, undefined, undefined, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.Asset)).data.data
       )
       const firstAccount = accounts[0]
       log('firstAccount: %O', firstAccount)
@@ -214,7 +214,7 @@ async function getDefaultDestinationAccount(ctx: MyContext) {
 
     if (!defaultDestinationAccount.name) {
       const accounts = filterActiveAccounts(
-        (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, ACCOUNTS_PAGE_LIMIT, 1, undefined, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data
+        (await firefly(ctx.session.userSettings).Accounts.listAccount(undefined, ACCOUNTS_PAGE_LIMIT, 1, undefined, undefined, undefined, dayjs().format('YYYY-MM-DD'), AccountTypeFilter.CashAccount)).data.data
       )
       const cashAccount = accounts[0]
       log('cashAccount: %O', cashAccount)
