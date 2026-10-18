@@ -1,0 +1,10 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_server_host": "dolt.dolt.svc.cluster.local",
+  "dolt_server_port": 3306,
+  "dolt_server_user": "root",
+  "dolt_database": "firefly_iii_telegram_bot",
+  "project_id": "f9c852e0-73f8-4d88-aca9-a4f7a3649f33"
+}
