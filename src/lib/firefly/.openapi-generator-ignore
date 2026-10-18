@@ -27,5 +27,7 @@ git_push.sh
 # Read the README.md for details on what is happening here
 index.ts
 api.ts
+# generator 5.2.1 emits an invalid boolean enum (True = true) for the spec's `primary: enum: [true]`;
+# the hand-patched string enum is restored in model/currency-update.ts after each codegen
 model/currency-update.ts
 api/configuration-api.ts
