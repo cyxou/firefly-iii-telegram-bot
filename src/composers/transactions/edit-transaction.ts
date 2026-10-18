@@ -5,12 +5,11 @@ import { Router } from "@grammyjs/router"
 import type { MyContext } from '../../types/MyContext'
 import {
   parseAmountInput,
-  formatTransaction,
   cleanupSessionData,
 } from '../helpers'
 
 import firefly from '../../lib/firefly'
-import { transactionRecordMenu } from './add-transactions-menus'
+import { replyWithTransactionMenu } from './add-transactions-menus'
 import { handleCallbackQueryError } from '../../lib/errorHandler'
 
 export enum Route {
@@ -75,13 +74,7 @@ async function changeAmountRouteHandler(ctx: MyContext) {
     // Cleanup session
     cleanupSessionData(ctx)
     
-    return ctx.reply(
-      formatTransaction(ctx, updatedTr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, updatedTr)
   } catch (err: any) {
     cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
@@ -129,13 +122,7 @@ async function changeDescriptionRouteHandler(ctx: MyContext) {
     // Cleanup session
     cleanupSessionData(ctx)
     
-    return ctx.reply(
-      formatTransaction(ctx, updatedTr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, updatedTr)
   } catch (err: any) {
     cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)

@@ -7,6 +7,7 @@ import { Menu, MenuRange } from '@grammyjs/menu'
 import type { MyContext } from '../../types/MyContext'
 import { AccountTypeFilter } from '../../lib/firefly/model/account-type-filter'
 import { AccountRead } from '../../lib/firefly/model/account-read'
+import { TransactionRead } from '../../lib/firefly/model/transaction-read'
 import { TransactionTypeProperty } from '../../lib/firefly/model/transaction-type-property'
 import { createMenuDatePicker, MenuDatePicker } from '../../lib/menu-date-picker'
 import { Route as AddRoute } from './add-transaction'
@@ -51,9 +52,10 @@ addTransactionMenu.register([
   createNewTransferMenu()
 ])
 
-// This is the menu for every transaction created
-// NOTE: Make sure to set `ctx.session.currentTransaction = tr` everytime you
-// call the transactionMenu
+// This is the menu for every transaction created.
+// NOTE: never reply with this menu directly — use replyWithTransactionMenu()
+// below, which keeps ctx.session.currentTransaction in sync (the Edit button
+// payload is built from it on every re-render).
 export const transactionRecordMenu = new Menu<MyContext>(MENUS.TRANSACTION_RECORD)
   .dynamic(createTransactionRecordMenu)
 
@@ -71,6 +73,18 @@ transactionRecordMenu.register([
   // createDeleteTransactionmenu(),
   // createEditTagsMenu(),
 ])
+
+// Single entry point for showing a transaction message with its Edit menu.
+// ALWAYS use this instead of replying with transactionRecordMenu directly:
+// it keeps ctx.session.currentTransaction in sync with the shown transaction,
+// which the Edit button payload is built from (see NOTE above).
+export function replyWithTransactionMenu(ctx: MyContext, tr: Partial<TransactionRead>, edit = false) {
+  ctx.session.currentTransaction = tr
+  const extra = { parse_mode: 'Markdown' as const, reply_markup: transactionRecordMenu }
+  return edit
+    ? ctx.editMessageText(formatTransaction(ctx, tr), extra)
+    : ctx.reply(formatTransaction(ctx, tr), extra)
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -169,15 +183,7 @@ function createNewDepositMenu() {
 
             cleanupSessionData(ctx)
 
-            ctx.session.newTransaction.id = tr.id
-
-            return ctx.editMessageText(
-              formatTransaction(ctx, tr),
-              {
-                parse_mode: 'Markdown',
-                reply_markup: transactionRecordMenu
-              }
-            )
+            return replyWithTransactionMenu(ctx, tr, true)
           }
         )
         // Split categories keyboard into two columns so that every odd indexed
@@ -300,16 +306,9 @@ function createNewTransferMenu() {
 
             cleanupSessionData(ctx)
 
-            ctx.session.currentTransaction = tr
             log('Looks like transaction got created. Returning transaction menu...')
 
-            return ctx.editMessageText(
-              formatTransaction(ctx, tr),
-              {
-                parse_mode: 'Markdown',
-                reply_markup: transactionRecordMenu
-              }
-            )
+            return replyWithTransactionMenu(ctx, tr, true)
           }
         )
         // Split categories keyboard into two columns so that every odd indexed
@@ -450,9 +449,7 @@ function createTransactionRecordMenu() {
   return new MenuRange<MyContext>().dynamic((ctx, range) => {
     const log = rootLog.extend('createTransactionMenu')
 
-    const currentTransaction: any = ctx.session.newTransaction.id
-      ? ctx.session.newTransaction
-      : ctx.session.currentTransaction
+    const currentTransaction: any = ctx.session.currentTransaction
 
     log('currentTransaction: %O', currentTransaction)
 
@@ -472,15 +469,19 @@ function createTransactionRecordMenu() {
     //   )
     // }
 
-    log('Adding edit transaction button to menu...')
-    range.submenu(
-      {
-        text: ctx => ctx.i18n.t('labels.EDIT_TRANSACTION'),
-        payload: currentTransaction!.id
-      },
-      MENUS.EDIT_TRANSACTION,
-      augmentSessionWithCurrentTransaction
-    )
+    // No transaction in session (e.g. session lost after a restart, or an old
+    // message clicked) — skip the button instead of crashing the menu layout.
+    if (currentTransaction?.id) {
+      log('Adding edit transaction button to menu...')
+      range.submenu(
+        {
+          text: ctx => ctx.i18n.t('labels.EDIT_TRANSACTION'),
+          payload: currentTransaction.id
+        },
+        MENUS.EDIT_TRANSACTION,
+        augmentSessionWithCurrentTransaction
+      )
+    }
 
     ctx.session.newTransaction = {}
     return range
@@ -551,18 +552,11 @@ function createEditDateMenu() {
             const updatedTr = await updateFireflyTransaction(ctx, {
               date: selectedDate
             });
-            ctx.session.currentTransaction = updatedTr;
-            
+
             // Clear picker state and return to transaction menu
             delete ctx.session.datePickerState;
-            
-            await ctx.editMessageText(
-              formatTransaction(ctx, updatedTr),
-              {
-                parse_mode: 'Markdown',
-                reply_markup: transactionRecordMenu
-              }
-            );
+
+            await replyWithTransactionMenu(ctx, updatedTr, true)
           }
         },
         ctx
@@ -663,25 +657,20 @@ async function closeEditTransactionMenu(ctx: MyContext) {
   try {
     log(' Closing edit menu...')
     const userSettings = ctx.session.userSettings
+    // Prefer the fresh session copy; fall back to the transaction id baked
+    // into the clicked button's payload, so old messages keep working after
+    // a session loss (e.g. pod restart).
     const trId = ctx.session.currentTransaction?.id
+      ?? (typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined)
     log('trId: %O', trId)
     if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
 
     log(' Getting transaction with ID: %s', trId)
     const tr = (await firefly(userSettings).Transactions.getTransaction(trId)).data.data
     log(' Got transaction data for transaction %s', tr.id)
-    ctx.session.currentTransaction = tr
-
     cleanupSessionData(ctx)
-
     log(' Formatting transaction menu...')
-    return ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, tr, true)
   } catch (err) {
     log('Error: %O', err)
     console.error('Error occured cancelling edit transaction: ', err)
@@ -721,17 +710,9 @@ async function newTransactionSelectCategoryHandler(ctx: MyContext) {
     const tr = await createFireflyTransaction(ctx)
     log('Got new transaction created: %O', tr.id)
 
-    ctx.session.currentTransaction = tr
-
     cleanupSessionData(ctx)
 
-    return ctx.editMessageText(
-      formatTransaction(ctx, tr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, tr, true)
   } catch (err) {
     console.error(err)
     log('Error occured handling category selection: %O', err)
@@ -754,15 +735,7 @@ async function editTransactionSelectCategoryHandler(ctx: MyContext) {
     const update = { categoryId }
 
     const updatedTr = await updateFireflyTransaction(ctx, update)
-    ctx.session.currentTransaction = updatedTr
-
-    return ctx.editMessageText(
-      formatTransaction(ctx, updatedTr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, updatedTr, true)
   } catch (err) {
     console.error(err)
     log('Error occured handling category selection: %O', err)
@@ -793,13 +766,7 @@ async function editTransactionSelectSourceAccountHandler(ctx: MyContext) {
 
     const updatedTr = await updateFireflyTransaction(ctx, update)
 
-    return ctx.editMessageText(
-      formatTransaction(ctx, updatedTr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, updatedTr, true)
   } catch (err) {
     console.error(err)
     log('Error occured handling source account selection: %O', err)
@@ -827,13 +794,7 @@ async function editTransactionSelectDestinationAccountHandler(ctx: MyContext) {
 
     const updatedTr = await updateFireflyTransaction(ctx, update)
 
-    return ctx.editMessageText(
-      formatTransaction(ctx, updatedTr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, updatedTr, true)
   } catch (err) {
     console.error(err)
     log('Error occured handling source account selection: %O', err)
