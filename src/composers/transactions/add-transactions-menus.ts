@@ -78,7 +78,11 @@ transactionRecordMenu.register([
 // ALWAYS use this instead of replying with transactionRecordMenu directly:
 // it keeps ctx.session.currentTransaction in sync with the shown transaction,
 // which the Edit button payload is built from (see NOTE above).
-export function replyWithTransactionMenu(ctx: MyContext, tr: Partial<TransactionRead>, edit = false) {
+export function replyWithTransactionMenu(
+  ctx: MyContext,
+  tr: Partial<TransactionRead> & Pick<TransactionRead, 'id' | 'attributes'>,
+  edit = false
+) {
   ctx.session.currentTransaction = tr
   const extra = { parse_mode: 'Markdown' as const, reply_markup: transactionRecordMenu }
   return edit
@@ -483,7 +487,6 @@ function createTransactionRecordMenu() {
       )
     }
 
-    ctx.session.newTransaction = {}
     return range
   })
 }
@@ -547,17 +550,23 @@ function createEditDateMenu() {
         state,
         async (selectedDate) => {
           // Handle date selection for transaction editing
-          if (ctx.session.currentTransaction) {
-            // Update the transaction date
-            const updatedTr = await updateFireflyTransaction(ctx, {
-              date: selectedDate
-            });
-
-            // Clear picker state and return to transaction menu
-            delete ctx.session.datePickerState;
-
-            await replyWithTransactionMenu(ctx, updatedTr, true)
+          if (!ctx.session.currentTransaction) {
+            // Session lost (e.g. bot restart) — this calendar can no longer
+            // apply the date; replace it with an error instead of a dead keyboard.
+            delete ctx.session.datePickerState
+            await ctx.editMessageText(ctx.i18n.t('common.errorOccurred'))
+            return
           }
+
+          // Update the transaction date
+          const updatedTr = await updateFireflyTransaction(ctx, {
+            date: selectedDate
+          });
+
+          // Clear picker state and return to transaction menu
+          delete ctx.session.datePickerState;
+
+          await replyWithTransactionMenu(ctx, updatedTr, true)
         },
         ctx
       );
@@ -641,7 +650,7 @@ function createEditDestinationAccountSubmenu(transactionId: string) {
           [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities, AccountTypeFilter.Expense]
         )
 
-        ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewSourceAccount'))
+        ctx.editMessageText(ctx.i18n.t('transactions.edit.chooseNewDestinationAccount'))
       } catch (err) {
         // TODO: Handle error properly
         console.error(err)
@@ -657,11 +666,11 @@ async function closeEditTransactionMenu(ctx: MyContext) {
   try {
     log(' Closing edit menu...')
     const userSettings = ctx.session.userSettings
-    // Prefer the fresh session copy; fall back to the transaction id baked
-    // into the clicked button's payload, so old messages keep working after
-    // a session loss (e.g. pod restart).
-    const trId = ctx.session.currentTransaction?.id
-      ?? (typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined)
+    // The payload identifies the transaction this message was opened for, so
+    // it wins; the session copy is only a fallback for payload-less 🔙
+    // buttons and for old messages still working after a session loss.
+    const trId = (typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined)
+      ?? ctx.session.currentTransaction?.id
     log('trId: %O', trId)
     if (typeof trId !== 'string') throw new Error('No transactionId supplied!')
 
@@ -797,7 +806,7 @@ async function editTransactionSelectDestinationAccountHandler(ctx: MyContext) {
     return replyWithTransactionMenu(ctx, updatedTr, true)
   } catch (err) {
     console.error(err)
-    log('Error occured handling source account selection: %O', err)
+    log('Error occured handling destination account selection: %O', err)
     return ctx.reply((err as Error).toString())
   }
 }
