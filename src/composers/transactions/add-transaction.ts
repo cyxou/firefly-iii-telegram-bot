@@ -6,13 +6,12 @@ import { Router } from "@grammyjs/router"
 import type { MyContext } from '../../types/MyContext'
 import {
   parseAmountInput,
-  formatTransaction,
   createFireflyTransaction,
   cleanupSessionData,
   filterActiveAccounts,
 } from '../helpers'
 
-import { transactionRecordMenu, addTransactionMenu } from './add-transactions-menus'
+import { transactionRecordMenu, addTransactionMenu, replyWithTransactionMenu } from './add-transactions-menus'
 
 
 import firefly from '../../lib/firefly'
@@ -105,15 +104,7 @@ export async function addTransaction(ctx: MyContext) {
         destinationAccountId: defaultDestinationAccount ? defaultDestinationAccount.id.toString() : ''
       })
 
-      ctx.session.newTransaction.id = tr.id
-
-      return ctx.reply(
-        formatTransaction(ctx, tr),
-        {
-          parse_mode: 'Markdown',
-          reply_markup: transactionRecordMenu
-        }
-      )
+      return replyWithTransactionMenu(ctx, tr)
     }
 
     ctx.session.newTransaction = {
@@ -275,15 +266,7 @@ async function setForeignAmountRouteHandler(ctx: MyContext) {
     // Cleanup session
     cleanupSessionData(ctx)
 
-    ctx.session.currentTransaction = tr
-
-    return ctx.reply(
-      formatTransaction(ctx, tr),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: transactionRecordMenu
-      }
-    )
+    return replyWithTransactionMenu(ctx, tr)
   } catch (err: any) {
     cleanupSessionData(ctx)
     return handleCallbackQueryError(err, ctx)
