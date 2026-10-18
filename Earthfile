@@ -83,7 +83,7 @@ release:
   RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
       && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
       && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-      && apt-get update && apt-get install gh jq -y \
+      && apt-get update && apt-get install gh -y \
       && gh --version
 
   # Generate release notes
@@ -97,10 +97,11 @@ release:
 
   # Create release
   RUN ls -al
-  RUN jq -r .body tmp-release-notes.json > tmp-release-notes.md \
+  # ponytail: node one-liners instead of jq — jq 404s from the bullseye-security pool
+  RUN node -e "require('fs').writeFileSync('tmp-release-notes.md', require('./tmp-release-notes.json').body)" \
       && gh release create ${RELEASE_VERSION} \
         --repo ${REPO} \
-        --title "$(jq -r .name tmp-release-notes.json)" \
+        --title "$(node -pe "require('./tmp-release-notes.json').name")" \
         --notes-file tmp-release-notes.md \
         --verify-tag \
         "./firefly-iii-telegram-bot.tar.gz#firefly-iii-telegram-bot-dist"
