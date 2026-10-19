@@ -71,8 +71,8 @@
 # - linear.api_key  → use LINEAR_API_KEY env var instead
 # - github.token    → use GITHUB_TOKEN env var instead
 
-sync:
-    remote: "https://github.com/cyxou/firefly-iii-telegram-bot.git"
+# sync:
+#     remote: "https://github.com/cyxou/firefly-iii-telegram-bot.git"
 # remote: "git+ssh://git@github.com/cyxou/firefly-iii-telegram-bot.git"
 dolt:
     port: 3306
