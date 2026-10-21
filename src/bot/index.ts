@@ -3,6 +3,7 @@ import type { Config } from '#root/config.js'
 import type { Logger } from '#root/logger.js'
 import type { FireflyServiceFactory } from '#root/lib/firefly/service.js'
 import { defaultSettings, type SettingsStore } from '#root/lib/settings-store.js'
+import { settingsFeature } from '#root/bot/features/settings/index.js'
 import { startFeature } from '#root/bot/features/start/index.js'
 import { unhandledFeature } from '#root/bot/features/unhandled/index.js'
 import { errorHandler } from '#root/bot/handlers/error.js'
@@ -53,7 +54,7 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
   protectedBot.use(setLocaleFromSettings())
   registerCoreMenus(protectedBot)
   protectedBot.use(startFeature)
-  // Phase 1 inserts settingsFeature here.
+  protectedBot.use(settingsFeature)
   protectedBot.use(unhandledFeature) // must stay last
 
   return bot
