@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { createBot } from '#root/bot/index.js'
-import { createMemorySettingsStore } from '#root/lib/settings-store.js'
-import { createSessionStorage } from '#root/lib/session.js'
 import { redis } from '#root/lib/redis.js'
+import { createSessionStorage } from '#root/lib/session.js'
+import { createMemorySettingsStore } from '#root/lib/settings-store.js'
 import {
-  createTestConfig, createTestFireflyService, createTestLogger,
-  findButton, generateCallbackQueryUpdate, generateMessageUpdate, initializeBot, setupMockApi,
+  createTestConfig,
+  createTestFireflyService,
+  createTestLogger,
+  findButton,
+  generateCallbackQueryUpdate,
+  generateMessageUpdate,
+  initializeBot,
+  setupMockApi,
 } from '../helpers/bot.js'
 
 // Same shared-redis probe discipline as session-storage.test.ts: setup.ts may

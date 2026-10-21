@@ -1,8 +1,8 @@
-import dayjs from 'dayjs'
+import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
+import dayjs from 'dayjs'
 import { createFireflyClients } from '#root/lib/firefly/client.js'
 import { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-type-filter.js'
-import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 
 // Features (and tests) import firefly types HERE, never from generated/ —
 // lint-tested in __tests__/lint/architecture.test.ts.
@@ -10,9 +10,9 @@ export { AccountTypeFilter }
 export type { AccountRead }
 
 export interface FireflyService {
-  getCurrentUser(): Promise<{ email: string } | null>
-  listAccounts(type: AccountTypeFilter, date?: string): Promise<AccountRead[]>
-  getAccount(id: string): Promise<AccountRead>
+  getCurrentUser: () => Promise<{ email: string } | null>
+  listAccounts: (type: AccountTypeFilter, date?: string) => Promise<AccountRead[]>
+  getAccount: (id: string) => Promise<AccountRead>
 }
 
 export type FireflyServiceFactory = (settings: UserSettings) => FireflyService
@@ -29,7 +29,14 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     },
     async listAccounts(type, date = dayjs().format('YYYY-MM-DD')) {
       const res = await clients().Accounts.listAccount(
-        undefined, 100, 1, undefined, undefined, undefined, date, type,
+        undefined,
+        100,
+        1,
+        undefined,
+        undefined,
+        undefined,
+        date,
+        type,
       )
       return filterActiveAccounts(res.data.data ?? [])
     },

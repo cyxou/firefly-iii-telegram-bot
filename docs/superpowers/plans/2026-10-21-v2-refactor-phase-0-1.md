@@ -462,9 +462,9 @@ Expected: FAIL (module missing)
 
 ```ts
 import path from 'node:path'
+import { I18n, pluralize } from '@grammyjs/i18n'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
-import { I18n, pluralize } from '@grammyjs/i18n'
 
 import 'dayjs/locale/ru'
 import 'dayjs/locale/en'
@@ -487,7 +487,7 @@ const i18n = new I18n({
 
 const locales = ['ru', 'it', 'en', 'es'] as const
 
-export { i18n, locales, defaultLanguage }
+export { defaultLanguage, i18n, locales }
 ```
 
 Note: `useSession: false` — Task 8's locale middleware sets `ctx.i18n.locale()` from durable settings instead, so `__language_code` never enters the session.
@@ -529,13 +529,13 @@ export class ResourceNotFoundError extends Error {
 - [ ] **Step 5: Implement `src/bot/context.ts`**
 
 ```ts
+import type { I18n } from '@grammyjs/i18n'
+import type { MenuFlavor } from '@grammyjs/menu'
+import type { Context as DefaultContext, SessionFlavor } from 'grammy'
 import type { Config } from '#root/config.js'
-import type { Logger } from '#root/logger.js'
 import type { FireflyService } from '#root/lib/firefly/service.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
-import type { MenuFlavor } from '@grammyjs/menu'
-import type { I18n } from '@grammyjs/i18n'
-import type { Context as DefaultContext, SessionFlavor } from 'grammy'
+import type { Logger } from '#root/logger.js'
 
 export type SettingsFlowStep = 'url' | 'api_url' | 'token'
 
@@ -673,8 +673,8 @@ export interface UserSettings {
 }
 
 export interface SettingsStore {
-  get(userId: number): Promise<UserSettings | undefined>
-  save(userId: number, settings: UserSettings): Promise<void>
+  get: (userId: number) => Promise<UserSettings | undefined>
+  save: (userId: number, settings: UserSettings) => Promise<void>
 }
 
 export function defaultSettings(overrides: Partial<UserSettings> = {}): UserSettings {
@@ -793,17 +793,16 @@ Expected: FAIL (module missing)
 Port the interceptor mapping verbatim from `legacy/src/lib/firefly/index.ts:36-73` (resErrorInterceptor — maps `Unauthenticated`/401 → AuthenticationError, `NotFoundHttpException`/404 → ResourceNotFoundError, other 400 → BadRequestError, ENOTFOUND/ECONNREFUSED → HostNotFoundError). The generated api files call the *global* axios instance, so the interceptor must stay global — the fix for v1's accumulation bug is the once-guard, not per-instance interceptors.
 
 ```ts
-import type { axios as AxiosStatic } from 'axios'
+import type { AxiosError, AxiosResponse, axios as AxiosStatic } from 'axios'
 import axios from 'axios'
-import type { AxiosError, AxiosResponse } from 'axios'
-import * as api from '#root/lib/firefly/api.js'
-import { Configuration } from '#root/lib/firefly/generated/configuration.js'
 import {
   AuthenticationError,
   BadRequestError,
   HostNotFoundError,
   ResourceNotFoundError,
 } from '#root/lib/errors.js'
+import * as api from '#root/lib/firefly/api.js'
+import { Configuration } from '#root/lib/firefly/generated/configuration.js'
 
 export interface FireflyClients {
   About: ReturnType<typeof api.AboutApiFactory>
@@ -824,8 +823,9 @@ function resErrorInterceptor(axiosError: AxiosError) {
   if (
     axiosError.code === 'ERR_BAD_REQUEST'
     && (axiosError.response?.data as any)?.exception === 'NotFoundHttpException'
-  )
+  ) {
     return Promise.reject(new ResourceNotFoundError(axiosError.code))
+  }
   if (axiosError.code === 'ERR_BAD_REQUEST')
     return Promise.reject(new BadRequestError((axiosError.response?.data as any)?.message || axiosError.code))
   if (axiosError.code === 'ENOTFOUND' || axiosError.code === 'ECONNREFUSED')
@@ -876,16 +876,16 @@ export function createFireflyClients(settings: {
 Copy `filterActiveAccounts` verbatim from `legacy/src/composers/helpers.ts` (search `export function filterActiveAccounts`) into this file if it exists there as a pure filter; if it also does something else, extract only the filter. Phase 1 needs three methods only.
 
 ```ts
-import dayjs from 'dayjs'
+import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
+import dayjs from 'dayjs'
 import { createFireflyClients } from '#root/lib/firefly/client.js'
 import { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-type-filter.js'
-import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 
 export interface FireflyService {
-  getCurrentUser(): Promise<{ email: string } | null>
-  listAccounts(type: AccountTypeFilter, date?: string): Promise<AccountRead[]>
-  getAccount(id: string): Promise<AccountRead>
+  getCurrentUser: () => Promise<{ email: string } | null>
+  listAccounts: (type: AccountTypeFilter, date?: string) => Promise<AccountRead[]>
+  getAccount: (id: string) => Promise<AccountRead>
 }
 
 export type FireflyServiceFactory = (settings: UserSettings) => FireflyService
@@ -902,7 +902,14 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     },
     async listAccounts(type, date = dayjs().format('YYYY-MM-DD')) {
       const res = await clients().Accounts.listAccount(
-        undefined, 100, 1, undefined, undefined, undefined, date, type,
+        undefined,
+        100,
+        1,
+        undefined,
+        undefined,
+        undefined,
+        date,
+        type,
       )
       return filterActiveAccounts(res.data.data ?? [])
     },
@@ -975,9 +982,9 @@ export function createSessionStorage(ttlSeconds = 86400): RedisAdapter<SessionDa
 ```
 
 ```ts
+import type { Middleware, SessionOptions } from 'grammy'
 // src/bot/middlewares/session.ts
 import type { Context, SessionData } from '#root/bot/context.js'
-import type { Middleware, SessionOptions } from 'grammy'
 import { session as createSession } from 'grammy'
 
 type Options = Pick<SessionOptions<SessionData, Context>, 'getSessionKey' | 'storage'>
@@ -1097,16 +1104,18 @@ Import changes: `Context` from `#root/bot/context.js`; drop everything Prisma-re
 Append to `__tests__/helpers/bot.ts`:
 
 ```ts
-import { createBot } from '#root/bot/index.js'
-import { createConfig, type Config } from '#root/config.js'
-import { MemorySessionStorage, type Bot as TelegramBot } from 'grammy'
+import type { Bot as TelegramBot } from 'grammy'
 import type { SessionData } from '#root/bot/context.js'
+import type { Config } from '#root/config.js'
+import type { AccountRead, FireflyService } from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
-import { createMemorySettingsStore, defaultSettings } from '#root/lib/settings-store.js'
-import type { FireflyService } from '#root/lib/firefly/service.js'
-import { AccountTypeFilter, type AccountRead } from '#root/lib/firefly/service.js'
-import { ResourceNotFoundError } from '#root/lib/errors.js'
+import { MemorySessionStorage } from 'grammy'
 import { pino } from 'pino'
+import { createBot } from '#root/bot/index.js'
+import { createConfig } from '#root/config.js'
+import { ResourceNotFoundError } from '#root/lib/errors.js'
+import { AccountTypeFilter } from '#root/lib/firefly/service.js'
+import { createMemorySettingsStore, defaultSettings } from '#root/lib/settings-store.js'
 
 export function createTestConfig(): Config {
   return createConfig({ BOT_TOKEN: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz' })
@@ -1131,7 +1140,8 @@ export function createTestFireflyService(
     },
     async getAccount(id) {
       const acc = (fixtures.accounts ?? []).find(a => a.id === id)
-      if (!acc) throw new ResourceNotFoundError('404')
+      if (!acc)
+        throw new ResourceNotFoundError('404')
       return acc
     },
     ...overrides,
@@ -1141,13 +1151,14 @@ export function createTestFireflyService(
 export function createTestBot(options: {
   config?: Partial<Config>
   settingsStore?: SettingsStore
-  settings?: UserSettings            // convenience: seeds the default test user 1111111
+  settings?: UserSettings // convenience: seeds the default test user 1111111
   firefly?: FireflyService
 } = {}) {
   const config = { ...createTestConfig(), ...options.config }
   const logger = createTestLogger()
   const settingsStore = options.settingsStore ?? createMemorySettingsStore()
-  if (options.settings) await settingsStore.save(1111111, options.settings)
+  if (options.settings)
+    await settingsStore.save(1111111, options.settings)
   const bot = createBot(config.botToken, {
     config,
     logger,
@@ -1229,8 +1240,8 @@ git commit -m "test(v2): mock Telegram API harness (ported from rukevich) + fire
 // __tests__/features/start/start.test.ts
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
-import { generateMessageUpdate, initializeBot, setupMockApi, createTestBot } from '../../helpers/bot.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
+import { createTestBot, generateMessageUpdate, initializeBot, setupMockApi } from '../../helpers/bot.js'
 
 describe('bot core', () => {
   it('drops updates from users not on the allowlist', async () => {
@@ -1302,9 +1313,10 @@ export const command = {
 ```
 
 ```ts
+import type { BotError } from 'grammy'
 // src/bot/handlers/error.ts
 import type { Context } from '#root/bot/context.js'
-import { GrammyError, HttpError, type BotError } from 'grammy'
+import { GrammyError, HttpError } from 'grammy'
 
 export async function errorHandler(error: BotError<Context>) {
   const { ctx, error: err } = error
@@ -1320,10 +1332,10 @@ export async function errorHandler(error: BotError<Context>) {
 ```
 
 ```ts
+import type { Middleware } from 'grammy'
 // src/bot/middlewares/access-control.ts — ported from legacy/src/index.ts:37-51
 import type { Context } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { Middleware } from 'grammy'
 
 export function accessControl(config: Config): Middleware<Context> {
   return async (ctx, next) => {
@@ -1342,11 +1354,11 @@ export function accessControl(config: Config): Middleware<Context> {
 ```
 
 ```ts
+import type { Middleware } from 'grammy'
+import type { Context } from '#root/bot/context.js'
 // src/bot/middlewares/locale.ts
 import dayjs from 'dayjs'
-import type { Context } from '#root/bot/context.js'
 import { defaultLanguage, locales } from '#root/bot/i18n.js'
-import type { Middleware } from 'grammy'
 
 // The language of record lives in the durable settings store, not the session
 // (v1 kept it in session.userSettings.language).
@@ -1370,9 +1382,14 @@ import { defaultSettings } from '#root/lib/settings-store.js'
 // If v1's layout differs, copy v1's exactly — this keyboard is muscle memory for users.
 export function createMainKeyboard(ctx: Context) {
   return new Keyboard()
-    .text(ctx.i18n.t('labels.TRANSACTIONS')).text(ctx.i18n.t('labels.ACCOUNTS')).row()
-    .text(ctx.i18n.t('labels.CATEGORIES')).text(ctx.i18n.t('labels.REPORTS')).row()
-    .text(ctx.i18n.t('labels.SETTINGS')).row()
+    .text(ctx.i18n.t('labels.TRANSACTIONS'))
+    .text(ctx.i18n.t('labels.ACCOUNTS'))
+    .row()
+    .text(ctx.i18n.t('labels.CATEGORIES'))
+    .text(ctx.i18n.t('labels.REPORTS'))
+    .row()
+    .text(ctx.i18n.t('labels.SETTINGS'))
+    .row()
     .resize()
 }
 
@@ -1387,9 +1404,9 @@ export function generateWelcomeMessage(ctx: Context) {
 ```
 
 ```ts
+import type { Composer } from 'grammy'
 // src/bot/menus/index.ts
 import type { Context } from '#root/bot/context.js'
-import type { Composer } from 'grammy'
 
 // Core (cross-feature) root menus attach here — AFTER i18n, BEFORE features.
 // No core menus exist until Phase 2; the guard is in place so double registration
@@ -1407,10 +1424,10 @@ export function registerCoreMenus(bot: Composer<Context>) {
 ```ts
 // src/bot/features/start/index.ts
 import type { Context } from '#root/bot/context.js'
+import type { UserSettings } from '#root/lib/settings-store.js'
 import { Composer } from 'grammy'
 import { command } from '#root/bot/constants.js'
 import { createMainKeyboard, generateWelcomeMessage } from '#root/bot/helpers/keyboard.js'
-import type { UserSettings } from '#root/lib/settings-store.js'
 
 export const startFeature = new Composer<Context>()
 
@@ -1440,8 +1457,8 @@ export type { UserSettings }
 ```ts
 // src/bot/features/unhandled/index.ts
 import type { Context } from '#root/bot/context.js'
-import { createMainKeyboard } from '#root/bot/helpers/keyboard.js'
 import { Composer } from 'grammy'
+import { createMainKeyboard } from '#root/bot/helpers/keyboard.js'
 
 // Interim fallback: v1 routed unknown text into the add-transaction flow; that
 // feature lands in Phase 3 and replaces this handler.
@@ -1452,13 +1469,15 @@ unhandledFeature.on('message:text', ctx =>
 ```
 
 ```ts
+import type { BotConfig, Storage } from 'grammy'
 // src/bot/index.ts
 import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { Logger } from '#root/logger.js'
 import type { FireflyServiceFactory } from '#root/lib/firefly/service.js'
 import type { SettingsStore } from '#root/lib/settings-store.js'
-import { defaultSettings } from '#root/lib/settings-store.js'
+import type { Logger } from '#root/logger.js'
+import { sequentialize } from '@grammyjs/runner'
+import { Bot as TelegramBot } from 'grammy'
 import { startFeature } from '#root/bot/features/start/index.js'
 import { unhandledFeature } from '#root/bot/features/unhandled/index.js'
 import { errorHandler } from '#root/bot/handlers/error.js'
@@ -1467,8 +1486,7 @@ import { registerCoreMenus } from '#root/bot/menus/index.js'
 import { accessControl } from '#root/bot/middlewares/access-control.js'
 import { setLocaleFromSettings } from '#root/bot/middlewares/locale.js'
 import { session } from '#root/bot/middlewares/session.js'
-import { sequentialize } from '@grammyjs/runner'
-import { Bot as TelegramBot, type BotConfig, type Storage } from 'grammy'
+import { defaultSettings } from '#root/lib/settings-store.js'
 
 export interface Dependencies {
   config: Config
@@ -1544,14 +1562,15 @@ git commit -m "feat(v2): createBot DI seam, middleware chain, start + unhandled 
 - [ ] **Step 1: Implement (port of donor `~/code/rukevich/bot/src/main.ts` polling branch, minus webhook, minus Prisma)**
 
 ```ts
+import type { RunnerHandle } from '@grammyjs/runner'
 import process from 'node:process'
+import { run } from '@grammyjs/runner'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
-import { logger } from '#root/logger.js'
 import { createFireflyService } from '#root/lib/firefly/service.js'
-import { createFileSettingsStore } from '#root/lib/settings-store.js'
 import { createSessionStorage } from '#root/lib/session.js'
-import { run, type RunnerHandle } from '@grammyjs/runner'
+import { createFileSettingsStore } from '#root/lib/settings-store.js'
+import { logger } from '#root/logger.js'
 
 const SHUTDOWN_TIMEOUT_MS = 5000
 
@@ -1628,7 +1647,7 @@ git commit -m "feat(v2): polling entry point with graceful shutdown"
 
 ```ts
 // __tests__/lint/architecture.test.ts
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -1704,21 +1723,27 @@ git commit -m "test(v2): architecture lint rules (menus-only, service boundary, 
 - [ ] **Step 0: Add re-exports to `src/lib/firefly/service.ts`** (features must not import generated code — lint rule from Task 10):
 
 ```ts
-export { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-type-filter.js'
 export type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
+export { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-type-filter.js'
 ```
 
 - [ ] **Step 1: Write failing integration tests**
 
 ```ts
+import type { OutgoingRequest } from '../../helpers/bot.js'
 // __tests__/features/settings/settings.test.ts
 import { beforeEach, describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
-import {
-  createTestBot, findButton, generateCallbackQueryUpdate, generateMessageUpdate,
-  initializeBot, setupMockApi, testAccount, type OutgoingRequest,
-} from '../../helpers/bot.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
+import {
+  createTestBot,
+  findButton,
+  generateCallbackQueryUpdate,
+  generateMessageUpdate,
+  initializeBot,
+  setupMockApi,
+  testAccount
+} from '../../helpers/bot.js'
 
 const URL_BUTTON = '🔗 Firefly URL'
 const TOKEN_BUTTON = '🔑 Access Token'
@@ -1827,8 +1852,8 @@ Expected: FAIL (feature missing; /settings falls through to unhandled)
 // src/bot/features/settings/settings.menu.ts
 import type { Context } from '#root/bot/context.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
-import { i18n, locales } from '#root/bot/i18n.js'
 import { createMainKeyboard, generateWelcomeMessage } from '#root/bot/helpers/keyboard.js'
+import { i18n, locales } from '#root/bot/i18n.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 
@@ -1851,10 +1876,14 @@ async function inputStep(ctx: Context, step: 'url' | 'api_url' | 'token', prompt
 export const settingsMenu = new Menu<Context>('settings')
   .submenu(ctx => ctx.i18n.t('labels.SWITCH_LANG'), 'switch-lang', async (ctx) => {
     await ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
-  }).row()
-  .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), ctx => inputStep(ctx, 'url', 'settings.inputFireflyUrl')).row()
-  .text(ctx => ctx.i18n.t('labels.FIREFLY_API_URL_BUTTON'), ctx => inputStep(ctx, 'api_url', 'settings.inputFireflyApiUrl')).row()
-  .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), ctx => inputStep(ctx, 'token', 'settings.inputFireflyAccessToken')).row()
+  })
+  .row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), ctx => inputStep(ctx, 'url', 'settings.inputFireflyUrl'))
+  .row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_API_URL_BUTTON'), ctx => inputStep(ctx, 'api_url', 'settings.inputFireflyApiUrl'))
+  .row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), ctx => inputStep(ctx, 'token', 'settings.inputFireflyAccessToken'))
+  .row()
   .dynamic(async (ctx) => {
     // Render-only: reads durable settings, never writes session (dynamic re-runs on every click).
     const range = new MenuRange<Context>()
@@ -1909,7 +1938,8 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
     const accounts = await ctx.firefly.listAccounts(AccountTypeFilter.Asset)
     if (!accounts.length) {
       return range
-        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${s.fireflyUrl}/accounts/asset`).row()
+        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${s.fireflyUrl}/accounts/asset`)
+        .row()
         .back('🔙', async (ctx) => {
           await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
         })
@@ -1980,7 +2010,7 @@ void i18n
 import type { Context } from '#root/bot/context.js'
 import { Router } from '@grammyjs/router'
 import { defaultSettings } from '#root/lib/settings-store.js'
-import { settingsMenu, settingsText } from './settings.menu.js'
+import { cancelMenu as cancelMenuRef, settingsMenu, settingsText } from './settings.menu.js'
 
 // Keyed on this flow's OWN session field — flows cannot re-point each other.
 export const settingsRouter = new Router<Context>(ctx => ctx.session.settingsFlow?.step)
@@ -2029,8 +2059,6 @@ function cancelMenuImport() {
   // plan text compiles in one pass.
   return cancelMenuRef
 }
-
-import { cancelMenu as cancelMenuRef } from './settings.menu.js'
 ```
 
 **Cleanup instruction:** the `cancelMenuImport` indirection above exists only to keep this plan document simple — in the real file, import `cancelMenu` from `./settings.menu.js` at the top (alongside `settingsMenu`) and use it directly; delete the function and the bottom import.
@@ -2053,8 +2081,9 @@ settingsMenu.register(cancelMenu)
 settingsFeature.use(settingsMenu)
 settingsFeature.use(settingsRouter)
 
-const settingsCommandHandler = (ctx: Context) =>
-  ctx.reply(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+function settingsCommandHandler(ctx: Context) {
+  return ctx.reply(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+}
 
 for (const locale of locales) {
   settingsFeature.hears(i18n.t(locale, 'labels.SETTINGS'), settingsCommandHandler)
@@ -2078,18 +2107,25 @@ Expected: all green. If `settings.badUrl`/`badAccessToken` keys don't exist in `
 - [ ] **Step 6: Add the e2e variant against real Redis**
 
 ```ts
+import type { FireflyService } from '#root/lib/firefly/service.js'
+import { pino } from 'pino'
 // __tests__/e2e/settings-flow.test.ts
 import { describe, expect, it } from 'vitest'
 import { createBot } from '#root/bot/index.js'
 import { createConfig } from '#root/config.js'
-import { createFireflyService, type FireflyService } from '#root/lib/firefly/service.js'
-import { createMemorySettingsStore, defaultSettings } from '#root/lib/settings-store.js'
+import { createFireflyService } from '#root/lib/firefly/service.js'
 import { createSessionStorage } from '#root/lib/session.js'
+import { createMemorySettingsStore, defaultSettings } from '#root/lib/settings-store.js'
 import {
-  createTestConfig, createTestFireflyService, createTestLogger,
-  findButton, generateCallbackQueryUpdate, generateMessageUpdate, initializeBot, setupMockApi,
+  createTestConfig,
+  createTestFireflyService,
+  createTestLogger,
+  findButton,
+  generateCallbackQueryUpdate,
+  generateMessageUpdate,
+  initializeBot,
+  setupMockApi,
 } from '../helpers/bot.js'
-import { pino } from 'pino'
 
 const available = await fetch('http://localhost:6380').then(() => false, () => false) // placeholder probe
 // (replace the probe with: import { redis } from '#root/lib/redis.js'; const available = await redis.connect().then(()=>redis.ping()).then(()=>true).catch(()=>false))
@@ -2143,7 +2179,7 @@ git commit -m "feat(v2): settings feature — durable credentials, lang menu, de
 
 ```ts
 // __tests__/scripts/migrate-v1-sessions.test.ts
-import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -2182,15 +2218,16 @@ Expected: FAIL (module missing)
 - [ ] **Step 3: Implement**
 
 ```ts
+import type { UserSettings } from '#root/lib/settings-store.js'
 // scripts/migrate-v1-sessions.ts
 // One-time migration: v1 stored Firefly credentials inside file-based sessions
 // (sessions/<shard>/<userId>_<chatId>.json → userSettings). v2 keeps credentials
 // in data/settings.json. Usage:
 //   bun run scripts/migrate-v1-sessions.ts [sessionsDir] [outputFile]
-import { readFile, readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { createFileSettingsStore, defaultSettings, type UserSettings } from '#root/lib/settings-store.js'
+import { createFileSettingsStore, defaultSettings } from '#root/lib/settings-store.js'
 
 export async function migrateV1Sessions(sessionsDir: string, outputFile: string) {
   const store = createFileSettingsStore(outputFile)
@@ -2359,4 +2396,3 @@ git commit -m "docs(v2): CLAUDE.md for the v2 architecture"
 ## Execution Order
 
 Tasks 1 → 13 strictly sequential. Task 3 knowingly leaves `tsc --noEmit` red until Task 5 lands (branch is WIP; called out in T3 Step 6).
-

@@ -48,23 +48,23 @@ labels:
 welcome: >
   👋 Hola! Este bot te ayudará a agregar transacciones de forma rápida y cómoda a Firefly III.
   También podrás gestionar algunas entidades de Firefly
-needToSet: "Para empezar a usar el bot, necesitas indicar lo siguiente:"
-setFireflyUrl: "  - *🔗 URL de Firefly* - Dirección web de tu instancia Firefly III"
-setFireflyAccessToken: "  - *🔑 Token de Acceso* Creado en la interfaz web de Firefly III"
-navigateToSettings: "Para continuar el proceso, ve a *🔧 Configuración*."
+needToSet: 'Para empezar a usar el bot, necesitas indicar lo siguiente:'
+setFireflyUrl: '  - *🔗 URL de Firefly* - Dirección web de tu instancia Firefly III'
+setFireflyAccessToken: '  - *🔑 Token de Acceso* Creado en la interfaz web de Firefly III'
+navigateToSettings: 'Para continuar el proceso, ve a *🔧 Configuración*.'
 
 help: >
-  🤖 Por favor, ve a la sección de *🔧 Configuración* del bot y configura los requisitos para empezar a usar el bot.   
-      
+  🤖 Por favor, ve a la sección de *🔧 Configuración* del bot y configura los requisitos para empezar a usar el bot.
+
   ❕ Para agregar una transacción, Primero envía un monto o importe. Debe ser un número, o una expresión matemática,
   por ejemplo `100-5*3`.
   Una vez recibido el monto o importe, el bot pedirá datos adicionales para los parámetros de la transacción.
-    
+
   También puedes agregar transacciones que no requieren datos adicionales,
   enviando la descripción y el importe, por ejemplo
-    
+
   `Cafe 35`
-    
+
   En este caso, se creará un nuevo retiro de la cuenta de activo por defecto
   con la descripción `Cafe` por un importe de `35`
 
@@ -75,15 +75,15 @@ help: >
 common:
   errorOccurred: Ha ocurrido un ERROR!
   noDefaultSourceAccountExist: |
-    🙈 Recórcholis! No tienes ninguna cuenta de Activo de donde sacar dinero!  
-       
+    🙈 Recórcholis! No tienes ninguna cuenta de Activo de donde sacar dinero!
+
     🙏 Por favor, ve a tu página de Firefly III y crea al menos una cuenta de Activo.
 mdlwr:
   noFireflyURLFound: Para usar el bot, necesitas indicar una *🔗 URL de Firefly* válida en la *🔧 Configuración* del Bot.
   noFireflyAccessTokenFound: Para usar el bot, necesitas indicar un *🔑 Token de Acceso* válido en la *🔧 Configuración* del Bot.
 settings:
-  selectBotLang: "Selecciona idioma del Bot:"
-  notSpecified: "🚨 <NO ESPECIFICADO>"
+  selectBotLang: 'Selecciona idioma del Bot:'
+  notSpecified: 🚨 <NO ESPECIFICADO>
   inputFireflyUrl: >
     Indica la dirección web de tu instancia Firefly III.
     Debe tener este formato: *https://firefly.example.com*
@@ -227,27 +227,27 @@ transactions:
 
       💡 Puedes crear Categorías fácilmente, usando el botón *🔖 Categorias*.
     transactionDeleted: Transacción eliminada!
-    couldNotDelete: "No se pudo eliminar la transacción con el id: ${id}"
-    selectRevenueAccount: "Elige una cuenta de Ingreso para retirar *${amount}* de:"
-    selectAssetAccount: "Elige una cuenta de Activo para añadir *${amount}* a:"
-    selectSourceAccount: "Selecciona una cuenta desde donde se va a transferir *${amount}*:"
-    selectDestAccount: "Selecciona una cuenta a la cual transferir:"
-    transactionError: "❗😰 Ocurrió un error durante la creación de la transacción: *${message}*"
+    couldNotDelete: 'No se pudo eliminar la transacción con el id: ${id}'
+    selectRevenueAccount: 'Elige una cuenta de Ingreso para retirar *${amount}* de:'
+    selectAssetAccount: 'Elige una cuenta de Activo para añadir *${amount}* a:'
+    selectSourceAccount: 'Selecciona una cuenta desde donde se va a transferir *${amount}*:'
+    selectDestAccount: 'Selecciona una cuenta a la cual transferir:'
+    transactionError: '❗😰 Ocurrió un error durante la creación de la transacción: *${message}*'
     created: Transacción creada!
     typeForeignAmount: >
       ⚠️ La moneda de la cuenta destino (*${destCurrency}*) es diferente a la moneda de la cuenta origen (*${sourceCurrency}*)!
       Ingresa el importe en moneda foránea, ejemplo, el importe en la moneda de la cuenta destino.
-            
+
       💡 Puedes usar los signos aritméticos para sumar, restar, multiplicar o dividir
       para realizar la operacion deseada en la cuenta origen de la transacción.
-          
+
       Por ejemplo, `*15` puede multiplicar el importe inicial por 15 para obtener el importe en moneda foranea (donde 15 es el tipo de cambio).
 
   edit:
     whatToEdit: ❓¿Qué desea modificar?
     updated: Transacción actualizada!
-    badAmountTyped: "El Importe debe ser un número. Ingresa un nuevo Importe por favor:"
-    badDescriptionTyped: "La Descripción debe ser un texto. Ingresa una nueva Descripción por favor:"
+    badAmountTyped: 'El Importe debe ser un número. Ingresa un nuevo Importe por favor:'
+    badDescriptionTyped: 'La Descripción debe ser un texto. Ingresa una nueva Descripción por favor:'
     typeNewAmount: >
       Ingresa un nuevo importe.
 
@@ -256,14 +256,14 @@ transactions:
       Por ejemplo, "+35" sumará 35 al importe existente de la transacción.
     noCategoriesYet: |
       🤷 Aún no has creado ninguna Categoría.
-            
+
       💡 Puedes agregar nuevas Categorías fácilmente usando el boton *🔖 Categorias* del bot.
-    typeNewDescription: "Ingresa una nueva Descripción:"
-    typeNewDate: "Selecciona una nueva fecha para la transacción:"
-    chooseNewCategory: "Elige una nueva Categoría:"
-    chooseNewSourceAccount: "Elige una nueva Cuenta de origen:"
-    chooseNewDestinationAccount: "Elige una nueva Cuenta de destino:"
-    chooseNewRevenueAccount: "Elige una nueva Cuenta de Ingreso:"
+    typeNewDescription: 'Ingresa una nueva Descripción:'
+    typeNewDate: 'Selecciona una nueva fecha para la transacción:'
+    chooseNewCategory: 'Elige una nueva Categoría:'
+    chooseNewSourceAccount: 'Elige una nueva Cuenta de origen:'
+    chooseNewDestinationAccount: 'Elige una nueva Cuenta de destino:'
+    chooseNewRevenueAccount: 'Elige una nueva Cuenta de Ingreso:'
     noSuchTransactionAnymore: |
       🤖 La transacción (${id}) ya no existe!
       Posiblemente ha sido borrado desde la página web de Firefly.
@@ -291,7 +291,7 @@ categories:
     ${categories.join('\n')}
 
     ¿Está bien?
-  typeNewName: "Ingresa el nuevo nombre de la Categoría:"
+  typeNewName: 'Ingresa el nuevo nombre de la Categoría:'
   confirmDeletion: >
     ¿Estás seguro de que quieres eliminar ésta Categoría?
     Las transacciones relacionadas no serán eliminadas. Éstas se pueden encontrar en la sección de *🔀 Transacciones*.
@@ -310,10 +310,10 @@ reports:
   notImplemented: Disculpe, pero los Reportes aún no se han implementado 😞
 
 datePicker:
-  selectDate: "Selecciona una fecha:"
-  backToMonth: "🔙 Atrás"
+  selectDate: 'Selecciona una fecha:'
+  backToMonth: 🔙 Atrás
   navigation:
-    prevMonth: "‹"
-    nextMonth: "›"
-    prevYear: "‹‹"
-    nextYear: "››"
+    prevMonth: ‹
+    nextMonth: ›
+    prevYear: ‹‹
+    nextYear: ››

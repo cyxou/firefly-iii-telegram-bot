@@ -10,7 +10,7 @@ export const settingsRouter = new Router<Context>(ctx => ctx.session.settingsFlo
 
 settingsRouter.route('url', async (ctx) => {
   const text = ctx.msg!.text!
-  if (!/^(http|https):\/\/[^ "]+$/i.test(text)) {
+  if (!/^(?:http|https):\/\/[^ "]+$/i.test(text)) {
     await ctx.reply(ctx.i18n.t('settings.badUrl'), { reply_markup: cancelMenu })
     return
   }
@@ -22,7 +22,7 @@ settingsRouter.route('url', async (ctx) => {
 
 settingsRouter.route('api_url', async (ctx) => {
   const text = ctx.msg!.text!
-  if (!/^(http|https):\/\/[^ "]+$/i.test(text)) {
+  if (!/^(?:http|https):\/\/[^ "]+$/i.test(text)) {
     await ctx.reply(ctx.i18n.t('settings.badUrl'), { reply_markup: cancelMenu })
     return
   }

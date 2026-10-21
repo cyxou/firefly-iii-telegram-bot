@@ -67,11 +67,11 @@ touches only its own field.
 
 ```ts
 interface SessionData {
-  settingsFlow?:  { step: 'url' | 'api_url' | 'token' }
-  categoryFlow?:  { step: 'add' | 'rename'; category?: CategoryRead }
-  txnDraft?:      TransactionDraft
-  editFlow?:      { transactionId: string; field: 'amount' | 'description' }
-  lists?:         Record<string, { page: number; view?: string }>  // keyed per list
+  settingsFlow?: { step: 'url' | 'api_url' | 'token' }
+  categoryFlow?: { step: 'add' | 'rename', category?: CategoryRead }
+  txnDraft?: TransactionDraft
+  editFlow?: { transactionId: string, field: 'amount' | 'description' }
+  lists?: Record<string, { page: number, view?: string }> // keyed per list
   __language_code?: string
 }
 ```

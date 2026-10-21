@@ -62,7 +62,8 @@
 const log = debug('bot:transactions:helpers')
 try {
   // Main logic
-} catch (err) {
+}
+catch (err) {
   log('Error: %O', err)
   console.error('Error occurred: ', err)
   throw err
@@ -96,6 +97,7 @@ export function handleCallbackQueryError(err: Error, ctx: MyContext) {
 ```typescript
 // Root logger with namespace
 import debug from 'debug'
+
 const rootLog = debug(`bot:root`)
 
 // Extended loggers for specific functions
@@ -182,7 +184,7 @@ export default bot
 
 **Router State Machine:**
 ```typescript
-const router = new Router<MyContext>((ctx) => ctx.session.step)
+const router = new Router<MyContext>(ctx => ctx.session.step)
 router.route(Route.SET_FOREIGN_AMOUNT, setForeignAmountRouteHandler)
 ```
 

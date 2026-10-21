@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
-import { generateMessageUpdate, initializeBot, setupMockApi, createTestBot } from '../../helpers/bot.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
+import { createTestBot, generateMessageUpdate, initializeBot, setupMockApi } from '../../helpers/bot.js'
 
 describe('bot core', () => {
   it('drops updates from users not on the allowlist', async () => {

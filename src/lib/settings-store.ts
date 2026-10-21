@@ -17,8 +17,8 @@ export interface UserSettings {
 }
 
 export interface SettingsStore {
-  get(userId: number): Promise<UserSettings | undefined>
-  save(userId: number, settings: UserSettings): Promise<void>
+  get: (userId: number) => Promise<UserSettings | undefined>
+  save: (userId: number, settings: UserSettings) => Promise<void>
 }
 
 export function defaultSettings(overrides: Partial<UserSettings> = {}): UserSettings {

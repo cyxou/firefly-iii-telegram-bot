@@ -75,4 +75,4 @@
 #     remote: "https://github.com/cyxou/firefly-iii-telegram-bot.git"
 # remote: "git+ssh://git@github.com/cyxou/firefly-iii-telegram-bot.git"
 dolt:
-    port: 3306
+  port: 3306

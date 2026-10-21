@@ -8,9 +8,11 @@ import { defaultSettings } from '#root/lib/settings-store.js'
 export function createMainKeyboard(ctx: Context) {
   return new Keyboard()
     .text(ctx.i18n.t('labels.ACCOUNTS'))
-    .text(ctx.i18n.t('labels.TRANSACTIONS')).row()
+    .text(ctx.i18n.t('labels.TRANSACTIONS'))
+    .row()
     .text(ctx.i18n.t('labels.REPORTS'))
-    .text(ctx.i18n.t('labels.CATEGORIES')).row()
+    .text(ctx.i18n.t('labels.CATEGORIES'))
+    .row()
     .text(ctx.i18n.t('labels.SETTINGS'))
     .resized()
 }

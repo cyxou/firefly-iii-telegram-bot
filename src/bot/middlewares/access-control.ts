@@ -1,6 +1,6 @@
+import type { Middleware } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { Middleware } from 'grammy'
 
 // Ported from legacy/src/index.ts:37-51 (v1 accessControl middleware).
 export function accessControl(config: Config): Middleware<Context> {

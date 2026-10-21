@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -27,11 +27,11 @@ describe('architecture rules', () => {
         continue
       const content = readFileSync(file, 'utf8')
       expect(content, file).not.toMatch(/#root\/lib\/firefly\/(api|generated)/)
-      expect(content, file).not.toMatch(/from '\.+(\/.*)*\/(api|generated)\//)
+      expect(content, file).not.toMatch(/from '\..*\/(api|generated)\//)
     }
   })
 
-  it('SessionData never grows a shared step field', () => {
+  it('sessionData never grows a shared step field', () => {
     const content = readFileSync('src/bot/context.ts', 'utf8')
     expect(content).not.toMatch(/^\s{2}step\??:/m)
   })

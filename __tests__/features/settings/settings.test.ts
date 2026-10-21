@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
-import {
-  createTestBot, createTestFireflyService, findButton, generateCallbackQueryUpdate,
-  generateMessageUpdate, initializeBot, setupMockApi, testAccount,
-} from '../../helpers/bot.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
+import {
+  createTestBot,
+  createTestFireflyService,
+  findButton,
+  generateCallbackQueryUpdate,
+  generateMessageUpdate,
+  initializeBot,
+  setupMockApi,
+  testAccount,
+} from '../../helpers/bot.js'
 
 const URL_BUTTON = '🔗 Firefly URL'
 const TOKEN_BUTTON = '🔑 Access Token'

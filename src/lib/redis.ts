@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { Redis } from 'ioredis'
 
 // Reads REDIS_URL directly instead of going through the config singleton so

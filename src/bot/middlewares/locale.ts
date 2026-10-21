@@ -1,7 +1,7 @@
-import dayjs from 'dayjs'
-import type { Context } from '#root/bot/context.js'
-import { defaultLanguage, locales } from '#root/bot/i18n.js'
 import type { Middleware } from 'grammy'
+import type { Context } from '#root/bot/context.js'
+import dayjs from 'dayjs'
+import { defaultLanguage, locales } from '#root/bot/i18n.js'
 
 // The language of record lives in the durable settings store, not the session
 // (v1 kept it in session.userSettings.language).

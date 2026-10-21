@@ -1,10 +1,10 @@
+import type { I18nContextFlavor } from '@grammyjs/i18n'
+import type { MenuFlavor } from '@grammyjs/menu'
+import type { Context as DefaultContext, SessionFlavor } from 'grammy'
 import type { Config } from '#root/config.js'
-import type { Logger } from '#root/logger.js'
 import type { FireflyService } from '#root/lib/firefly/service.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
-import type { MenuFlavor } from '@grammyjs/menu'
-import type { I18nContextFlavor } from '@grammyjs/i18n'
-import type { Context as DefaultContext, SessionFlavor } from 'grammy'
+import type { Logger } from '#root/logger.js'
 
 export type SettingsFlowStep = 'url' | 'api_url' | 'token'
 

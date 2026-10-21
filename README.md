@@ -1,5 +1,5 @@
 # Firefly III Telegram Bot
-This Telegram bot facilitates creating [Firefly III](https://www.firefly-iii.org/) transactions 
+This Telegram bot facilitates creating [Firefly III](https://www.firefly-iii.org/) transactions
 as well as provides some capabilities to manage other Firefly's entities like
 Accounts, Categories, Reports, etc.
 
@@ -16,14 +16,12 @@ related to all Firefly III versions. Users are encouraged to consider this while
 using the bot with different versions of Firefly III.
 
 For the best experience, it's recommended to use this bot with supported Firefly III versions.
-Your understanding and cooperation are appreciated. 
-
+Your understanding and cooperation are appreciated.
 
 ### Version Compatibility
 
 - Version v2 of this bot has been tested with Firefly III v6.0.30.
 - All other versions of Firefly III might not work properly with this bot.
-
 
 ## Setup
 First you'll have to [generate a Telegram Bot token through BotFather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token). Once you generate the token, keep it safe.
@@ -40,7 +38,7 @@ docker run \
 
 You may also provide BOT_TOKEN via the .env file. For this just rename the
 _example.env_ file to _.env_ and update it with your values. Then you can pass it
-to docker like so:  
+to docker like so:
 ```shell
 docker run \
   --rm --it --init --name firefly-bot \
@@ -49,10 +47,8 @@ docker run \
   ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
 
-
 Once the bot is running, navigate to its **Settings** and provide all the
 necessary information to connect it to your Firefly III instance.
-
 
 ### Manual
 
@@ -109,7 +105,6 @@ docker stop earthly-buildkitd || true
 ```
 More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 
-
 ## TODO
 - [x] Add English translations and make it a default language
 - [x] Add transactions improvements (create transfers and deposits)
@@ -162,7 +157,7 @@ which is hard-coded in `codegen` npm task.
    the transaction under edit. Doing so will result in unexpected behavior.
 
 ## Feedback
-Please join our Telegram group - any feedback is very appreciated!  
+Please join our Telegram group - any feedback is very appreciated!
 
 [![Telegram Group](https://img.shields.io/badge/Support%20Group-white?logo=telegram)](https://t.me/firefly_iii_telegram_bot_group)
 

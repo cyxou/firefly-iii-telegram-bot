@@ -56,7 +56,7 @@
 **Message Processing Flow:**
 
 1. **Bot Reception**: Grammy bot receives update (text/command/callback)
-2. **Middleware Chain**: 
+2. **Middleware Chain**:
    - Rate limiting → Access control → Session attachment → i18n → Settings validation → Cleanup
 3. **Composer Dispatch**: Router determines appropriate composer based on session state
 4. **State Machine**: Router navigates through multi-step workflows (e.g., transaction creation)
@@ -120,7 +120,7 @@
 
 ## Cross-Cutting Concerns
 
-**Logging:** 
+**Logging:**
 - Debug library with hierarchical namespacing (`bot:domain:fn`)
 - Structured logging with context information
 - Error logging in catch blocks

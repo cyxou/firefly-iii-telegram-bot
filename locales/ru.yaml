@@ -39,14 +39,14 @@ labels:
   SHOW_WITHDRAWALS: 📤 Расходы
   TRANSACTIONS: 🔀 Транзакции
   YES: ✅ Да
-  SWITCH_LANG: 🌐Язык 
-  SWITCH_TO_EN: 🇬🇧 Английский 
+  SWITCH_LANG: 🌐Язык
+  SWITCH_TO_EN: 🇬🇧 Английский
   SWITCH_TO_ES: 🇪🇸 Испанский
   SWITCH_TO_RU: 🇷🇺 Русский
   SWITCH_TO_IT: 🇮🇹 Итальянский
 
 welcome: >
-  👋 Привет! Этот бот помогает быстро создавать транзакции в Firefly III, 
+  👋 Привет! Этот бот помогает быстро создавать транзакции в Firefly III,
   а также управлять некоторыми его сущностями.
 needToSet: 'Для работы с ботом необходимо указать:'
 setFireflyUrl: '  - *🔗 Firefly URL* - адрес сайта Firefly III'
@@ -54,36 +54,36 @@ setFireflyAccessToken: '  - *🔑 Access Token*, созданный в веб-и
 navigateToSettings: Загляните в *🔧 Настройки* для продолжения работы.
 
 help: >
-  🤖 Перед использованием бота, пожалуйста, зайдите в его *🔧 Настройки* и укажите необходимые параметры.  
-     
+  🤖 Перед использованием бота, пожалуйста, зайдите в его *🔧 Настройки* и укажите необходимые параметры.
+
   ❕ Для добавления транзакции, отправьте боту сумму транзакции. Это может быть число
   или математическое выражение, например `100-5*3`.
-  После чего бот предложит выбрать дополнительные параметры транзакции.  
-    
+  После чего бот предложит выбрать дополнительные параметры транзакции.
+
   Вы также можете создавать транзакции без дополнительных вопросов от бота просто
-  послав ему текст описания транзакции и сумму. Например:  
-    
+  послав ему текст описания транзакции и сумму. Например:
+
   `Кафе 35`
-    
+
   В этом случае будет создана транзакция списания со счета по умолчанию в размере
-  `35` с названием `Кафе`.  
-    
+  `35` с названием `Кафе`.
+
   ✨ А если вы еще настроите *Правила* в соответствующем разделе Firefly, то
   транзакции будут дополнительно обработаны настроенными для них правилами перед
-  созданием.  
+  созданием.
 
 common:
   errorOccurred: Произошла ошибка!
   noDefaultSourceAccountExist: |
-    🙈 Упс! У вас пока нет ни одного Основного счета для списания средств!   
-       
+    🙈 Упс! У вас пока нет ни одного Основного счета для списания средств!
+
     🙏 Пожалуйста, перейдите на сайт Firefly III и создайте хотя бы один Основной счет.
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
 settings:
   selectBotLang: 'Выберите язык бота:'
-  notSpecified: '🚨<НЕ УКАЗАН>'
+  notSpecified: 🚨<НЕ УКАЗАН>
   inputFireflyUrl: >
     Введите URL-адрес вашего сервера Firefly III.
     Он должен быть в таком же формате, как этот: *https://firefly.example.com*
@@ -98,10 +98,10 @@ settings:
     *Параметры → Профиль → OAuth → Создать новый токен*
   defaultAssetAccountSet: Счет по умолчанию установлен!
   whatDoYouWantToChange: >
-    🔧 *Настройки*  
-       
-    Что Вы хотите изменить?  
-       
+    🔧 *Настройки*
+
+    Что Вы хотите изменить?
+
     *🔗 Firefly URL*: ${fireflyUrl || '🚨<НЕ УКАЗАН>'}
 
     *🔗 Firefly API URL*: ${fireflyApiUrl || '🚨<НЕ УКАЗАН>'}
@@ -110,7 +110,7 @@ settings:
 
     *💳 Счет по умолчанию*: ${defaultSourceAccount.name || '🚨<НЕ УКАЗАН>'}
   selectDefaultAssetAccount: >
-    Выберите счет, с которого будут списываться деньги по умолчанию.  
+    Выберите счет, с которого будут списываться деньги по умолчанию.
     Если его не задать, то будет использован самый первый счет из списка ниже:
   specifySmthFirst: Сперва укажите ${smth}.
   connectionFailed: Соединение НЕ установлено!
@@ -123,8 +123,8 @@ settings:
     Ошибка соединения с сервером Firefly!
     Убедитесь, что вы указали корректный *🔗 Firefly API URL*.
   connectionSuccess: >
-    🎉 Соединение установлено!  
-      
+    🎉 Соединение установлено!
+
     👋 Привет, ${email}!
   badAccessToken: Введеный текст не похож на Access Token. Попробуйте еще раз, пожалуйста.
   badUrl: >
@@ -141,90 +141,90 @@ accounts:
     noAccounts: Счетов пока нет 🤷
     asset: >
       Баланс ваших основных счетов:
-       
+
       <pre>${accounts.replace(/\n$/, '')}
-      
+
       ──────────────────
-      
+
       ИТОГО: ${sums ? sums : '0'}</pre>
     expense: >
       Баланс ваших счетов расходов:
-       
+
       <pre>${accounts.replace(/\n$/, '')}
-      
+
       ──────────────────
-      
+
       ИТОГО: ${sums ? sums : '0'}</pre>
     revenue: >
       Баланс ваших счетов доходов:
-       
+
       <pre>${accounts.replace(/\n$/, '')}
-      
+
       ──────────────────
-      
+
       ИТОГО: ${sums ? sums : '0'}</pre>
     liability: >
       Баланс ваших долговых счетов:
-       
+
       <pre>${accounts.replace(/\n$/, '')}
-      
+
       ──────────────────
-      
+
       ИТОГО: ${sums ? sums : '0'}</pre>
 
 transactions:
   list:
     withdrawal: >
-      Ваши расходы за <b>${day}</b>:  
-        
+      Ваши расходы за <b>${day}</b>:
+
       <pre>${transactions.replace(/\n$/, '')}
-      
+
       ──────────────────
-      
+
       ИТОГО: ${sums ? sums : '0'}</pre>
     deposit: >
-      Ваши доходы за <b>${day}</b>:  
-        
+      Ваши доходы за <b>${day}</b>:
+
       <pre>${transactions.replace(/\n$/, '')}
-      
+
       ──────────────────
-      
+
       ИТОГО: ${sums ? sums : '0'}</pre>
     transfer: >
-      Ваши переводы за <b>${day}</b>:  
-        
+      Ваши переводы за <b>${day}</b>:
+
       <pre>${transactions.replace(/\n$/, '')}</pre>
     noTransactions: 🤷 Транзакций нет
   add:
     dontUnderstand: >
-      🤖 Я пока такое не понимаю.  
-        
-      Введите сумму транзакции, это должно быть число!  
- 
+      🤖 Я пока такое не понимаю.
+
+      Введите сумму транзакции, это должно быть число!
+
       Или введите описание транзации и ее сумму, например, `Продукты 25`.
     withdrawalMessage: >
-      📆 ${date}  
-        
+      📆 ${date}
+
       📤 Добавлено ${description === 'N/A' ? '' : '*' + description + '*'}
-      *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}  
+      *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}
 
       ${source} → ${destination}
     depositMessage: >
-      📆 ${date}  
-       
+      📆 ${date}
+
       📥 Добавлено ${description === 'N/A' ? '' : '*' + description + '* '}
       *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}
-      
+
       from ${source} → ${destination}
     transferMessage: >
-      📆 ${date}  
-         
+      📆 ${date}
+
       ↔️ Перевод *${amount}* *${currency}* со счета *${source}* на счет *${destination}*${foreignAmount ? " (" + foreignAmount + " " + foreignCurrencySymbol +  ")" : ''}${category ? ' в категорию *' + category + '*' : ''}
     selectCategory: В какую категорию добавить *${amount}*?
     noCategoriesYet: |
-      🤷 Вы пока не создали ни одну категорию расходов.   
+      🤷 Вы пока не создали ни одну категорию расходов.
       Транзакция будет создана без категории. Продолжить?
-            
+
       💡 Категории расходов можно создать через кнопку бота *🔖 Категории*
     transactionDeleted: Транзакция удалена!
     couldNotDelete: 'Не удалось удалить транзакцию по id: ${id}'
@@ -236,11 +236,11 @@ transactions:
     created: Транзакция создана!
     typeForeignAmount: >
       ⚠️ The destination account currency (*${destCurrency}*) is different than the source account currency (*${sourceCurrency}*)!
-      Type in the foreign amount i.e. the amount in the destination account currency.  
-        
+      Type in the foreign amount i.e. the amount in the destination account currency.
+
       💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to
-      perform the appropriate operation on the source account amount of the transaction.  
-        
+      perform the appropriate operation on the source account amount of the transaction.
+
       For example, `*15` would multiply the initial amount by 15 to get the foreign amount.
 
   edit:
@@ -255,8 +255,8 @@ transactions:
 
       Например, "+35" - увеличит текущее значение транзакции на 35.'
     noCategoriesYet: |
-      🤷 Вы пока не создали ни одну категорию расходов.   
-            
+      🤷 Вы пока не создали ни одну категорию расходов.
+
       💡 Категории расходов можно создать через кнопку бота *🔖 Категории*
     typeNewDescription: 'Введите новое описание транзакции:'
     typeNewDate: 'Выберите новую дату для транзакции:'
@@ -274,47 +274,47 @@ categories:
     Для просмотра расходов по категории, выберите ее из списка ниже.
     Там же вы сможете переименовать или удалить категорию.
   typeCategories: >
-    Введите названия категорий ваших расходов, так чтобы каждая отдельная категория была с новой строки, например:  
-       
+    Введите названия категорий ваших расходов, так чтобы каждая отдельная категория была с новой строки, например:
+
     💡 Коммуналка
 
     👕 Одежда и обувь
 
-    🥦 Продукты  
-       
+    🥦 Продукты
+
     *P.S.*: Названия категорий расходов в дальнейшем можно будет изменить.
 
     *P.P.S.*: Ничего страшного, если категория с таким именем уже существует.
   confirmCreation: >
-    Будет создано ${categories.length} новых категорий:  
-       
-    ${categories.join('\n')}   
-       
+    Будет создано ${categories.length} новых категорий:
+
+    ${categories.join('\n')}
+
     Все правильно?
   typeNewName: 'Введите новое имя для категории:'
   confirmDeletion: >
-    Уверены, что хотите удалить эту категорию? 
-    Соответствующие транзакции при этом удалены не будут. 
+    Уверены, что хотите удалить эту категорию?
+    Соответствующие транзакции при этом удалены не будут.
     Их можно будет найти в разделе *🔀 Транзакции*
   deleted: Категория удалена!
   noTransactions: Транзакций не было
   transactionsList: >
-    Расходы по категории <b>${categoryName}</b> за <b>${monthName}</b>:  
-      
+    Расходы по категории <b>${categoryName}</b> за <b>${monthName}</b>:
+
     <pre>${transactions.replace(/\n$/, '')}
-    
+
     ──────────────────
-    
+
     ИТОГО: ${sums ? sums : '0'}</pre>
 
 reports:
   notImplemented: Извините, но отчеты пока не реализованы 😞
 
 datePicker:
-  selectDate: "Выберите дату:"
-  backToMonth: "🔙 Назад"
+  selectDate: 'Выберите дату:'
+  backToMonth: 🔙 Назад
   navigation:
-    prevMonth: "‹"
-    nextMonth: "›"
-    prevYear: "‹‹"
-    nextYear: "››"
+    prevMonth: ‹
+    nextMonth: ›
+    prevYear: ‹‹
+    nextYear: ››

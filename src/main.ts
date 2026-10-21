@@ -1,15 +1,16 @@
+import type { RunnerHandle } from '@grammyjs/runner'
 import process from 'node:process'
+import { run } from '@grammyjs/runner'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
-import { logger } from '#root/logger.js'
 import { createFireflyService } from '#root/lib/firefly/service.js'
-import { createFileSettingsStore } from '#root/lib/settings-store.js'
 import { createSessionStorage } from '#root/lib/session.js'
-import { run, type RunnerHandle } from '@grammyjs/runner'
+import { createFileSettingsStore } from '#root/lib/settings-store.js'
+import { logger } from '#root/logger.js'
 
 const SHUTDOWN_TIMEOUT_MS = 5000
 
-try {
+async function main() {
   const bot = createBot(config.botToken, {
     config,
     logger,
@@ -28,10 +29,11 @@ try {
   runner = run(bot)
   logger.info({ msg: 'Bot running', username: bot.botInfo.username })
 }
-catch (error) {
+
+main().catch((error) => {
   logger.error(error)
   process.exit(1)
-}
+})
 
 function onShutdown(cleanUp: () => Promise<void>) {
   let isShuttingDown = false

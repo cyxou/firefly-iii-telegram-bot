@@ -1,7 +1,7 @@
 import path from 'node:path'
+import { I18n, pluralize } from '@grammyjs/i18n'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
-import { I18n, pluralize } from '@grammyjs/i18n'
 
 import 'dayjs/locale/ru'
 import 'dayjs/locale/en'
@@ -24,4 +24,4 @@ const i18n = new I18n({
 
 const locales = ['ru', 'it', 'en', 'es'] as const
 
-export { i18n, locales, defaultLanguage }
+export { defaultLanguage, i18n, locales }

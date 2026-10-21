@@ -1,5 +1,6 @@
+import type { BotError } from 'grammy'
 import type { Context } from '#root/bot/context.js'
-import { GrammyError, HttpError, type BotError } from 'grammy'
+import { GrammyError, HttpError } from 'grammy'
 
 export async function errorHandler(error: BotError<Context>) {
   const { ctx, error: err } = error

@@ -1,13 +1,13 @@
-import axios from 'axios'
 import type { AxiosError, AxiosResponse } from 'axios'
-import * as api from '#root/lib/firefly/api.js'
-import { Configuration } from '#root/lib/firefly/generated/configuration.js'
+import axios from 'axios'
 import {
   AuthenticationError,
   BadRequestError,
   HostNotFoundError,
   ResourceNotFoundError,
 } from '#root/lib/errors.js'
+import * as api from '#root/lib/firefly/api.js'
+import { Configuration } from '#root/lib/firefly/generated/configuration.js'
 
 export interface FireflyClients {
   About: ReturnType<typeof api.AboutApiFactory>
@@ -29,8 +29,9 @@ function resErrorInterceptor(axiosError: AxiosError) {
   if (
     axiosError.code === 'ERR_BAD_REQUEST'
     && (axiosError.response?.data as any)?.exception === 'NotFoundHttpException'
-  )
+  ) {
     return Promise.reject(new ResourceNotFoundError(axiosError.code))
+  }
   if (axiosError.code === 'ERR_BAD_REQUEST')
     return Promise.reject(new BadRequestError((axiosError.response?.data as any)?.message || axiosError.code))
   if (axiosError.code === 'ENOTFOUND' || axiosError.code === 'ECONNREFUSED')

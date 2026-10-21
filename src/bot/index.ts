@@ -1,8 +1,11 @@
+import type { BotConfig, StorageAdapter } from 'grammy'
 import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { Logger } from '#root/logger.js'
 import type { FireflyServiceFactory } from '#root/lib/firefly/service.js'
-import { defaultSettings, type SettingsStore } from '#root/lib/settings-store.js'
+import type { SettingsStore } from '#root/lib/settings-store.js'
+import type { Logger } from '#root/logger.js'
+import { sequentialize } from '@grammyjs/runner'
+import { Bot as TelegramBot } from 'grammy'
 import { settingsFeature } from '#root/bot/features/settings/index.js'
 import { startFeature } from '#root/bot/features/start/index.js'
 import { unhandledFeature } from '#root/bot/features/unhandled/index.js'
@@ -12,8 +15,7 @@ import { registerCoreMenus } from '#root/bot/menus/index.js'
 import { accessControl } from '#root/bot/middlewares/access-control.js'
 import { setLocaleFromSettings } from '#root/bot/middlewares/locale.js'
 import { session } from '#root/bot/middlewares/session.js'
-import { sequentialize } from '@grammyjs/runner'
-import { Bot as TelegramBot, type BotConfig, type StorageAdapter } from 'grammy'
+import { defaultSettings } from '#root/lib/settings-store.js'
 
 export interface Dependencies {
   config: Config

@@ -1,11 +1,12 @@
+import type { UserSettings } from '#root/lib/settings-store.js'
 // One-time migration: v1 stored Firefly credentials inside file-based sessions
 // (sessions/<shard>/<userId>_<chatId>.json → userSettings). v2 keeps credentials
 // in data/settings.json. Usage:
 //   bun run scripts/migrate-v1-sessions.ts [sessionsDir] [outputFile]
-import { readFile, readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { createFileSettingsStore, defaultSettings, type UserSettings } from '#root/lib/settings-store.js'
+import { createFileSettingsStore, defaultSettings } from '#root/lib/settings-store.js'
 
 export async function migrateV1Sessions(sessionsDir: string, outputFile: string) {
   const store = createFileSettingsStore(outputFile)
@@ -16,7 +17,7 @@ export async function migrateV1Sessions(sessionsDir: string, outputFile: string)
     if (!entry.isDirectory())
       continue
     for (const file of await readdir(path.join(sessionsDir, entry.name))) {
-      const match = /^(\d+)_(\d+)\.json$/.exec(file)
+      const match = /^(\d+)_\d+\.json$/.exec(file)
       if (!match) {
         skipped++
         continue

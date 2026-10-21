@@ -13,8 +13,9 @@ settingsMenu.register(cancelMenu)
 
 settingsFeature.use(settingsMenu)
 
-const settingsCommandHandler = (ctx: Context) =>
-  ctx.reply(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+function settingsCommandHandler(ctx: Context) {
+  return ctx.reply(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+}
 
 for (const locale of locales) {
   settingsFeature.hears(i18n.t(locale, 'labels.SETTINGS'), settingsCommandHandler)

@@ -1,7 +1,7 @@
 import type { Context } from '#root/bot/context.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
-import { locales } from '#root/bot/i18n.js'
 import { createMainKeyboard, generateWelcomeMessage } from '#root/bot/helpers/keyboard.js'
+import { locales } from '#root/bot/i18n.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 
@@ -18,18 +18,17 @@ export function settingsText(ctx: Context) {
   })
 }
 
-async function inputStep(ctx: Context, step: 'url' | 'api_url' | 'token', promptKey: string) {
-  ctx.session.settingsFlow = { step }
-  await ctx.editMessageText(ctx.i18n.t(promptKey), { parse_mode: 'Markdown', reply_markup: cancelMenu })
-}
-
 export const settingsMenu = new Menu<Context>('settings')
   .submenu(ctx => ctx.i18n.t('labels.SWITCH_LANG'), 'switch-lang', async (ctx) => {
     await ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
-  }).row()
-  .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), ctx => inputStep(ctx, 'url', 'settings.inputFireflyUrl')).row()
-  .text(ctx => ctx.i18n.t('labels.FIREFLY_API_URL_BUTTON'), ctx => inputStep(ctx, 'api_url', 'settings.inputFireflyApiUrl')).row()
-  .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), ctx => inputStep(ctx, 'token', 'settings.inputFireflyAccessToken')).row()
+  })
+  .row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_URL_BUTTON'), ctx => inputStep(ctx, 'url', 'settings.inputFireflyUrl'))
+  .row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_API_URL_BUTTON'), ctx => inputStep(ctx, 'api_url', 'settings.inputFireflyApiUrl'))
+  .row()
+  .text(ctx => ctx.i18n.t('labels.FIREFLY_ACCESS_TOKEN_BUTTON'), ctx => inputStep(ctx, 'token', 'settings.inputFireflyAccessToken'))
+  .row()
   .dynamic(async (ctx) => {
     // Render-only: reads durable settings, never writes session (dynamic re-runs on every click).
     const range = new MenuRange<Context>()
@@ -51,8 +50,19 @@ export const settingsMenu = new Menu<Context>('settings')
     await ctx.deleteMessage()
   })
 
+export const cancelMenu = new Menu<Context>('setting-cancel')
+  .back('🔙', async (ctx) => {
+    ctx.session.settingsFlow = undefined
+    await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+  })
+
+async function inputStep(ctx: Context, step: 'url' | 'api_url' | 'token', promptKey: string) {
+  ctx.session.settingsFlow = { step }
+  await ctx.editMessageText(ctx.i18n.t(promptKey), { parse_mode: 'Markdown', reply_markup: cancelMenu })
+}
+
 export const langMenu = new Menu<Context>('switch-lang')
-  .dynamic((ctx) => {
+  .dynamic(() => {
     const range = new MenuRange<Context>()
     for (const locale of locales) {
       range.text(
@@ -84,7 +94,8 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
     const accounts = await ctx.firefly.listAccounts(AccountTypeFilter.Asset)
     if (!accounts.length) {
       return range
-        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${s.fireflyUrl}/accounts/asset`).row()
+        .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${s.fireflyUrl}/accounts/asset`)
+        .row()
         .back('🔙', async (ctx) => {
           await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
         })
@@ -113,12 +124,6 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
       await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
     })
     return range
-  })
-
-export const cancelMenu = new Menu<Context>('setting-cancel')
-  .back('🔙', async (ctx) => {
-    ctx.session.settingsFlow = undefined
-    await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
   })
 
 async function testConnection(ctx: Context) {
