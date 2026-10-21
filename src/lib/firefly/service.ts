@@ -4,6 +4,11 @@ import { createFireflyClients } from '#root/lib/firefly/client.js'
 import { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-type-filter.js'
 import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 
+// Features (and tests) import firefly types HERE, never from generated/ —
+// lint-tested in __tests__/lint/architecture.test.ts.
+export { AccountTypeFilter }
+export type { AccountRead }
+
 export interface FireflyService {
   getCurrentUser(): Promise<{ email: string } | null>
   listAccounts(type: AccountTypeFilter, date?: string): Promise<AccountRead[]>
