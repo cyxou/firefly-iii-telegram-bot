@@ -2,9 +2,13 @@
 // (mock transformer, update generators, request queries) and its e2e/helpers.ts
 // (findButton). Prisma-related helpers from the donor are dropped: no database here.
 import type { Update } from '@grammyjs/types'
-import type { Context } from '#root/bot/context.js'
+import type { Context, SessionData } from '#root/bot/context.js'
+import { createBot } from '#root/bot/index.js'
 import type { Bot as TelegramBot } from 'grammy'
+import { MemorySessionStorage } from 'grammy'
 import { createConfig, type Config } from '#root/config.js'
+import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
+import { createMemorySettingsStore } from '#root/lib/settings-store.js'
 import type { FireflyService } from '#root/lib/firefly/service.js'
 import type { AccountRead } from '#root/lib/firefly/service.js'
 import { ResourceNotFoundError } from '#root/lib/errors.js'
@@ -366,4 +370,23 @@ export function createTestFireflyService(
     },
     ...overrides,
   }
+}
+
+export function createTestBot(options: {
+  config?: Partial<Config>
+  settingsStore?: SettingsStore
+  settings?: UserSettings // convenience: seeds the default test user 1111111
+  firefly?: FireflyService
+} = {}) {
+  const config = { ...createTestConfig(), ...options.config }
+  const settingsStore = options.settingsStore
+    ?? createMemorySettingsStore(options.settings ? { 1111111: options.settings } : {})
+  const bot = createBot(config.botToken, {
+    config,
+    logger: createTestLogger(),
+    settingsStore,
+    firefly: () => options.firefly ?? createTestFireflyService(),
+    sessionStorage: new MemorySessionStorage<SessionData>(),
+  })
+  return { bot, config, settingsStore }
 }
