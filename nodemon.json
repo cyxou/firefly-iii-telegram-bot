@@ -1,9 +1,0 @@
-{
-  "watch": [
-    "./src/*"
-  ],
-  "events": {
-    "start": "npm run copylocales",
-    "restart": "npm run copylocales"
-  }
-}
