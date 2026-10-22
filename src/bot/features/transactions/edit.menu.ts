@@ -94,6 +94,8 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
       .row()
       .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`)
       .row()
+      .text({ text: () => ctx.i18n.t('labels.DELETE'), payload: trId }, askDeleteConfirm)
+      .row()
       .text({ text: () => ctx.i18n.t('labels.CLOSE'), payload: trId }, async c => showRecordFromId(c, trId))
     return range
   })
@@ -200,6 +202,30 @@ async function onEditDestSelected(ctx: Context) {
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, { destination_id: accId })
   ctx.session.editFlow = undefined
   return showRecord(ctx, updated, true)
+}
+
+// ---- delete confirm (owner-approved deviation: v1 deleted instantly) ----
+
+export const txnDeleteConfirmMenu = new Menu<Context>('txn-delete-confirm')
+  .dynamic((ctx) => {
+    // ctx.match here is the DELETE button's payload (the trId) — it is what
+    // bakes YES/CANCEL correctly at the confirm-menu attach render
+    const trId = typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined
+    const range = new MenuRange<Context>()
+    if (!trId)
+      return range
+    range
+      .text({ text: c => c.i18n.t('labels.YES'), payload: trId }, async (c) => {
+        await c.firefly.deleteTransaction(trId)
+        await c.deleteMessage() // v1: the message just vanishes
+      })
+      .danger() // menu@1.5 destructive styling
+    range.text({ text: c => c.i18n.t('labels.CANCEL'), payload: trId }, async c => showRecordFromId(c, trId))
+    return range
+  })
+
+async function askDeleteConfirm(ctx: Context) {
+  await ctx.editMessageText(ctx.i18n.t('transactions.edit.confirmDeletion'), { parse_mode: 'Markdown', reply_markup: txnDeleteConfirmMenu })
 }
 
 function promptOf(ctx: Context) {

@@ -247,6 +247,8 @@ transactions:
     whatToEdit: ❓What do you want to change?
     updated: Transaction updated!
     badAmountTyped: 'An amount should be a number. Type in new amount please:'
+    confirmDeletion: >
+      Are you sure that you want to delete this transaction?
     badDescriptionTyped: 'Description needs to be text. Type in new description please:'
     typeNewAmount: >
       Type in new amount.

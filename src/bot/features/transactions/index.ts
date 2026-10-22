@@ -3,7 +3,7 @@ import { Composer } from 'grammy'
 import { i18n, locales } from '#root/bot/i18n.js'
 import { handleAddText } from './add.js'
 import { addTransactionMenu } from './add.menu.js'
-import { editTransactionMenu } from './edit.menu.js'
+import { editTransactionMenu, txnDeleteConfirmMenu } from './edit.menu.js'
 import { showTransactions, transactionsMenu } from './list.menu.js'
 import { openAssetAccountsMenu } from './open-accounts.menu.js'
 import { recordMenu } from './record.menu.js'
@@ -13,7 +13,7 @@ export const transactionsFeature = new Composer<Context>()
 
 // Registered at the composition root (categories-feature precedent): nothing
 // else imports edit.menu.ts, so a registration living there would never run.
-recordMenu.register([editTransactionMenu])
+recordMenu.register([editTransactionMenu, txnDeleteConfirmMenu])
 
 transactionsFeature.use(recordMenu)
 transactionsFeature.use(addTransactionMenu)

@@ -238,3 +238,28 @@ describe('edit date (stateless calendar)', () => {
     expect(findButton(api.getOutgoingRequests(), '‹')).toBeDefined() // back in month view
   })
 })
+
+describe('delete confirmation', () => {
+  it('delete asks for confirmation; CANCEL returns to the record', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('❌ Delete')
+    const confirm = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((confirm.payload as any).text).toContain('Are you sure')
+    await click('✖ Cancel')
+    expect((await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))).toHaveLength(1)
+    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((edit.payload as any).text).toContain('Groceries')
+  })
+
+  it('confirming deletes the transaction and removes the message', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('❌ Delete')
+    await click('✅ Yes')
+    expect((await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))).toHaveLength(0)
+    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
+  })
+})
