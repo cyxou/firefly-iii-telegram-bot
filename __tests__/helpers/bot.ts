@@ -47,7 +47,9 @@ interface SentMessage {
 
 // Send methods that create a message the real API would later allow editing.
 // Reply-keyboard-only methods (sendChatAction etc.) are not messages.
-const SEND_TEXT_METHODS = new Set(['sendMessage'])
+// Rich sends count as text: Bot API editMessageText edits "text, rich and game
+// messages" — same edit semantics.
+const SEND_TEXT_METHODS = new Set(['sendMessage', 'sendRichMessage'])
 const SEND_MEDIA_METHODS = new Set([
   'sendPhoto',
   'sendVideo',
@@ -85,7 +87,13 @@ export function setupMockApi(bot: TelegramBot<Context>) {
       payload,
     })
 
-    const p = payload as { chat_id?: number, message_id?: number, inline_message_id?: string, text?: string }
+    const p = payload as {
+      chat_id?: number
+      message_id?: number
+      inline_message_id?: string
+      text?: string
+      rich_message?: { markdown?: string }
+    }
 
     if (SEND_TEXT_METHODS.has(method) && p.chat_id !== undefined) {
       const id = trackSent(p.chat_id, 'text')
@@ -97,6 +105,7 @@ export function setupMockApi(bot: TelegramBot<Context>) {
           date: Math.floor(Date.now() / 1000),
           chat: { id: p.chat_id, type: 'private', first_name: 'Mock' },
           text: p.text,
+          ...(p.rich_message ? { rich_message: p.rich_message } : {}),
         } as ResultType,
       }
     }
@@ -301,6 +310,16 @@ export function getLastMessage(outgoingRequests: OutgoingRequest[]): { text: str
   if (!lastRequest || !isTextPayload(lastRequest.payload))
     return null
   return lastRequest.payload
+}
+
+/** Markdown of the most recent rich send/edit, if any. */
+export function getLastRichMarkdown(requests: OutgoingRequest[]): string | undefined {
+  for (const request of [...requests].reverse()) {
+    const markdown = (request.payload as { rich_message?: { markdown?: string } })?.rich_message?.markdown
+    if (markdown !== undefined)
+      return markdown
+  }
+  return undefined
 }
 
 // Helper to check if payload is a sendPhoto call
