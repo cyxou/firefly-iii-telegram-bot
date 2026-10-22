@@ -35,6 +35,7 @@ export async function handleAddText(ctx: Context) {
       },
       categoryPage: 1,
     }
+    ctx.session.editFlow = undefined // a new add wins over a half-finished edit prompt
     return ctx.reply(ctx.i18n.t('transactions.add.selectCategory', { amount }), {
       parse_mode: 'Markdown',
       reply_markup: addTransactionMenu,
@@ -52,5 +53,6 @@ export async function handleAddText(ctx: Context) {
   // Drop any half-finished flow, else its menu message can later resume with a
   // stale amount/date (v1 session-cleanup semantics, scoped to our field)
   ctx.session.txnFlow = undefined
+  ctx.session.editFlow = undefined // a new add wins over a half-finished edit prompt
   return showRecord(ctx, tr, false)
 }

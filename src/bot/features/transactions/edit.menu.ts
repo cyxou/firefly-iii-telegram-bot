@@ -74,6 +74,16 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
         return c.editMessageText(c.i18n.t('transactions.edit.chooseNewDestinationAccount'))
       })
       .row()
+      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DESCRIPTION'), payload: trId }, 'edit-description', async (c) => {
+        c.session.editFlow = { transactionId: trId, step: 'description', promptMessage: promptOf(c) }
+        // markup-less edit: navInstaller injects edit-description (the 🔙 prompt keyboard)
+        return c.editMessageText(c.i18n.t('transactions.edit.typeNewDescription'))
+      })
+      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_AMOUNT'), payload: trId }, 'edit-amount', async (c) => {
+        c.session.editFlow = { transactionId: trId, step: 'amount', promptMessage: promptOf(c) }
+        return c.editMessageText(c.i18n.t('transactions.edit.typeNewAmount'))
+      })
+      .row()
       .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`)
       .row()
       .text({ text: () => ctx.i18n.t('labels.CLOSE'), payload: trId }, async c => showRecordFromId(c, trId))
@@ -184,4 +194,16 @@ async function onEditDestSelected(ctx: Context) {
   return showRecord(ctx, updated, true)
 }
 
-editTransactionMenu.register([editCategoryMenu, editSourceMenu, editDestMenu])
+function promptOf(ctx: Context) {
+  // the prompt IS the edited menu message (v1 deleteBotsMessage, as plain ids)
+  return { chatId: ctx.chat!.id, messageId: ctx.msg!.message_id }
+}
+
+// Prompt keyboards while waiting for text (v1 stub menus: 🔙 only).
+export const editAmountMenu = new Menu<Context>('edit-amount')
+  .text('🔙', cancelTextPrompt)
+
+export const editDescriptionMenu = new Menu<Context>('edit-description')
+  .text('🔙', cancelTextPrompt)
+
+editTransactionMenu.register([editCategoryMenu, editSourceMenu, editDestMenu, editAmountMenu, editDescriptionMenu])

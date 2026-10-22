@@ -124,3 +124,66 @@ describe('edit accounts', () => {
     expect(split.destination_id).toBe('2')
   })
 })
+
+describe('edit amount/description text flows', () => {
+  it('amount: prompt → text → update, prompt deleted, fresh record', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('💸 Amount')
+    const prompt = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((prompt.payload as any).text).toContain('amount')
+    await send('30')
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    expect(split.amount).toBe('30')
+    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
+    const reply = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect((reply.payload as any).text).toContain('30')
+  })
+
+  it('amount composes with current (v1): "+5" on 25 → 30', async () => {
+    const { click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('💸 Amount')
+    await send('+5')
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    expect(split.amount).toBe('30')
+  })
+
+  it('bad amount stays in the flow and retries', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('💸 Amount')
+    await send('abc')
+    const err = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect((err.payload as any).text).toContain('amount')
+    await send('40')
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    expect(split.amount).toBe('40')
+  })
+
+  it('description: prompt → text → update', async () => {
+    const { click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('📝 Description')
+    await send('Beer')
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    expect(split.description).toBe('Beer')
+  })
+
+  it('🔙 on the prompt cancels: editFlow cleared, record re-rendered, next text is a NEW add', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('💸 Amount')
+    await click('🔙')
+    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((edit.payload as any).text).toContain('Groceries')
+    await send('Cinema 9')
+    const all = await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    expect(all).toHaveLength(2) // second text was parsed as a new quick add, not an edit
+  })
+})

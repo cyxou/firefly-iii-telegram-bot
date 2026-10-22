@@ -7,7 +7,7 @@ import { editTransactionMenu } from './edit.menu.js'
 import { showTransactions, transactionsMenu } from './list.menu.js'
 import { openAssetAccountsMenu } from './open-accounts.menu.js'
 import { recordMenu } from './record.menu.js'
-import { transactionsRouter } from './router.js'
+import { editRouter, transactionsRouter } from './router.js'
 
 export const transactionsFeature = new Composer<Context>()
 
@@ -19,9 +19,10 @@ transactionsFeature.use(recordMenu)
 transactionsFeature.use(addTransactionMenu)
 transactionsFeature.use(transactionsMenu)
 transactionsFeature.use(openAssetAccountsMenu)
-// router ABOVE the text handler: the foreign-amount text is routed, not parsed
-// as a new transaction
+// routers ABOVE the text handler: the foreign-amount / edit-prompt texts are
+// routed, not parsed as new transactions
 transactionsFeature.use(transactionsRouter)
+transactionsFeature.use(editRouter)
 
 // hears ABOVE on('message:text') — the main-keyboard label must not be parsed
 // as a transaction amount
