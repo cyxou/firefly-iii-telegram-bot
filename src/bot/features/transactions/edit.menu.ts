@@ -1,6 +1,8 @@
 import type { Context } from '#root/bot/context.js'
-import type { TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
+import type { CategoryRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
+import { twoColumnRange } from '#root/bot/helpers/menu.js'
+import { CATEGORIES_PER_PAGE } from './add.menu.js'
 import { showRecord } from './record.js'
 
 // v1 updateFireflyTransaction port: fetch fresh, re-send the FULL split
@@ -58,8 +60,59 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
     if (!trId)
       return range // rendered outside an edit click (stale keyboard): empty
     range
+      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_CATEGORY'), payload: trId }, 'edit-category', enterEditFlow)
+      .row()
       .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`)
       .row()
       .text({ text: () => ctx.i18n.t('labels.CLOSE'), payload: trId }, async c => showRecordFromId(c, trId))
     return range
   })
+
+// Edit category picker: same shape as the add-flow picker, but the page
+// counter and trId live in editFlow (render reads session, handlers mutate).
+export const editCategoryMenu = new Menu<Context>('edit-category')
+  .dynamic(async (ctx) => {
+    const range = new MenuRange<Context>()
+    const flow = ctx.session.editFlow
+    if (!flow)
+      return range // rendered outside a live flow (stale attach): empty grid
+    let categories: CategoryRead[] = []
+    try {
+      categories = await ctx.firefly.listCategories()
+    }
+    catch (err) {
+      ctx.logger.warn({ err }, 'edit category picker render failed') // dead range, live nav row
+    }
+    const page = flow.categoryPage ?? 1
+    const totalPages = Math.max(1, Math.ceil(categories.length / CATEGORIES_PER_PAGE))
+    const slice = categories.slice((page - 1) * CATEGORIES_PER_PAGE, page * CATEGORIES_PER_PAGE)
+    twoColumnRange(range, slice, (r, cat) => {
+      r.text({ text: () => cat.attributes.name, payload: cat.id }, onEditCategorySelected)
+    })
+    if (page > 1) {
+      range.text('<<', async (c) => {
+        c.session.editFlow!.categoryPage = page - 1
+        c.menu.update() // menu@1.5: lazy void — no await needed
+      })
+    }
+    if (page < totalPages) {
+      range.text('>>', async (c) => {
+        c.session.editFlow!.categoryPage = page + 1
+        c.menu.update()
+      })
+    }
+    return range.row()
+  })
+  .text('🔙', cancelTextPrompt) // v1: every edit submenu's 🔙 = back to record
+
+async function onEditCategorySelected(ctx: Context) {
+  const flow = ctx.session.editFlow
+  const categoryId = String(ctx.match ?? '')
+  if (!flow || !categoryId)
+    return staleExit(ctx)
+  const updated = await applyTransactionUpdate(ctx, flow.transactionId, { category_id: categoryId })
+  ctx.session.editFlow = undefined
+  return showRecord(ctx, updated, true)
+}
+
+editTransactionMenu.register([editCategoryMenu])

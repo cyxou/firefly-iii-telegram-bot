@@ -7,7 +7,7 @@ import { buildSplit } from './create.js'
 import { showRecord } from './record.js'
 import { newDepositMenu, newDepositTargetMenu, newTransferMenu, newTransferTargetMenu, txnForeignMenu } from './transfer.menu.js'
 
-const CATEGORIES_PER_PAGE = 20 // v1 CATEGORIES_PAGE_LIMIT
+export const CATEGORIES_PER_PAGE = 20 // v1 CATEGORIES_PAGE_LIMIT
 
 // Category picker for the amount-only flow (v1 addTransactionMenu). Categories
 // re-fetch per render (render callbacks re-run on every click and must not

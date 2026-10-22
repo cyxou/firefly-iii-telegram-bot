@@ -70,3 +70,31 @@ describe('record menu + edit shell', () => {
     expect(findButton(api.getOutgoingRequests(), '✏️ Edit')).toBeDefined()
   })
 })
+
+describe('edit category', () => {
+  it('picker lists categories; picking one updates and re-renders the record', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('🔖 Category')
+    await click('Food')
+    const updated = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!
+    expect(updated.attributes.transactions![0]!.category_id).toBe('1')
+    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((edit.payload as any).text).toContain('Food')
+  })
+
+  it('🔙 from the picker returns to the record without updating', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('🔖 Category')
+    await click('🔙')
+    const updated = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!
+    // buildSplit sent category_id: '' (v1: Firefly treats '' as absent) — the
+    // untouched stored value IS that empty string, i.e. no category was set
+    expect(updated.attributes.transactions![0]!.category_id).toBe('')
+    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((edit.payload as any).text).toContain('Groceries')
+  })
+})
