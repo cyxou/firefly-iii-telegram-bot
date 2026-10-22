@@ -69,6 +69,22 @@ describe('settings feature', () => {
     expect((replies.at(-1)!.payload as any).text).toContain('t...')
   })
 
+  // Regression: token tail "r_cs" made Telegram reject the whole settings screen
+  // with "can't parse entities" — legacy Markdown read _ as an italic opener.
+  it('escapes Markdown metachars in stored values (token tail, URL)', async () => {
+    const { api, send } = await setup({
+      settings: defaultSettings({
+        fireflyUrl: 'http://my_host:8888',
+        fireflyApiUrl: 'http://my_host:8888/api',
+        fireflyAccessToken: `ey${'A'.repeat(600)}r_cs`,
+      }),
+    })
+    await send('/settings')
+    const text = (api.getOutgoingRequests().find(r => r.method === 'sendMessage')?.payload as any).text
+    expect(text).toContain('r\\_cs')
+    expect(text).toContain('my\\_host')
+  })
+
   it('check connection reports the firefly user email', async () => {
     const { api, send, click } = await setup({
       settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),

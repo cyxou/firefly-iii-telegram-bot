@@ -1,6 +1,7 @@
 import type { Context } from '#root/bot/context.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
 import { createMainKeyboard, generateWelcomeMessage } from '#root/bot/helpers/keyboard.js'
+import { escapeMarkdown } from '#root/bot/helpers/markdown.js'
 import { locales } from '#root/bot/i18n.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
@@ -11,10 +12,11 @@ export function settingsText(ctx: Context) {
   const s = ctx.settings ?? defaultSettings()
   const accessToken = s.fireflyAccessToken.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
   return ctx.i18n.t('settings.whatDoYouWantToChange', {
-    fireflyUrl: s.fireflyUrl,
-    fireflyApiUrl: s.fireflyApiUrl,
-    accessToken: s.fireflyAccessToken ? accessToken : '',
-    defaultSourceAccount: s.defaultSourceAccount,
+    // values are user-controlled and this text is parsed as Markdown — escape
+    fireflyUrl: escapeMarkdown(s.fireflyUrl),
+    fireflyApiUrl: escapeMarkdown(s.fireflyApiUrl),
+    accessToken: s.fireflyAccessToken ? escapeMarkdown(accessToken) : '',
+    defaultSourceAccount: { ...s.defaultSourceAccount, name: escapeMarkdown(s.defaultSourceAccount.name) },
   })
 }
 
