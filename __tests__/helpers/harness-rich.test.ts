@@ -1,6 +1,6 @@
 import { Bot } from 'grammy'
 import { describe, expect, it } from 'vitest'
-import { getLastRichMarkdown, generateMessageUpdate, initializeBot, setupMockApi } from './bot.js'
+import { generateMessageUpdate, getLastRichMarkdown, initializeBot, setupMockApi } from './bot.js'
 
 describe('mock API rich messages', () => {
   it('records sendRichMessage with a message id, and edits target it', async () => {

@@ -28,4 +28,9 @@ describe('createFireflyClients', () => {
     createFireflyClients({ fireflyApiUrl: 'https://x/api', fireflyAccessToken: 't3' })
     expect(handlerCount()).toBe(mid)
   })
+
+  it('wires the Insight api', () => {
+    const clients = createFireflyClients({ fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'tok-insight' })
+    expect(typeof clients.Insight.insightExpenseCategory).toBe('function')
+  })
 })

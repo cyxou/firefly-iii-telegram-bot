@@ -5,7 +5,7 @@ import type { Update } from '@grammyjs/types'
 import type { Bot as TelegramBot } from 'grammy'
 import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { AccountRead, FireflyService } from '#root/lib/firefly/service.js'
+import type { AccountRead, CategoryExpenseSummary, CategoryRead, FireflyService, TransactionRead } from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
 import type { Logger } from '#root/logger.js'
 import { MemorySessionStorage } from 'grammy'
@@ -371,26 +371,90 @@ export function createTestLogger() {
   return pino({ level: 'silent' })
 }
 
-export function testAccount(id: string, name: string, type = 'asset'): AccountRead {
-  return { id, type: 'account', attributes: { name, type, active: true } } as unknown as AccountRead
+export function testAccount(id: string, name: string, options: {
+  type?: string
+  active?: boolean
+  balance?: string
+  currencySymbol?: string
+  decimalPlaces?: number
+} = {}): AccountRead {
+  const { type = 'asset', active = true, balance = '100.00', currencySymbol = 'USD', decimalPlaces = 2 } = options
+  return {
+    id,
+    type: 'account',
+    attributes: { name, type, active, current_balance: balance, currency_symbol: currencySymbol, currency_decimal_places: decimalPlaces },
+  } as unknown as AccountRead
+}
+
+export function testCategory(id: string, name: string): CategoryRead {
+  return { id, type: 'category', attributes: { name } } as unknown as CategoryRead
+}
+
+export function testCategoryTransaction(description: string, options: {
+  amount?: string
+  currencySymbol?: string
+  date?: string
+} = {}): TransactionRead {
+  const { amount = '12.34', currencySymbol = '$', date = '2026-10-01T12:00:00+00:00' } = options
+  return {
+    type: 'transaction',
+    attributes: { transactions: [{ description, amount, currency_symbol: currencySymbol, date }] },
+  } as unknown as TransactionRead
 }
 
 export function createTestFireflyService(
-  fixtures: { accounts?: AccountRead[] } = {},
+  fixtures: {
+    accounts?: AccountRead[]
+    categories?: CategoryRead[]
+    categoryTransactions?: Record<string, TransactionRead[]>
+    categoryInsights?: Record<string, CategoryExpenseSummary[]>
+  } = {},
   overrides: Partial<FireflyService> = {},
 ): FireflyService {
+  const categories = [...(fixtures.categories ?? [])] // mutable copy: store/update/delete are observable in re-renders
+  let nextCategoryId = 100
   return {
     async getCurrentUser() {
       return { email: 'test@example.com' }
     },
     async listAccounts(type) {
-      return (fixtures.accounts ?? []).filter(a => !type || String(a.attributes.type) === String(type))
+      return (fixtures.accounts ?? [])
+        .filter(a => a.attributes.active !== false) // service parity: filterActiveAccounts
+        .filter(a => !type || String(a.attributes.type) === String(type))
     },
     async getAccount(id) {
       const acc = (fixtures.accounts ?? []).find(a => a.id === id)
       if (!acc)
         throw new ResourceNotFoundError('404')
       return acc
+    },
+    async listCategories() {
+      return [...categories]
+    },
+    async getCategory(id) {
+      const found = categories.find(c => c.id === id)
+      if (!found)
+        throw new ResourceNotFoundError('404')
+      return found
+    },
+    async storeCategory(name) {
+      categories.push(testCategory(String(nextCategoryId++), name))
+    },
+    async updateCategory(id, name) {
+      const found = categories.find(c => c.id === id)
+      if (found)
+        (found.attributes as { name: string }).name = name
+    },
+    async deleteCategory(id) {
+      const idx = categories.findIndex(c => c.id === id)
+      if (idx !== -1)
+        categories.splice(idx, 1)
+    },
+    async listTransactionsByCategory(id) {
+      return fixtures.categoryTransactions?.[id] ?? []
+    },
+    async insightExpenseCategory(_start, _end, categoryId) {
+      return fixtures.categoryInsights?.[String(categoryId)] ?? []
     },
     ...overrides,
   }

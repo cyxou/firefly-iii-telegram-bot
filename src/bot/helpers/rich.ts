@@ -4,7 +4,7 @@
 
 /** Escape a value interpolated into rich-markdown PROSE (bold names, headings). */
 export function escapeRichMarkdown(value: string): string {
-  return value.replace(/([\\`*_\[\]~|])/g, '\\$1')
+  return value.replace(/([\\`*_[\]~|])/g, '\\$1')
 }
 
 function escapeCell(cell: string): string {

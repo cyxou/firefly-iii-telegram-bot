@@ -1,4 +1,6 @@
 import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
+import type { CategoryRead } from '#root/lib/firefly/generated/model/category-read.js'
+import type { TransactionRead } from '#root/lib/firefly/generated/model/transaction-read.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
 import dayjs from 'dayjs'
 import { createFireflyClients } from '#root/lib/firefly/client.js'
@@ -7,12 +9,24 @@ import { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-typ
 // Features (and tests) import firefly types HERE, never from generated/ —
 // lint-tested in __tests__/lint/architecture.test.ts.
 export { AccountTypeFilter }
-export type { AccountRead }
+export type { AccountRead, CategoryRead, TransactionRead }
+
+export interface CategoryExpenseSummary {
+  currency: string
+  difference: number
+}
 
 export interface FireflyService {
   getCurrentUser: () => Promise<{ email: string } | null>
   listAccounts: (type: AccountTypeFilter, date?: string) => Promise<AccountRead[]>
   getAccount: (id: string) => Promise<AccountRead>
+  listCategories: () => Promise<CategoryRead[]>
+  getCategory: (id: string) => Promise<CategoryRead>
+  storeCategory: (name: string) => Promise<void>
+  updateCategory: (id: string, name: string) => Promise<void>
+  deleteCategory: (id: string) => Promise<void>
+  listTransactionsByCategory: (id: string, start: string, end: string) => Promise<TransactionRead[]>
+  insightExpenseCategory: (start: string, end: string, categoryId: number) => Promise<CategoryExpenseSummary[]>
 }
 
 export type FireflyServiceFactory = (settings: UserSettings) => FireflyService
@@ -43,6 +57,36 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     async getAccount(id) {
       const res = await clients().Accounts.getAccount(id)
       return res.data.data
+    },
+    // ponytail: 500-category cap (v1 ceiling); real pagination arrives with the Phase 3 lists standard.
+    async listCategories() {
+      const res = await clients().Categories.listCategory(undefined, 500)
+      return res.data.data ?? []
+    },
+    async getCategory(id) {
+      const res = await clients().Categories.getCategory(id)
+      return res.data.data
+    },
+    async storeCategory(name) {
+      await clients().Categories.storeCategory({ name })
+    },
+    async updateCategory(id, name) {
+      await clients().Categories.updateCategory(id, { name })
+    },
+    async deleteCategory(id) {
+      await clients().Categories.deleteCategory(id)
+    },
+    // ponytail: 100-transaction single page (v1 ceiling); page counter arrives in Phase 3.
+    async listTransactionsByCategory(id, start, end) {
+      const res = await clients().Categories.listTransactionByCategory(id, undefined, 100, 1, start, end)
+      return res.data.data ?? []
+    },
+    async insightExpenseCategory(start, end, categoryId) {
+      const res = await clients().Insight.insightExpenseCategory(start, end, undefined, [categoryId])
+      return (res.data ?? []).map(item => ({
+        currency: item.currency_code ?? '',
+        difference: item.difference_float ?? 0,
+      }))
     },
   }
 }

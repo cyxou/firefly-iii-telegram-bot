@@ -13,6 +13,7 @@ export interface FireflyClients {
   About: ReturnType<typeof api.AboutApiFactory>
   Accounts: ReturnType<typeof api.AccountsApiFactory>
   Categories: ReturnType<typeof api.CategoriesApiFactory>
+  Insight: ReturnType<typeof api.InsightApiFactory>
   Transactions: ReturnType<typeof api.TransactionsApiFactory>
 }
 
@@ -70,6 +71,7 @@ export function createFireflyClients(settings: {
     About: api.AboutApiFactory(configuration),
     Accounts: api.AccountsApiFactory(configuration),
     Categories: api.CategoriesApiFactory(configuration),
+    Insight: api.InsightApiFactory(configuration),
     Transactions: api.TransactionsApiFactory(configuration),
   }
   cache.set(key, clients)
