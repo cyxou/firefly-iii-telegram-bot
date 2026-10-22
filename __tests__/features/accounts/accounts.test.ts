@@ -55,6 +55,9 @@ describe('accounts feature', () => {
     expect(markdown).not.toContain('Hidden') // inactive accounts filtered (service parity)
     expect(markdown).not.toContain('Wallet') // expense account not in the asset view
     expect(markdown).toContain('SUM:')
+    // GFM: a table cannot interrupt a paragraph — the header row needs a blank
+    // line before it or Telegram renders the pipes as literal text (live bug 8wh)
+    expect(markdown).toMatch(/\n\n\|/)
   })
 
   it('sums use the v1 running-ceil quirk (USD 1234.5 + 980.004 → 2216)', async () => {

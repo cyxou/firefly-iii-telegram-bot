@@ -61,12 +61,15 @@ function accountsMarkdown(ctx: Context, view: AccountTypeFilter, accounts: Accou
     Number.parseFloat(acc.attributes.current_balance || '').toFixed(acc.attributes.currency_decimal_places ?? 2),
     acc.attributes.currency_symbol ?? '',
   ])
+  // GFM: a table cannot interrupt a paragraph — the leading/trailing \n plus the
+  // template's single blank line give the header row the blank line it needs
+  // (live bug 8wh: pipes rendered as literal text without it)
   const table = rows.length
-    ? markdownTable(
-        [ctx.i18n.t('tables.name'), ctx.i18n.t('tables.balance'), ctx.i18n.t('tables.currency')],
-        rows,
-        ['left', 'right', 'left'],
-      )
+    ? `\n${markdownTable(
+      [ctx.i18n.t('tables.name'), ctx.i18n.t('tables.balance'), ctx.i18n.t('tables.currency')],
+      rows,
+      ['left', 'right', 'left'],
+    )}\n`
     : ctx.i18n.t('accounts.list.noAccounts')
   return ctx.i18n.t(`accounts.list.${String(view).toLowerCase()}`, {
     accounts: table,

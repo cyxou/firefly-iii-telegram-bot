@@ -135,11 +135,13 @@ function transactionsMarkdown(ctx: Context, transactions: TransactionRead[]): st
       `${Number.parseFloat(tr.amount).toFixed(2)} ${tr.currency_symbol ?? ''}`,
     ]]
   })
-  return markdownTable(
+  // leading/trailing \n = blank line around the table (GFM tables can't
+  // interrupt a paragraph — see accounts.menu.ts, bug 8wh)
+  return `\n${markdownTable(
     [ctx.i18n.t('tables.date'), ctx.i18n.t('tables.description'), ctx.i18n.t('tables.amount')],
     rows,
     ['left', 'left', 'right'],
-  )
+  )}\n`
 }
 
 // ---- list ----

@@ -44,6 +44,11 @@ They are conventions backed by lint tests where noted — extend them, never byp
 - Tabular data renders as GFM markdown via `markdownTable()` (`bot/helpers/rich.ts`):
   localized column headers come from the shared `tables.*` locale keys; cells escape
   themselves; prose interpolations go through `escapeRichMarkdown()`.
+- **A GFM table cannot interrupt a paragraph**: the header row must be preceded by a
+  blank line or Telegram renders the pipes as literal text (live bug, beads 8wh).
+  The call sites wrap every `markdownTable()` string in `\n…\n` — folded-YAML
+  templates only carry one blank line, which folds to a single `\n` and is NOT
+  enough. Tests pin this with `expect(markdown).toMatch(/\n\n\|/)`.
 - `accounts.list.*` / `categories.transactionsList` locale values interpolate
   `${accounts}`/`${transactions}` = the rendered table string, plus `${sums}`.
 - The message and the keyboard are independent: rich payload via `rich_message`,
