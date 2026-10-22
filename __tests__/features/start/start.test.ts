@@ -41,7 +41,7 @@ describe('bot core', () => {
     expect((send?.payload as any).text).toContain(i18n.t('ru', 'welcome').slice(0, 10))
   })
 
-  it('answers /help, and unknown text falls to unhandled for configured users', async () => {
+  it('answers /help, and unknown text gets dontUnderstand for configured users', async () => {
     const { bot } = createTestBot({
       settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),
     })
@@ -53,6 +53,6 @@ describe('bot core', () => {
       .filter(r => r.method === 'sendMessage')
       .map(r => (r.payload as any).text)
     expect(texts[0]).toContain(i18n.t('en', 'help').slice(0, 10))
-    expect(texts[1]).toContain(i18n.t('en', 'help').slice(0, 10))
+    expect(texts[1]).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10))
   })
 })

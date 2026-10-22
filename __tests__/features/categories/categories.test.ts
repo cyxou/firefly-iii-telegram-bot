@@ -165,10 +165,11 @@ describe('categories flows', () => {
     await click(i18n.t('en', 'labels.CANCEL'))
     last = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
     expect((last.payload as any).text).toContain(i18n.t('en', 'categories.list').slice(0, 12))
-    // flow cleared: plain text no longer routes into the add flow
+    // flow cleared: plain text no longer routes into the add flow (it now lands
+    // in the transactions add flow's dontUnderstand reply)
     await bot.handleUpdate(generateMessageUpdate('not categories input'))
     const texts = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').map(r => (r.payload as any).text)
-    expect(texts.at(-1)).toContain(i18n.t('en', 'help').slice(0, 8))
+    expect(texts.at(-1)).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 8))
   })
 
   it('rename: from details, new name updates the category and returns to the list', async () => {

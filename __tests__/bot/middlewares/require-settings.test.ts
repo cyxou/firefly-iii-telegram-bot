@@ -42,12 +42,12 @@ describe('requireSettings gate', () => {
     expect(gateTexts(api).at(-1)).toContain('Access Token')
   })
 
-  it('lets configured users through to the unhandled fallback', async () => {
+  it('lets configured users through to the transactions add flow', async () => {
     const { bot } = createTestBot({ settings: CONFIGURED })
     const api = setupMockApi(bot)
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate('blah'))
-    expect(gateTexts(api).at(-1)).toContain(i18n.t('en', 'help').slice(0, 10))
+    expect(gateTexts(api).at(-1)).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10))
   })
 
   it('never gates /start, /settings, or callback queries', async () => {

@@ -10,6 +10,7 @@ import { accountsFeature } from '#root/bot/features/accounts/index.js'
 import { categoriesFeature } from '#root/bot/features/categories/index.js'
 import { settingsFeature } from '#root/bot/features/settings/index.js'
 import { startFeature } from '#root/bot/features/start/index.js'
+import { transactionsFeature } from '#root/bot/features/transactions/index.js'
 import { unhandledFeature } from '#root/bot/features/unhandled/index.js'
 import { errorHandler } from '#root/bot/handlers/error.js'
 import { i18n } from '#root/bot/i18n.js'
@@ -65,6 +66,7 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
   protectedBot.use(requireSettings()) // gates everything below (Phase 2+: accounts, categories, unhandled)
   protectedBot.use(accountsFeature)
   protectedBot.use(categoriesFeature)
+  protectedBot.use(transactionsFeature)
   protectedBot.use(unhandledFeature) // must stay last
 
   return bot
