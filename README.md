@@ -28,10 +28,14 @@ First you'll have to [generate a Telegram Bot token through BotFather](https://c
 
 ### Docker (Recommended)
 
+The image runs the bot directly from TypeScript source with Bun — there is no
+build step or `dist/` bundle. Bot sessions live in Redis (`REDIS_URL`, defaults
+to `redis://localhost:6379` — point it at your Redis instance, e.g. a linked
+container or a `--network` service).
+
 ```shell
 docker run \
   --rm --it --init --name firefly-bot \
-  --volume `pwd`/sessions:/home/node/app/sessions \
   --env BOT_TOKEN=<your-bot-token> \
   ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
@@ -42,7 +46,6 @@ to docker like so:
 ```shell
 docker run \
   --rm --it --init --name firefly-bot \
-  --volume `pwd`/sessions:/home/node/app/sessions \
   --env-file .env \
   ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
@@ -52,14 +55,14 @@ necessary information to connect it to your Firefly III instance.
 
 ### Manual
 
-For this you need to have NodeJS installed.
+For this you need to have [Bun](https://bun.sh) ≥ 1 installed.
 
  - Clone the repository
- - Install dependencies by running `npm install`
+ - Install dependencies by running `bun install`
  - Run `export BOT_TOKEN=<your-bot-token>`
  - (Optional) Restrict access: `export ALLOWED_TG_USER_IDS=123456,987654321`
    - If not set, the bot will respond to all users.
- - Run `npm start`
+ - Run `bun run start`
 
 If you'll have certificate errors when trying to connect to Firefly III instance,
 stop the bot, do `export NODE_TLS_REJECT_UNAUTHORIZED=0` in your shell and start the
@@ -75,7 +78,6 @@ Example with restricted access:
 ```shell
 docker run \
   --rm --it --init --name firefly-bot \
-  --volume `pwd`/sessions:/home/node/app/sessions \
   --env BOT_TOKEN=<your-bot-token> \
   --env ALLOWED_TG_USER_IDS=123456,987654321 \
   ghcr.io/cyxou/firefly-iii-telegram-bot:latest
@@ -91,6 +93,16 @@ DISABLE_UNAUTHORIZED_USER_LOG=true
 ```
 
 ## Development
+
+```shell
+bun install           # install dependencies
+bun run dev           # run with watch-reload
+bunx tsc --noEmit     # typecheck
+bun run lint          # ESLint (bun run fix to auto-fix)
+bunx vitest run       # unit + integration tests
+docker compose -f docker-compose.tests.yaml up -d   # ephemeral Redis for e2e
+bun run test:e2e      # e2e (real Redis, Telegram still mocked)
+```
 
 To build docker images you would need to install additional tools and packages.
  - Docker
@@ -115,7 +127,7 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [x] Add math equations when creating transactions
 - [x] Allow selecting of Liabilities accounts in transactions
 - [x] Configure CI/CD so that it builds and pushes docker images on merges to master
-- [ ] Reports
+- [x] Reports
 - [ ] Proper error handling
 - [ ] Firefly API tests
 - [x] Add JSON database for persistence (used @grammyjs/storage-file)
@@ -142,7 +154,7 @@ file, which also had to be referenced in the __.openapi-generator-ignore__.
 ### How to generate a client code
 
 There is a corresponding task for it in the __package.json__ file: `codegen`.
-Hence the command is `npm run codegen`. Running this command should not introduce
+Hence the command is `bun run codegen`. Running this command should not introduce
 any git changes unless you want to rollback or update the API specification URL
 which is hard-coded in `codegen` npm task.
 
