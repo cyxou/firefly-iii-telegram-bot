@@ -56,6 +56,16 @@ export async function enterEditFlow(ctx: Context) {
     ctx.session.editFlow = { transactionId: trId, categoryPage: 1 }
 }
 
+// Telegram rejects URL buttons whose host has no dot (localhost, dotless
+// intranet names) — and vetoes the WHOLE keyboard render for one bad button
+// (live bug: localhost fireflyUrl broke the Edit menu). Skip the button when
+// the configured URL can never pass. ponytail: host-contains-a-dot heuristic,
+// not Telegram's exact regex — extend only if another shape bites.
+function telegramUrlOk(url: string): boolean {
+  const host = /^https?:\/\/([^/:]+)/.exec(url)?.[1]
+  return host !== undefined && host.includes('.')
+}
+
 export const editTransactionMenu = new Menu<Context>('edit-transaction')
   .dynamic((ctx) => {
     // ctx.match is the payload of the button that opened/re-rendered this menu
@@ -64,6 +74,7 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
     const range = new MenuRange<Context>()
     if (!trId)
       return range // rendered outside an edit click (stale keyboard): empty
+    const browserUrl = `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`
     range
       .submenu({ text: () => ctx.i18n.t('labels.CHANGE_CATEGORY'), payload: trId }, 'edit-category', enterEditFlow)
       .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DATE'), payload: trId }, 'edit-date', async (c) => {
@@ -92,8 +103,9 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
         return c.editMessageText(c.i18n.t('transactions.edit.typeNewAmount'))
       })
       .row()
-      .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`)
-      .row()
+    if (telegramUrlOk(browserUrl))
+      range.url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), browserUrl).row()
+    range
       .text({ text: () => ctx.i18n.t('labels.DELETE'), payload: trId }, askDeleteConfirm)
       .row()
       .text({ text: () => ctx.i18n.t('labels.CLOSE'), payload: trId }, async c => showRecordFromId(c, trId))

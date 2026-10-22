@@ -69,6 +69,32 @@ describe('record menu + edit shell', () => {
     expect((edit.payload as any).text).toContain('Groceries')
     expect(findButton(api.getOutgoingRequests(), '✏️ Edit')).toBeDefined()
   })
+
+  it('localhost fireflyUrl: edit shell renders without the URL button (Telegram vetoes dotless hosts)', async () => {
+    const firefly = createTestFireflyService({
+      accounts: [testAccount('1', 'Checking', { type: 'asset' }), testAccount('2', 'Cash wallet', { type: 'Cash account' })],
+      transactions: [],
+    })
+    const { bot } = createTestBot({
+      settings: defaultSettings({
+        fireflyUrl: 'http://localhost:8888',
+        fireflyApiUrl: 'http://localhost:8888/api',
+        fireflyAccessToken: 'x'.repeat(500),
+      }),
+      firefly,
+    })
+    const api = setupMockApi(bot)
+    await initializeBot(bot)
+    await bot.handleUpdate(generateMessageUpdate('Groceries 25'))
+    const btn = findButton(api.getOutgoingRequests(), '✏️ Edit')!
+    await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
+    // no error-boundary reply — the menu opened, minus the unusable URL button
+    expect(api.getOutgoingRequests().some(r => r.method === 'sendMessage' && (r.payload as any).text === 'An error occurred!')).toBe(false)
+    expect(findButton(api.getOutgoingRequests(), '🔖 Category')).toBeDefined()
+    expect(api.getOutgoingRequests().slice(-1)[0]!.method).toBe('editMessageReplyMarkup')
+    const kb = (api.getOutgoingRequests().at(-1)!.payload as any).reply_markup.inline_keyboard as { url?: string }[][]
+    expect(kb.flat().some(b => b.url !== undefined)).toBe(false)
+  })
 })
 
 describe('edit category', () => {

@@ -103,6 +103,22 @@ export function setupMockApi(bot: TelegramBot<Context>) {
       rich_message?: { markdown?: string }
     }
 
+    // Telegram validates EVERY button of a keyboard and rejects the whole call
+    // on one bad URL (live bug: localhost fireflyUrl vetoed the whole Edit
+    // menu). Mirror that here so this class fails in tests, not in production.
+    const keyboard = (payload as { reply_markup?: { inline_keyboard?: { url?: string }[][] } })
+      ?.reply_markup
+      ?.inline_keyboard
+    if (keyboard) {
+      for (const btn of keyboard.flat()) {
+        if (btn.url === undefined)
+          continue
+        const host = /^https?:\/\/([^/:]+)/.exec(btn.url)?.[1]
+        if (!host || !host.includes('.'))
+          throw new MockApiError(400, `Bad Request: inline keyboard button URL '${btn.url}' is invalid: Wrong HTTP URL`)
+      }
+    }
+
     if (SEND_TEXT_METHODS.has(method) && p.chat_id !== undefined) {
       const id = trackSent(p.chat_id, 'text')
       outgoingRequests[outgoingRequests.length - 1].resultMessageId = id
