@@ -297,13 +297,11 @@ categories:
   deleted: Categoría eliminada!
   noTransactions: Sin transacciones
   transactionsList: >
-    <b>${categoryName}</b> Gastos del mes de <b>${monthName}</b>:
+    *${categoryName}* Gastos del mes de *${monthName}*:
 
-    <pre>${transactions.replace(/\n$/, '')}
+    ${transactions}
 
-    ──────────────────
-
-    SUM: ${sums ? sums : '0'}</pre>
+    SUM: ${sums ? sums : '0'}
 
 reports:
   notImplemented: Disculpe, pero los Reportes aún no se han implementado 😞

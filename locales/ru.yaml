@@ -298,13 +298,11 @@ categories:
   deleted: Категория удалена!
   noTransactions: Транзакций не было
   transactionsList: >
-    Расходы по категории <b>${categoryName}</b> за <b>${monthName}</b>:
+    Расходы по категории *${categoryName}* за *${monthName}*:
 
-    <pre>${transactions.replace(/\n$/, '')}
+    ${transactions}
 
-    ──────────────────
-
-    ИТОГО: ${sums ? sums : '0'}</pre>
+    ИТОГО: ${sums ? sums : '0'}
 
 reports:
   notImplemented: Извините, но отчеты пока не реализованы 😞

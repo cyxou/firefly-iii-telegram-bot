@@ -297,13 +297,11 @@ categories:
   deleted: Category deleted!
   noTransactions: No transactions
   transactionsList: >
-    <b>${categoryName}</b> withdrawals for the month of <b>${monthName}</b>:
+    *${categoryName}* withdrawals for the month of *${monthName}*:
 
-    <pre>${transactions.replace(/\n$/, '')}
+    ${transactions}
 
-    ──────────────────
-
-    SUM: ${sums ? sums : '0'}</pre>
+    SUM: ${sums ? sums : '0'}
 
 reports:
   notImplemented: Sorry, but reports are not implemented yet 😞

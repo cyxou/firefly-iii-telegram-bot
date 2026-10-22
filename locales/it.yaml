@@ -292,13 +292,11 @@ categories:
   deleted: Categoria eliminata!
   noTransactions: Nessuna transazione
   transactionsList: >
-    <b>${categoryName}</b> prelievi per il mese di <b>${monthName}</b>:
+    *${categoryName}* prelievi per il mese di *${monthName}*:
 
-    <pre>${transactions.replace(/\n$/, '')}
+    ${transactions}
 
-    ──────────────────
-
-    SOMMA: ${sums ? sums : '0'}</pre>
+    SOMMA: ${sums ? sums : '0'}
 
 reports:
   notImplemented: Siamo spiacenti, ma i rapporti non sono ancora stati implementati 😞
