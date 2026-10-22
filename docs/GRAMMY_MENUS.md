@@ -48,7 +48,10 @@ They are conventions backed by lint tests where noted — extend them, never byp
   blank line or Telegram renders the pipes as literal text (live bug, beads 8wh).
   The call sites wrap every `markdownTable()` string in `\n…\n` — folded-YAML
   templates only carry one blank line, which folds to a single `\n` and is NOT
-  enough. Tests pin this with `expect(markdown).toMatch(/\n\n\|/)`.
+  enough. The mock harness structurally validates every rich send
+  (`__tests__/helpers/rich-validate.ts`) and fails the offending test in a global
+  afterEach — new GFM gotchas get added to `validateRichMarkdown()`, not to
+  per-test assertions.
 - `accounts.list.*` / `categories.transactionsList` locale values interpolate
   `${accounts}`/`${transactions}` = the rendered table string, plus `${sums}`.
 - The message and the keyboard are independent: rich payload via `rich_message`,

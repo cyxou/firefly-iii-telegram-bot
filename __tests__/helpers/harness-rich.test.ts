@@ -14,7 +14,7 @@ describe('mock API rich messages', () => {
     expect(sent.message_id).toBe(last.resultMessageId)
     expect(getLastRichMarkdown(api.getOutgoingRequests())).toContain('| a |')
 
-    await bot.api.editMessageText(1111111, sent.message_id, { markdown: '| b |' })
+    await bot.api.editMessageText(1111111, sent.message_id, { markdown: '| b |\n| --- |' })
     expect(getLastRichMarkdown(api.getOutgoingRequests())).toContain('| b |')
   })
 

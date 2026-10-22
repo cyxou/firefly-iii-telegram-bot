@@ -89,7 +89,7 @@ describe('categories feature', () => {
     expect(markdown).toContain('*Groceries*')
     expect(markdown).toContain('| Bakery | 5.20 $ |') // newest first (v1 .reverse())
     expect(markdown).toContain('45.3 USD') // Math.abs of insight difference
-    expect(markdown).toMatch(/\n\n\|/) // table must start its own block (live bug 8wh)
+    // blank-line-before-table: enforced globally by the harness validator
 
     // month nav is stateless: prev-month click refetches the previous range
     await click(`<< ${monthLabel(dayjs().subtract(1, 'month'))}`)

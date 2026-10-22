@@ -14,6 +14,7 @@ import { createBot } from '#root/bot/index.js'
 import { createConfig } from '#root/config.js'
 import { ResourceNotFoundError } from '#root/lib/errors.js'
 import { createMemorySettingsStore } from '#root/lib/settings-store.js'
+import { noteRichMarkdown } from './rich-validate.js'
 
 // Type for API call function
 type ApiCallFn = ReturnType<typeof TelegramBot.prototype.api.call>
@@ -86,6 +87,12 @@ export function setupMockApi(bot: TelegramBot<Context>) {
       method,
       payload,
     })
+
+    // structural GFM check (see rich-validate.ts) — records violations; the
+    // shared setup's afterEach fails the test that produced them
+    const richMarkdown = (payload as { rich_message?: { markdown?: string } })?.rich_message?.markdown
+    if (typeof richMarkdown === 'string')
+      noteRichMarkdown(richMarkdown)
 
     const p = payload as {
       chat_id?: number
