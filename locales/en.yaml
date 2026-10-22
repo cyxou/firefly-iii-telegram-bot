@@ -78,6 +78,13 @@ common:
     🙈 Whoa! You do not have any Asset accounts to withdraw money from!
 
     🙏 Please, navigate to your Firefly III website and create at least one Asset account.
+tables:
+  name: Name
+  balance: Balance
+  currency: Currency
+  date: Date
+  description: Description
+  amount: Amount
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
@@ -142,35 +149,27 @@ accounts:
     asset: >
       Balance of your asset accounts:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     expense: >
       Balance of your expense accounts:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     revenue: >
       Balance of your revenue accounts:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     liability: >
       Balance of your liabilities:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
 
 transactions:
   list:

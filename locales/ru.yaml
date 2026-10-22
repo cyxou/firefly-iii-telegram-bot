@@ -78,6 +78,13 @@ common:
     🙈 Упс! У вас пока нет ни одного Основного счета для списания средств!
 
     🙏 Пожалуйста, перейдите на сайт Firefly III и создайте хотя бы один Основной счет.
+tables:
+  name: Название
+  balance: Баланс
+  currency: Валюта
+  date: Дата
+  description: Описание
+  amount: Сумма
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
@@ -142,35 +149,27 @@ accounts:
     asset: >
       Баланс ваших основных счетов:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      ИТОГО: ${sums ? sums : '0'}</pre>
+      ИТОГО: ${sums ? sums : '0'}
     expense: >
       Баланс ваших счетов расходов:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      ИТОГО: ${sums ? sums : '0'}</pre>
+      ИТОГО: ${sums ? sums : '0'}
     revenue: >
       Баланс ваших счетов доходов:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      ИТОГО: ${sums ? sums : '0'}</pre>
+      ИТОГО: ${sums ? sums : '0'}
     liability: >
       Баланс ваших долговых счетов:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      ИТОГО: ${sums ? sums : '0'}</pre>
+      ИТОГО: ${sums ? sums : '0'}
 
 transactions:
   list:

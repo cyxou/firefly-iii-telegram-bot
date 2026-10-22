@@ -78,6 +78,13 @@ common:
     🙈 Recórcholis! No tienes ninguna cuenta de Activo de donde sacar dinero!
 
     🙏 Por favor, ve a tu página de Firefly III y crea al menos una cuenta de Activo.
+tables:
+  name: Nombre
+  balance: Saldo
+  currency: Moneda
+  date: Fecha
+  description: Descripción
+  amount: Importe
 mdlwr:
   noFireflyURLFound: Para usar el bot, necesitas indicar una *🔗 URL de Firefly* válida en la *🔧 Configuración* del Bot.
   noFireflyAccessTokenFound: Para usar el bot, necesitas indicar un *🔑 Token de Acceso* válido en la *🔧 Configuración* del Bot.
@@ -142,35 +149,27 @@ accounts:
     asset: >
       Saldo de tus cuentas de Activos:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     expense: >
       Saldo de tus cuentas de Gastos:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     revenue: >
       Saldo de tus cuentas de Ingresos:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     liability: >
       Saldo de tus cuentas de Pasivo:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
 
 transactions:
   list:

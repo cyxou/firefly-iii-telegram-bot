@@ -12,6 +12,9 @@ export type SettingsFlowStep = 'url' | 'api_url' | 'token'
 // (lint-tested in __tests__/lint/architecture.test.ts).
 export interface SessionData {
   settingsFlow?: { step: SettingsFlowStep }
+  categoryFlow?: { step: 'add' | 'rename', names?: string[], categoryId?: string }
+  // Per-list view state — the list/pagination standard shape (Phase 3 fills the page counter in)
+  lists?: Record<string, { page: number, view?: string }>
 }
 
 interface ExtendedContextFlavor {

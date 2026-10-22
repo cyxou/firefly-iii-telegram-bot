@@ -73,6 +73,13 @@ common:
     🙈 Wow! Non hai nessun conto deposito da cui prelevare il denaro!
 
     🙏 Per piacere, accedi al sito di Firefly III e crea almeno un conto deposito.
+tables:
+  name: Nome
+  balance: Saldo
+  currency: Valuta
+  date: Data
+  description: Descrizione
+  amount: Importo
 mdlwr:
   noFireflyURLFound: Per utilizzare il bot, devi specificare *🔗 Firefly URL* nelle *🔧 Impostazioni* del bot.
   noFireflyAccessTokenFound: Per utilizzare il bot, devi specificare un *🔑 Token di accesso* valido nelle *🔧 Impostazioni* del bot.
@@ -137,35 +144,27 @@ accounts:
     asset: >
       Bilancio dei tuoi conti deposito:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SOMMA: ${sums ? sums : '0'}</pre>
+      SOMMA: ${sums ? sums : '0'}
     expense: >
       Bilancio dei tuoi conti spesa:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SOMMA: ${sums ? sums : '0'}</pre>
+      SOMMA: ${sums ? sums : '0'}
     revenue: >
       Bilancio dei tuoi conti entrate:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SOMMA: ${sums ? sums : '0'}</pre>
+      SOMMA: ${sums ? sums : '0'}
     liability: >
       Bilancio dei tuoi conti passività:
 
-      <pre>${accounts.replace(/\n$/, '')}
+      ${accounts}
 
-      ──────────────────
-
-      SOMMA: ${sums ? sums : '0'}</pre>
+      SOMMA: ${sums ? sums : '0'}
 
 transactions:
   list:
