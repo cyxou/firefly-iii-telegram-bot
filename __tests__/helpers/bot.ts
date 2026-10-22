@@ -8,6 +8,7 @@ import type { Config } from '#root/config.js'
 import type { AccountRead, CategoryExpenseSummary, CategoryRead, FireflyService, TransactionRead } from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
 import type { Logger } from '#root/logger.js'
+import dayjs from 'dayjs'
 import { MemorySessionStorage } from 'grammy'
 import { pino } from 'pino'
 import { createBot } from '#root/bot/index.js'
@@ -409,10 +410,25 @@ export function testCategoryTransaction(description: string, options: {
   } as unknown as TransactionRead
 }
 
+export function testTransaction(description: string, options: {
+  type?: string
+  amount?: string
+  currencySymbol?: string
+  date?: string
+} = {}): TransactionRead {
+  const { type = 'withdrawal', amount = '12.34', currencySymbol = '$', date = '2026-10-01T12:00:00+00:00' } = options
+  return {
+    id: String(Math.random()).slice(2, 10),
+    type: 'transaction',
+    attributes: { transactions: [{ description, type, amount, currency_symbol: currencySymbol, date }] },
+  } as unknown as TransactionRead
+}
+
 export function createTestFireflyService(
   fixtures: {
     accounts?: AccountRead[]
     categories?: CategoryRead[]
+    transactions?: TransactionRead[]
     categoryTransactions?: Record<string, TransactionRead[]>
     categoryInsights?: Record<string, CategoryExpenseSummary[]>
   } = {},
@@ -420,6 +436,8 @@ export function createTestFireflyService(
 ): FireflyService {
   const categories = [...(fixtures.categories ?? [])] // mutable copy: store/update/delete are observable in re-renders
   let nextCategoryId = 100
+  const transactions = [...(fixtures.transactions ?? [])] // store appends here — assertable
+  let nextTransactionId = 200
   return {
     async getCurrentUser() {
       return { email: 'test@example.com' }
@@ -459,6 +477,35 @@ export function createTestFireflyService(
     },
     async listTransactionsByCategory(id) {
       return fixtures.categoryTransactions?.[id] ?? []
+    },
+    async listTransactions(type, start, end) {
+      return transactions.filter((t) => {
+        const split = t.attributes.transactions?.[0]
+        if (!split)
+          return false
+        if (String(split.type) !== String(type))
+          return false
+        const day = dayjs(split.date).format('YYYY-MM-DD')
+        return day >= start && day <= end
+      })
+    },
+    async storeTransaction(split) {
+      const accounts = fixtures.accounts ?? []
+      const nameOf = (id?: string | null) => accounts.find(a => a.id === id)?.attributes.name ?? ''
+      const read = {
+        id: String(nextTransactionId++),
+        type: 'transaction',
+        attributes: {
+          transactions: [{
+            ...split,
+            source_name: nameOf(split.source_id),
+            destination_name: nameOf(split.destination_id),
+            currency_symbol: '$',
+          }],
+        },
+      } as unknown as TransactionRead
+      transactions.push(read)
+      return read
     },
     async insightExpenseCategory(_start, _end, categoryId) {
       return fixtures.categoryInsights?.[String(categoryId)] ?? []

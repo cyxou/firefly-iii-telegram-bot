@@ -33,7 +33,11 @@ describe('architecture rules', () => {
 
   it('sessionData never grows a shared step field', () => {
     const content = readFileSync('src/bot/context.ts', 'utf8')
-    expect(content).not.toMatch(/^\s{2}step\??:/m)
+    // The rule targets a SHARED step directly on SessionData. Per-flow step
+    // discriminators (settingsFlow/categoryFlow/txnFlow — inline or in a named
+    // flow interface) are the sanctioned Router-keying pattern.
+    const sessionData = content.match(/export interface SessionData \{[\s\S]*?\n\}/)![0]
+    expect(sessionData).not.toMatch(/^\s{2}step\??:/m)
   })
 
   it('no cleanupSessionData and no @grammyjs/conversations', () => {

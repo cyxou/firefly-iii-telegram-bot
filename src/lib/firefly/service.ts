@@ -1,15 +1,18 @@
 import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 import type { CategoryRead } from '#root/lib/firefly/generated/model/category-read.js'
 import type { TransactionRead } from '#root/lib/firefly/generated/model/transaction-read.js'
+import type { TransactionSplitStore } from '#root/lib/firefly/generated/model/transaction-split-store.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
 import dayjs from 'dayjs'
 import { createFireflyClients } from '#root/lib/firefly/client.js'
 import { AccountTypeFilter } from '#root/lib/firefly/generated/model/account-type-filter.js'
+import { TransactionTypeFilter } from '#root/lib/firefly/generated/model/transaction-type-filter.js'
+import { TransactionTypeProperty } from '#root/lib/firefly/generated/model/transaction-type-property.js'
 
 // Features (and tests) import firefly types HERE, never from generated/ —
 // lint-tested in __tests__/lint/architecture.test.ts.
-export { AccountTypeFilter }
-export type { AccountRead, CategoryRead, TransactionRead }
+export { AccountTypeFilter, TransactionTypeFilter, TransactionTypeProperty }
+export type { AccountRead, CategoryRead, TransactionRead, TransactionSplitStore }
 
 export interface CategoryExpenseSummary {
   currency: string
@@ -26,6 +29,8 @@ export interface FireflyService {
   updateCategory: (id: string, name: string) => Promise<void>
   deleteCategory: (id: string) => Promise<void>
   listTransactionsByCategory: (id: string, start: string, end: string) => Promise<TransactionRead[]>
+  listTransactions: (type: TransactionTypeFilter, start: string, end: string) => Promise<TransactionRead[]>
+  storeTransaction: (split: TransactionSplitStore) => Promise<TransactionRead>
   insightExpenseCategory: (start: string, end: string, categoryId: number) => Promise<CategoryExpenseSummary[]>
 }
 
@@ -80,6 +85,16 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     async listTransactionsByCategory(id, start, end) {
       const res = await clients().Categories.listTransactionByCategory(id, undefined, 100, 1, start, end)
       return res.data.data ?? []
+    },
+    // ponytail: 100-transaction single page per day view (v1 ceiling); prev/next
+    // navigates DAYS, not pages — a day with >100 txns truncates like v1.
+    async listTransactions(type, start, end) {
+      const res = await clients().Transactions.listTransaction(undefined, 100, 1, start, end, type)
+      return res.data.data ?? []
+    },
+    async storeTransaction(split) {
+      const res = await clients().Transactions.storeTransaction({ transactions: [split] })
+      return res.data.data
     },
     async insightExpenseCategory(start, end, categoryId) {
       const res = await clients().Insight.insightExpenseCategory(start, end, undefined, [categoryId])
