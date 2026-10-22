@@ -38,6 +38,11 @@ features → unhandled (last).
   upgrade to 1.x — it is Fluent-only. Locale keys are v1's, unchanged.
 - **Menus**: `@grammyjs/menu` only. No raw InlineKeyboard, no `bot.callbackQuery`,
   no manual callback-data parsing (lint-tested). Payload buttons: read `ctx.match`.
+- **Rich messages**: list content goes out as GFM markdown via
+  `ctx.replyWithRichMessage` / `ctx.editMessageText({ markdown })` (grammy 1.46,
+  Bot API 10.1) with menus attached as `reply_markup`. Escape user values
+  (`bot/helpers/rich.ts`); column headers come from shared `tables.*` locale keys.
+  Patterns: `docs/GRAMMY_MENUS.md`.
 - **`legacy/`** is v1 reference code: never import, never edit.
 
 ## Testing Patterns
