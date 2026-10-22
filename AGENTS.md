@@ -43,7 +43,6 @@ features → unhandled (last).
   Bot API 10.1) with menus attached as `reply_markup`. Escape user values
   (`bot/helpers/rich.ts`); column headers come from shared `tables.*` locale keys.
   Patterns: `docs/GRAMMY_MENUS.md`.
-- **`legacy/`** is v1 reference code: never import, never edit.
 
 ## Testing Patterns
 
