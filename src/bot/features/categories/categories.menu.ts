@@ -110,7 +110,7 @@ export async function showCategoryDetails(ctx: Context) {
   const [category, transactions, insights] = await Promise.all([
     ctx.firefly.getCategory(id),
     ctx.firefly.listTransactionsByCategory(id, start, end),
-    ctx.firefly.insightExpenseCategory(start, end, Number(id)),
+    ctx.firefly.insightExpenseForCategory(start, end, Number(id)),
   ])
   const sums = insights.map(s => `${Math.abs(s.difference)} ${s.currency}`).join('\n')
   const markdown = ctx.i18n.t('categories.transactionsList', {

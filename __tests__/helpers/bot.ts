@@ -5,7 +5,7 @@ import type { Update } from '@grammyjs/types'
 import type { Bot as TelegramBot } from 'grammy'
 import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { AccountRead, CategoryExpenseSummary, CategoryRead, FireflyService, TransactionRead } from '#root/lib/firefly/service.js'
+import type { AccountRead, CategoryExpense, CategoryExpenseSummary, CategoryRead, CurrencyTotal, FireflyService, TransactionRead } from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
 import type { Logger } from '#root/logger.js'
 import dayjs from 'dayjs'
@@ -448,6 +448,9 @@ export function createTestFireflyService(
     transactions?: TransactionRead[]
     categoryTransactions?: Record<string, TransactionRead[]>
     categoryInsights?: Record<string, CategoryExpenseSummary[]>
+    incomeTotals?: CurrencyTotal[]
+    expenseTotals?: CurrencyTotal[]
+    expenseByCategory?: CategoryExpense[]
   } = {},
   overrides: Partial<FireflyService> = {},
 ): FireflyService {
@@ -553,8 +556,17 @@ export function createTestFireflyService(
       if (idx !== -1)
         transactions.splice(idx, 1)
     },
-    async insightExpenseCategory(_start, _end, categoryId) {
+    async insightExpenseForCategory(_start, _end, categoryId) {
       return fixtures.categoryInsights?.[String(categoryId)] ?? []
+    },
+    async insightExpenseTotal() {
+      return fixtures.expenseTotals ?? []
+    },
+    async insightIncomeTotal() {
+      return fixtures.incomeTotals ?? []
+    },
+    async insightExpenseByCategory() {
+      return fixtures.expenseByCategory ?? []
     },
     ...overrides,
   }

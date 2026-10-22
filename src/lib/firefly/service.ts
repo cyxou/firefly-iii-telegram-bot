@@ -1,5 +1,6 @@
 import type { AccountRead } from '#root/lib/firefly/generated/model/account-read.js'
 import type { CategoryRead } from '#root/lib/firefly/generated/model/category-read.js'
+import type { InsightTotal } from '#root/lib/firefly/generated/model/insight-total.js'
 import type { TransactionRead } from '#root/lib/firefly/generated/model/transaction-read.js'
 import type { TransactionSplitStore } from '#root/lib/firefly/generated/model/transaction-split-store.js'
 import type { TransactionSplitUpdate } from '#root/lib/firefly/generated/model/transaction-split-update.js'
@@ -20,6 +21,19 @@ export interface CategoryExpenseSummary {
   difference: number
 }
 
+export interface CurrencyTotal {
+  currency: string
+  /** Signed as the API returns it: expenses negative, income positive. */
+  amount: number
+}
+
+export interface CategoryExpense {
+  name: string
+  currency: string
+  /** Absolute expense amount. */
+  amount: number
+}
+
 export interface FireflyService {
   getCurrentUser: () => Promise<{ email: string } | null>
   listAccounts: (type: AccountTypeFilter, date?: string) => Promise<AccountRead[]>
@@ -35,7 +49,10 @@ export interface FireflyService {
   getTransaction: (id: string) => Promise<TransactionRead>
   updateTransaction: (id: string, split: TransactionSplitUpdate) => Promise<TransactionRead>
   deleteTransaction: (id: string) => Promise<void>
-  insightExpenseCategory: (start: string, end: string, categoryId: number) => Promise<CategoryExpenseSummary[]>
+  insightExpenseForCategory: (start: string, end: string, categoryId: number) => Promise<CategoryExpenseSummary[]>
+  insightExpenseTotal: (start: string, end: string) => Promise<CurrencyTotal[]>
+  insightIncomeTotal: (start: string, end: string) => Promise<CurrencyTotal[]>
+  insightExpenseByCategory: (start: string, end: string) => Promise<CategoryExpense[]>
 }
 
 export type FireflyServiceFactory = (settings: UserSettings) => FireflyService
@@ -114,11 +131,27 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     async deleteTransaction(id) {
       await clients().Transactions.deleteTransaction(id)
     },
-    async insightExpenseCategory(start, end, categoryId) {
+    async insightExpenseForCategory(start, end, categoryId) {
       const res = await clients().Insight.insightExpenseCategory(start, end, undefined, [categoryId])
       return (res.data ?? []).map(item => ({
         currency: item.currency_code ?? '',
         difference: item.difference_float ?? 0,
+      }))
+    },
+    async insightExpenseTotal(start, end) {
+      const res = await clients().Insight.insightExpenseTotal(start, end)
+      return toCurrencyTotals(res.data)
+    },
+    async insightIncomeTotal(start, end) {
+      const res = await clients().Insight.insightIncomeTotal(start, end)
+      return toCurrencyTotals(res.data)
+    },
+    async insightExpenseByCategory(start, end) {
+      const res = await clients().Insight.insightExpenseCategory(start, end)
+      return (res.data ?? []).map(item => ({
+        name: item.name ?? '',
+        currency: item.currency_code ?? '',
+        amount: Math.abs(item.difference_float ?? 0),
       }))
     },
   }
@@ -127,4 +160,11 @@ export function createFireflyService(settings: UserSettings): FireflyService {
 // Ported verbatim from legacy/composers/helpers.ts:21-23 — keep v1 semantics.
 function filterActiveAccounts<T extends { attributes: { active?: boolean } }>(accounts: T[]): T[] {
   return accounts.filter(acc => acc.attributes.active !== false)
+}
+
+function toCurrencyTotals(data: InsightTotal | undefined): CurrencyTotal[] {
+  return (data ?? []).map(item => ({
+    currency: item.currency_code ?? '',
+    amount: item.difference_float ?? 0,
+  }))
 }
