@@ -41,8 +41,10 @@ describe('bot core', () => {
     expect((send?.payload as any).text).toContain(i18n.t('ru', 'welcome').slice(0, 10))
   })
 
-  it('answers /help and unknown text (interim unhandled)', async () => {
-    const { bot } = createTestBot()
+  it('answers /help, and unknown text falls to unhandled for configured users', async () => {
+    const { bot } = createTestBot({
+      settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),
+    })
     const api = setupMockApi(bot)
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate('/help', { isCommand: true }))

@@ -7,6 +7,7 @@ import type { Logger } from '#root/logger.js'
 import { sequentialize } from '@grammyjs/runner'
 import { Bot as TelegramBot } from 'grammy'
 import { settingsFeature } from '#root/bot/features/settings/index.js'
+import { requireSettings } from '#root/bot/middlewares/require-settings.js'
 import { startFeature } from '#root/bot/features/start/index.js'
 import { unhandledFeature } from '#root/bot/features/unhandled/index.js'
 import { errorHandler } from '#root/bot/handlers/error.js'
@@ -59,6 +60,7 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
   registerCoreMenus(protectedBot)
   protectedBot.use(startFeature)
   protectedBot.use(settingsFeature)
+  protectedBot.use(requireSettings()) // gates everything below (Phase 2+: accounts, categories, unhandled)
   protectedBot.use(unhandledFeature) // must stay last
 
   return bot
