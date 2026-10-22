@@ -1,8 +1,8 @@
 version: '3.3'
 
 volumes:
-   firefly_iii_upload:
-   firefly_iii_db:
+  firefly_iii_upload:
+  firefly_iii_db:
 
 networks:
   firefly_iii:

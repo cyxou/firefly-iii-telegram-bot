@@ -15,6 +15,7 @@ import { registerCoreMenus } from '#root/bot/menus/index.js'
 import { accessControl } from '#root/bot/middlewares/access-control.js'
 import { setLocaleFromSettings } from '#root/bot/middlewares/locale.js'
 import { session } from '#root/bot/middlewares/session.js'
+import { updateLogger } from '#root/bot/middlewares/update-logger.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 
 export interface Dependencies {
@@ -47,8 +48,9 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
 
   const protectedBot = bot.errorBoundary(errorHandler)
 
-  // Load-bearing order (spec §1): accessControl → sequentialize → session →
-  // i18n → locale-from-settings → core menus → features → unhandled (last).
+  // Load-bearing order (spec §1): updateLogger → accessControl → sequentialize →
+  // session → i18n → locale-from-settings → core menus → features → unhandled (last).
+  protectedBot.use(updateLogger())
   protectedBot.use(accessControl(deps.config))
   protectedBot.use(sequentialize(getSessionKey))
   protectedBot.use(session({ getSessionKey, storage: deps.sessionStorage }))

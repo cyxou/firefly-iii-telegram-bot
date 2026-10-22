@@ -8,6 +8,7 @@ bun run dev                # Dev with watch-reload
 bun run start              # Run the bot (polling)
 bunx tsc --noEmit          # Typecheck
 bun run lint / bun run fix # ESLint
+LOG_FILE=logs/bot.log LOG_LEVEL=debug bun run start  # Debug run with file logging (logs/ gitignored)
 bunx vitest run            # Unit + integration tests (no external services needed)
 docker compose -f docker-compose.tests.yaml up -d   # ephemeral Redis for e2e
 bun run test:e2e           # e2e (real Redis, Telegram still mocked)

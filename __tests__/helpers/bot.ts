@@ -7,6 +7,7 @@ import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
 import type { AccountRead, FireflyService } from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
+import type { Logger } from '#root/logger.js'
 import { MemorySessionStorage } from 'grammy'
 import { pino } from 'pino'
 import { createBot } from '#root/bot/index.js'
@@ -374,6 +375,7 @@ export function createTestFireflyService(
 
 export function createTestBot(options: {
   config?: Partial<Config>
+  logger?: Logger
   settingsStore?: SettingsStore
   settings?: UserSettings // convenience: seeds the default test user 1111111
   firefly?: FireflyService
@@ -383,7 +385,7 @@ export function createTestBot(options: {
     ?? createMemorySettingsStore(options.settings ? { 1111111: options.settings } : {})
   const bot = createBot(config.botToken, {
     config,
-    logger: createTestLogger(),
+    logger: options.logger ?? createTestLogger(),
     settingsStore,
     firefly: () => options.firefly ?? createTestFireflyService(),
     sessionStorage: new MemorySessionStorage<SessionData>(),
