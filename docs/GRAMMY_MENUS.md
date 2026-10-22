@@ -59,15 +59,24 @@ They are conventions backed by lint tests where noted — extend them, never byp
 
 ## List views & pagination (the standard)
 
-Per-list view state lives in `session.lists.<name> = { page: number, view?: string }`
-(`accounts` uses `view` for the account-type tab). Phase 2 ships single-page lists
-(v1 ceilings, `ponytail:`-noted); Phase 3 adds prev/next buttons that mutate `page`
-and re-render — the session shape is already in place, do not invent a new one.
+Per-list view state lives in `session.lists.<name> = { page: number, view?: string, date?: string }`
+(`accounts` uses `view` for the account-type tab; `transactions` adds `date` for
+day navigation). The transactions add-flow picker pages client-side instead:
+`txnFlow.categoryPage` + prev/next handlers that mutate it and `ctx.menu.update()`
+— page state that belongs to a flow lives in the flow's own session field, not
+in `lists`. Lists stay single-fetch (v1 ceilings, `ponytail:`-noted): prev/next
+on a list navigates days (transactions) or re-fetches the page counter (future).
 
 - Tab bars show every view with the active one `.disabled()` (menu@1.5; on the wire
   the flag is an empty OBJECT `disabled: {}`, not `true`); destructive
   confirmations style their YES button `.danger()`.
-- Views that fit in a payload stay stateless: the category details view carries
+- A tab bar inside a Menu MUST be session-driven (`accounts`, `transactions-list`):
+  menu@1.5 re-renders at click time and requires the clicked position to land on
+  a handler-backed button — a `ctx.match`-driven render promotes the clicked tab
+  to the disabled active tab at that position and throws "Cannot invoke handlers
+  … outdated", even with `onMenuOutdated: false`.
+- Views that fit in a payload stay stateless when EVERY button stays
+  handler-backed across re-renders: the category details view carries
   `'{id}|{YYYY-MM-DD}'` in prev/next payloads and re-reads `ctx.match` at render —
   zero session, TTL-proof. Prefer this whenever the state is ≤ 64 bytes.
 

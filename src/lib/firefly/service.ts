@@ -63,7 +63,9 @@ export function createFireflyService(settings: UserSettings): FireflyService {
       const res = await clients().Accounts.getAccount(id)
       return res.data.data
     },
-    // ponytail: 500-category cap (v1 ceiling); real pagination arrives with the Phase 3 lists standard.
+    // ponytail: 500-category cap (v1 ceiling); the add-flow picker slices
+    // client-side (txnFlow.categoryPage) — real pagination only if a category
+    // list ever outgrows it.
     async listCategories() {
       const res = await clients().Categories.listCategory(undefined, 500)
       return res.data.data ?? []
@@ -81,7 +83,8 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     async deleteCategory(id) {
       await clients().Categories.deleteCategory(id)
     },
-    // ponytail: 100-transaction single page (v1 ceiling); page counter arrives in Phase 3.
+    // ponytail: 100-transaction single page (v1 ceiling) — same ceiling as the
+    // day view below; a month with >100 txns truncates like v1.
     async listTransactionsByCategory(id, start, end) {
       const res = await clients().Categories.listTransactionByCategory(id, undefined, 100, 1, start, end)
       return res.data.data ?? []
