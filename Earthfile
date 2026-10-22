@@ -9,15 +9,18 @@ FROM oven/bun:1
 
 WORKDIR /app
 
+# Multi-arch is amd64 + arm64: oven/bun publishes no arm/v7 (32-bit) images —
+# Bun does not build for it. v1's bare `linux/arm` resolved to arm/v7 via
+# node:20-bullseye; the Bun cutover therefore drops 32-bit ARM support.
 build-and-release:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --TAG_LATEST=true
+    BUILD --platform=linux/amd64 --platform=linux/arm64 +buildImage --TAG_LATEST=true
     BUILD +release
 
 build-and-push:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+    BUILD --platform=linux/amd64 --platform=linux/arm64 +buildImage
 
 build-latest:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --RELEASE_VERSION=latest
+    BUILD --platform=linux/amd64 --platform=linux/arm64 +buildImage --RELEASE_VERSION=latest
 
 validatePR:
     BUILD +runTests
