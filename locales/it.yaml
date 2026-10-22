@@ -81,6 +81,13 @@ tables:
   time: Ora
   description: Descrizione
   amount: Importo
+  category: Categoria
+reports:
+  title: '📊 ${monthName}'
+  income: 'Entrate: ${amount}'
+  expense: 'Uscite: ${amount}'
+  net: 'Netto: ${amount}'
+  empty: Niente questo mese.
 mdlwr:
   noFireflyURLFound: Per utilizzare il bot, devi specificare *🔗 Firefly URL* nelle *🔧 Impostazioni* del bot.
   noFireflyAccessTokenFound: Per utilizzare il bot, devi specificare un *🔑 Token di accesso* valido nelle *🔧 Impostazioni* del bot.
@@ -301,9 +308,6 @@ categories:
     ${transactions}
 
     SOMMA: ${sums ? sums : '0'}
-
-reports:
-  notImplemented: Siamo spiacenti, ma i rapporti non sono ancora stati implementati 😞
 
 datePicker:
   selectDate: 'Seleziona una data:'

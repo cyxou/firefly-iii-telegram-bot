@@ -86,6 +86,13 @@ tables:
   time: Time
   description: Description
   amount: Amount
+  category: Category
+reports:
+  title: '📊 ${monthName}'
+  income: 'Income: ${amount}'
+  expense: 'Expense: ${amount}'
+  net: 'Net: ${amount}'
+  empty: Nothing this month.
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.
@@ -306,9 +313,6 @@ categories:
     ${transactions}
 
     SUM: ${sums ? sums : '0'}
-
-reports:
-  notImplemented: Sorry, but reports are not implemented yet 😞
 
 datePicker:
   selectDate: 'Select a date:'

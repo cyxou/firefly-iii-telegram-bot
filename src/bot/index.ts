@@ -8,6 +8,7 @@ import { sequentialize } from '@grammyjs/runner'
 import { Bot as TelegramBot } from 'grammy'
 import { accountsFeature } from '#root/bot/features/accounts/index.js'
 import { categoriesFeature } from '#root/bot/features/categories/index.js'
+import { reportsFeature } from '#root/bot/features/reports/index.js'
 import { settingsFeature } from '#root/bot/features/settings/index.js'
 import { startFeature } from '#root/bot/features/start/index.js'
 import { transactionsFeature } from '#root/bot/features/transactions/index.js'
@@ -66,6 +67,10 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
   protectedBot.use(requireSettings()) // gates everything below (Phase 2+: accounts, categories, unhandled)
   protectedBot.use(accountsFeature)
   protectedBot.use(categoriesFeature)
+  // reports' label hears must sit ABOVE transactionsFeature's message:text
+  // catch-all (transactions/index.ts:33) — same reason transactions' own hears
+  // do (its line-27 comment); below it, the label would hit dontUnderstand.
+  protectedBot.use(reportsFeature)
   protectedBot.use(transactionsFeature)
   protectedBot.use(unhandledFeature) // must stay last
 

@@ -86,6 +86,13 @@ tables:
   time: Время
   description: Описание
   amount: Сумма
+  category: Категория
+reports:
+  title: '📊 ${monthName}'
+  income: 'Доход: ${amount}'
+  expense: 'Расход: ${amount}'
+  net: 'Итог: ${amount}'
+  empty: В этом месяце ничего нет.
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
@@ -307,9 +314,6 @@ categories:
     ${transactions}
 
     ИТОГО: ${sums ? sums : '0'}
-
-reports:
-  notImplemented: Извините, но отчеты пока не реализованы 😞
 
 datePicker:
   selectDate: 'Выберите дату:'
