@@ -191,3 +191,23 @@ transactions; UX/flow redesign during port; encrypted credential storage at rest
    (v1 hid the active tab). Delete-confirmations use `.danger()` styling on the YES button.
 5. **Pagination standard only**: `lists` session field + tabs + cookbook now; prev/next page
    buttons arrive with Phase 3 (transactions), where v1 actually paginated.
+
+## Phase 5 amendments (2026-10-22, owner-approved)
+
+1. **Reports is a monthly summary screen** (greenfield — v1's reports composer was a
+   `notImplemented` toast, and the §7 "reports" row left content open). One rich
+   message per month: income/expense/net totals (one line per currency; net =
+   income − expense; transfers excluded) above an expenses-by-category GFM table
+   (per-row currency, descending). Stateless `<< Month / Month >>` nav — categories
+   payload pattern (`<YYYY-MM-DD>` anchor, `onMenuOutdated: false`), no clamp, no
+   session. Data: three new `FireflyService` insight methods; read-only feature.
+2. **The release artifact is the image.** v2 ships `oven/bun` images running
+   TypeScript from source (no `dist/`); releases are generated notes only — the
+   v1 dist-tarball attachment is dropped.
+3. **Landing is a PR to master**, not a direct merge. Merge builds `latest`; the
+   `v3.0.0` tag pushed after merge fires the existing release workflow
+   (versioned image + Telegram notice). Version bumps rc.0 → 3.0.0 in the PR.
+4. **Dependency sweep is conservative**: non-grammy deps bump within the same
+   major (axios stays 1.x — codegen output pins its usage); the grammy family
+   keeps its Phase 2 pins; `pino-pretty` moves to devDependencies (loaded only
+   when stdout is a TTY, never in the container); no new dependencies.
