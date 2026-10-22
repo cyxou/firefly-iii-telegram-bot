@@ -5,9 +5,9 @@ ARG --global GHCR_USERNAME
 ARG --global GHCR_TOKEN
 ARG --global RELEASE_VERSION=latest
 
-FROM node:20-bullseye
+FROM oven/bun:1
 
-WORKDIR /home/node/app
+WORKDIR /app
 
 build-and-release:
     BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --TAG_LATEST=true
@@ -21,39 +21,35 @@ build-latest:
 
 validatePR:
     BUILD +runTests
-    BUILD +buildDist
-    # BUILD +checkIfTagExist
+    BUILD +buildImage
 
 deps:
-    COPY *.json .npmrc ./
-    RUN npm install --omit=dev --omit=optional \
+    COPY package.json bun.lock .npmrc ./
+    RUN bun install --production --frozen-lockfile \
         && mv ./node_modules ./node_modules_prod \
-        && npm install --omit=optional
+        && bun install --frozen-lockfile
 
-    # Output these back in case npm install changes them.
     SAVE ARTIFACT package.json AS LOCAL ./package.json
-    SAVE ARTIFACT package-lock.json AS LOCAL ./package-lock.json
+    SAVE ARTIFACT bun.lock AS LOCAL ./bun.lock
     SAVE ARTIFACT node_modules /node_modules AS LOCAL ./node_modules
-    SAVE ARTIFACT node_modules_prod /node_modules_prod
-
-buildDist:
-    COPY +deps/node_modules ./node_modules
-    COPY *.json ./
-    COPY --dir src ./
-
-    RUN npm run build
-
-    SAVE ARTIFACT dist /dist AS LOCAL ./dist
+    SAVE ARTIFACT node_modules_prod /node_modules_prod AS LOCAL ./node_modules_prod
 
 runTests:
-    RUN echo "😞 No tests yet..."
+    COPY +deps/node_modules ./node_modules
+    COPY package.json bun.lock tsconfig.json vitest.config.ts eslint.config.js .npmrc ./
+    COPY --dir src __tests__ locales scripts ./
 
+    RUN bunx tsc --noEmit && bun run lint && bunx vitest run
+
+# v2 runs TypeScript from source — no build/dist step exists (spec amendment 2).
+# locales/ ships in the image: i18n resolves it relative to src/bot (src/bot/i18n.ts).
 buildImage:
     ARG TAG_LATEST=false
-    COPY +buildDist/dist ./dist
     COPY +deps/node_modules_prod ./node_modules
+    COPY package.json bun.lock ./
+    COPY --dir src locales ./
 
-    CMD ["dist/index.js"]
+    CMD ["bun", "run", "./src/main.ts"]
 
     SAVE IMAGE --push $GHCR_REPO:$RELEASE_VERSION
     IF [ "$TAG_LATEST" = "true" ]
@@ -70,14 +66,12 @@ checkIfTagExist:
             && exit 1
     END
 
+# Release = generated notes only; the GHCR image is the artifact (spec amendment 2).
 release:
   ARG --required GHCR_TOKEN
   ARG --required RELEASE_VERSION
   ENV GITHUB_TOKEN=${GHCR_TOKEN}
-  ENV OUT_BASE="./dist"
   ENV REPO="cyxou/firefly-iii-telegram-bot"
-
-  COPY +buildDist/dist ./dist
 
   # Install gh-cli
   RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -92,16 +86,11 @@ release:
         -F tag_name=${RELEASE_VERSION} \
       > tmp-release-notes.json
 
-  # Gzip the bins
-  RUN tar -czvf "firefly-iii-telegram-bot.tar.gz" ${OUT_BASE}
-
   # Create release
-  RUN ls -al
-  # ponytail: node one-liners instead of jq — jq 404s from the bullseye-security pool
-  RUN node -e "require('fs').writeFileSync('tmp-release-notes.md', require('./tmp-release-notes.json').body)" \
+  # ponytail: bun -e one-liners instead of jq — jq 404s from the security pool (v1 hit this on bullseye)
+  RUN bun -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("tmp-release-notes.json","utf8"));fs.writeFileSync("tmp-release-notes.md",j.body)' \
       && gh release create ${RELEASE_VERSION} \
         --repo ${REPO} \
-        --title "$(node -pe "require('./tmp-release-notes.json').name")" \
+        --title "$(bun -e 'const j=JSON.parse(require("fs").readFileSync("tmp-release-notes.json","utf8"));console.log(j.name)')" \
         --notes-file tmp-release-notes.md \
-        --verify-tag \
-        "./firefly-iii-telegram-bot.tar.gz#firefly-iii-telegram-bot-dist"
+        --verify-tag
