@@ -24,6 +24,28 @@ export async function cancelCategoryFlow(ctx: Context) {
 export const categoryFlowCancelMenu = new Menu<Context>('category-flow-cancel')
   .text(c => c.i18n.t('labels.CANCEL'), cancelCategoryFlow)
 
+// ---- add-flow confirm (Task 8) ----
+
+async function createCategories(ctx: Context) {
+  const names = ctx.session.categoryFlow?.names ?? []
+  for (const name of names)
+    await ctx.firefly.storeCategory(name)
+  ctx.session.categoryFlow = undefined
+  await ctx.answerCallbackQuery({ text: ctx.i18n.t('categories.created') })
+  await showCategoriesList(ctx, true)
+}
+
+async function rePromptAddCategories(ctx: Context) {
+  await ctx.editMessageText(ctx.i18n.t('categories.typeCategories'), { parse_mode: 'Markdown', reply_markup: categoryFlowCancelMenu })
+}
+
+export const categoriesConfirmMenu = new Menu<Context>('categories-confirm')
+  .text(c => c.i18n.t('labels.YES'), createCategories)
+  .row()
+  .text(c => c.i18n.t('labels.DECLINE_CATEGORIES_LIST'), rePromptAddCategories)
+  .row()
+  .text(c => c.i18n.t('labels.CANCEL'), cancelCategoryFlow)
+
 // ---- delete confirm ----
 
 export const categoryDeleteMenu = new Menu<Context>('category-delete')
@@ -65,7 +87,11 @@ export const categoryDetailsMenu = new Menu<Context>('category-details', { onMen
     const range = new MenuRange<Context>()
     range.text({ text: () => `<< ${monthLabel(prev)}`, payload: `${id}|${prev.format('YYYY-MM-DD')}` }, showCategoryDetails)
     range.text({ text: () => `${monthLabel(next)} >>`, payload: `${id}|${next.format('YYYY-MM-DD')}` }, showCategoryDetails).row()
-    // rename row arrives in Task 8
+    // rename row (Task 8) — payload id keeps ctx.match non-empty for the re-render
+    range.text({ text: () => ctx.i18n.t('labels.RENAME_CATEGORY'), payload: id }, async (c) => {
+      c.session.categoryFlow = { step: 'rename', categoryId: parseDetailsMatch(c.match).id }
+      await c.editMessageText(c.i18n.t('categories.typeNewName'), { reply_markup: categoryFlowCancelMenu })
+    }).row()
     // DELETE carries the id|date payload: at click AND at the confirm-menu attach
     // render, ctx.match is this payload — it is what bakes YES/CANCEL correctly.
     range.text({ text: () => ctx.i18n.t('labels.DELETE'), payload: `${id}|${date}` }, (c) => {

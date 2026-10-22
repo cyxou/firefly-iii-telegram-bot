@@ -295,6 +295,7 @@ categories:
     Are you sure that you want to delete this category?
     Corresponding transactions won't be deleted. They can be found in *🔀 Transactions* section.
   deleted: Category deleted!
+  created: Categories created!
   noTransactions: No transactions
   transactionsList: >
     *${categoryName}* withdrawals for the month of *${monthName}*:

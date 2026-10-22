@@ -295,6 +295,7 @@ categories:
     ¿Estás seguro de que quieres eliminar ésta Categoría?
     Las transacciones relacionadas no serán eliminadas. Éstas se pueden encontrar en la sección de *🔀 Transacciones*.
   deleted: Categoría eliminada!
+  created: ¡Categorías creadas!
   noTransactions: Sin transacciones
   transactionsList: >
     *${categoryName}* Gastos del mes de *${monthName}*:

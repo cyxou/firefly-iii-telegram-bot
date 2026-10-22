@@ -129,3 +129,78 @@ describe('categories feature', () => {
     expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
   })
 })
+
+describe('categories flows', () => {
+  it('add: multi-line input → confirm screen → YES creates each and toasts', async () => {
+    const { bot, api, click } = await setup()
+    await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.CATEGORIES')))
+    await click(i18n.t('en', 'labels.ADD_CATEGORIES'))
+    let last = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((last.payload as any).text).toContain(i18n.t('en', 'categories.typeCategories').slice(0, 12))
+
+    await bot.handleUpdate(generateMessageUpdate('Food\nFuel'))
+    last = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect((last.payload as any).text).toContain('2 new category(s)') // v1 copy, unchanged
+    expect((last.payload as any).text).toContain('Food')
+
+    await click(i18n.t('en', 'labels.YES'))
+    const answered = api.getOutgoingRequests().filter(r => r.method === 'answerCallbackQuery').at(-1)!
+    expect((answered.payload as any).text).toBe(i18n.t('en', 'categories.created'))
+    const listReRender = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const labels = ((listReRender.payload as any).reply_markup.inline_keyboard as { text: string }[][]).flat().map(b => b.text)
+    expect(labels).toContain('Food')
+    expect(labels).toContain('Fuel')
+  })
+
+  it('add: DECLINE re-prompts, CANCEL returns to the list with an empty flow', async () => {
+    const { bot, api, click } = await setup()
+    await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.CATEGORIES')))
+    await click(i18n.t('en', 'labels.ADD_CATEGORIES'))
+    await bot.handleUpdate(generateMessageUpdate('Food'))
+    await click(i18n.t('en', 'labels.DECLINE_CATEGORIES_LIST'))
+    let last = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((last.payload as any).text).toContain(i18n.t('en', 'categories.typeCategories').slice(0, 12))
+
+    await click(i18n.t('en', 'labels.CANCEL'))
+    last = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((last.payload as any).text).toContain(i18n.t('en', 'categories.list').slice(0, 12))
+    // flow cleared: plain text no longer routes into the add flow
+    await bot.handleUpdate(generateMessageUpdate('not categories input'))
+    const texts = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').map(r => (r.payload as any).text)
+    expect(texts.at(-1)).toContain(i18n.t('en', 'help').slice(0, 8))
+  })
+
+  it('rename: from details, new name updates the category and returns to the list', async () => {
+    const renamed: Array<{ id: string, name: string }> = []
+    const { bot } = createTestBot({
+      settings: CONFIGURED,
+      firefly: createTestFireflyService(
+        { categories: [testCategory('1', 'Groceries')] },
+        {
+          updateCategory: async (id, name) => {
+            renamed.push({ id, name })
+          },
+        },
+      ),
+    })
+    const api = setupMockApi(bot)
+    await initializeBot(bot)
+    const click = async (label: string) => {
+      const btn = findButton(api.getOutgoingRequests(), label)
+      if (!btn)
+        throw new Error(`button not found: ${label}`)
+      await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
+    }
+    await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.CATEGORIES')))
+    await click('Groceries')
+    await click(i18n.t('en', 'labels.RENAME_CATEGORY'))
+    let last = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((last.payload as any).text).toContain(i18n.t('en', 'categories.typeNewName').slice(0, 8))
+
+    await bot.handleUpdate(generateMessageUpdate('Groceries & Stuff'))
+    expect(renamed).toEqual([{ id: '1', name: 'Groceries & Stuff' }])
+    last = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect((last.payload as any).text).toContain(i18n.t('en', 'categories.list').slice(0, 12))
+    expect((last.payload as any).reply_markup).toBeDefined()
+  })
+})

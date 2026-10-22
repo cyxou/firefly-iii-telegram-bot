@@ -290,6 +290,7 @@ categories:
     Sei sicuro di voler eliminare questa categoria?
     Le transazioni corrispondenti non verranno eliminate. Possono essere trovate nella sezione *🔀 Transazioni*.
   deleted: Categoria eliminata!
+  created: Categorie create!
   noTransactions: Nessuna transazione
   transactionsList: >
     *${categoryName}* prelievi per il mese di *${monthName}*:
