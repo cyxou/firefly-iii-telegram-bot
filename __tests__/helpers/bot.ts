@@ -511,6 +511,32 @@ export function createTestFireflyService(
       transactions.push(read)
       return read
     },
+    async getTransaction(id) {
+      const found = transactions.find(t => t.id === id)
+      if (!found)
+        throw new ResourceNotFoundError('404')
+      return found
+    },
+    async updateTransaction(id, split) {
+      const found = transactions.find(t => t.id === id)
+      if (!found)
+        throw new ResourceNotFoundError('404')
+      const cur = found.attributes.transactions![0]!
+      Object.assign(cur, split)
+      const accounts = fixtures.accounts ?? []
+      if (split.source_id)
+        cur.source_name = accounts.find(a => a.id === split.source_id)?.attributes.name ?? cur.source_name
+      if (split.destination_id)
+        cur.destination_name = accounts.find(a => a.id === split.destination_id)?.attributes.name ?? cur.destination_name
+      if (split.category_id !== undefined && split.category_id !== null)
+        cur.category_name = fixtures.categories?.find(c => c.id === split.category_id)?.attributes.name
+      return found
+    },
+    async deleteTransaction(id) {
+      const idx = transactions.findIndex(t => t.id === id)
+      if (idx !== -1)
+        transactions.splice(idx, 1)
+    },
     async insightExpenseCategory(_start, _end, categoryId) {
       return fixtures.categoryInsights?.[String(categoryId)] ?? []
     },

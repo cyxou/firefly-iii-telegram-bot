@@ -2,6 +2,7 @@ import type { AccountRead } from '#root/lib/firefly/generated/model/account-read
 import type { CategoryRead } from '#root/lib/firefly/generated/model/category-read.js'
 import type { TransactionRead } from '#root/lib/firefly/generated/model/transaction-read.js'
 import type { TransactionSplitStore } from '#root/lib/firefly/generated/model/transaction-split-store.js'
+import type { TransactionSplitUpdate } from '#root/lib/firefly/generated/model/transaction-split-update.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
 import dayjs from 'dayjs'
 import { createFireflyClients } from '#root/lib/firefly/client.js'
@@ -12,7 +13,7 @@ import { TransactionTypeProperty } from '#root/lib/firefly/generated/model/trans
 // Features (and tests) import firefly types HERE, never from generated/ —
 // lint-tested in __tests__/lint/architecture.test.ts.
 export { AccountTypeFilter, TransactionTypeFilter, TransactionTypeProperty }
-export type { AccountRead, CategoryRead, TransactionRead, TransactionSplitStore }
+export type { AccountRead, CategoryRead, TransactionRead, TransactionSplitStore, TransactionSplitUpdate }
 
 export interface CategoryExpenseSummary {
   currency: string
@@ -31,6 +32,9 @@ export interface FireflyService {
   listTransactionsByCategory: (id: string, start: string, end: string) => Promise<TransactionRead[]>
   listTransactions: (type: TransactionTypeFilter, start: string, end: string) => Promise<TransactionRead[]>
   storeTransaction: (split: TransactionSplitStore) => Promise<TransactionRead>
+  getTransaction: (id: string) => Promise<TransactionRead>
+  updateTransaction: (id: string, split: TransactionSplitUpdate) => Promise<TransactionRead>
+  deleteTransaction: (id: string) => Promise<void>
   insightExpenseCategory: (start: string, end: string, categoryId: number) => Promise<CategoryExpenseSummary[]>
 }
 
@@ -98,6 +102,17 @@ export function createFireflyService(settings: UserSettings): FireflyService {
     async storeTransaction(split) {
       const res = await clients().Transactions.storeTransaction({ transactions: [split] })
       return res.data.data
+    },
+    async getTransaction(id) {
+      const res = await clients().Transactions.getTransaction(id)
+      return res.data.data
+    },
+    async updateTransaction(id, split) {
+      const res = await clients().Transactions.updateTransaction(id, { transactions: [split] })
+      return res.data.data
+    },
+    async deleteTransaction(id) {
+      await clients().Transactions.deleteTransaction(id)
     },
     async insightExpenseCategory(start, end, categoryId) {
       const res = await clients().Insight.insightExpenseCategory(start, end, undefined, [categoryId])
