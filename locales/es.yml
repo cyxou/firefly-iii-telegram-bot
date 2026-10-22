@@ -83,6 +83,7 @@ tables:
   balance: Saldo
   currency: Moneda
   date: Fecha
+  time: Hora
   description: Descripción
   amount: Importe
 mdlwr:
@@ -174,25 +175,25 @@ accounts:
 transactions:
   list:
     withdrawal: >
-      Tus Gastos al <b>${day}</b>:
+      Tus Gastos al **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     deposit: >
-      Tus Depósitos al <b>${day}</b>:
+      Tus Depósitos al **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     transfer: >
-      Tus Transacciones al <b>${day}</b>:
+      Tus Transacciones al **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}</pre>
+      ${transactions}
     noTransactions: 🤷 No hay transacciones
   add:
     dontUnderstand: >

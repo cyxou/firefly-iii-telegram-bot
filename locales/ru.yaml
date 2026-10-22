@@ -83,6 +83,7 @@ tables:
   balance: Баланс
   currency: Валюта
   date: Дата
+  time: Время
   description: Описание
   amount: Сумма
 mdlwr:
@@ -174,25 +175,25 @@ accounts:
 transactions:
   list:
     withdrawal: >
-      Ваши расходы за <b>${day}</b>:
+      Ваши расходы за **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      ИТОГО: ${sums ? sums : '0'}</pre>
+      ИТОГО: ${sums ? sums : '0'}
     deposit: >
-      Ваши доходы за <b>${day}</b>:
+      Ваши доходы за **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      ИТОГО: ${sums ? sums : '0'}</pre>
+      ИТОГО: ${sums ? sums : '0'}
     transfer: >
-      Ваши переводы за <b>${day}</b>:
+      Ваши переводы за **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}</pre>
+      ${transactions}
     noTransactions: 🤷 Транзакций нет
   add:
     dontUnderstand: >

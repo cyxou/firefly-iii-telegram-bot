@@ -33,7 +33,7 @@ export interface SessionData {
   categoryFlow?: { step: 'add' | 'rename', names?: string[], categoryId?: string }
   txnFlow?: TxnFlowState
   // Per-list view state — the list/pagination standard shape (Phase 3 fills the page counter in)
-  lists?: Record<string, { page: number, view?: string }>
+  lists?: Record<string, { page: number, view?: string, date?: string }>
 }
 
 interface ExtendedContextFlavor {

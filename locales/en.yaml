@@ -83,6 +83,7 @@ tables:
   balance: Balance
   currency: Currency
   date: Date
+  time: Time
   description: Description
   amount: Amount
 mdlwr:
@@ -174,25 +175,25 @@ accounts:
 transactions:
   list:
     withdrawal: >
-      Your withdrawals for <b>${day}</b>:
+      Your withdrawals for **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     deposit: >
-      Your deposits for <b>${day}</b>:
+      Your deposits for **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      SUM: ${sums ? sums : '0'}</pre>
+      SUM: ${sums ? sums : '0'}
     transfer: >
-      Your transactions for <b>${day}</b>:
+      Your transactions for **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}</pre>
+      ${transactions}
     noTransactions: 🤷 No transactions
   add:
     dontUnderstand: >

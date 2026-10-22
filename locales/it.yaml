@@ -78,6 +78,7 @@ tables:
   balance: Saldo
   currency: Valuta
   date: Data
+  time: Ora
   description: Descrizione
   amount: Importo
 mdlwr:
@@ -169,25 +170,25 @@ accounts:
 transactions:
   list:
     withdrawal: >
-      Prelievi del giorno <b>${day}</b>:
+      Prelievi del giorno **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      SOMMA: ${sums ? sums : '0'}</pre>
+      SOMMA: ${sums ? sums : '0'}
     deposit: >
-      Entrate del giorno <b>${day}</b>:
+      Entrate del giorno **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}
+      ${transactions}
 
       ──────────────────
 
-      SOMMA: ${sums ? sums : '0'}</pre>
+      SOMMA: ${sums ? sums : '0'}
     transfer: >
-      Transazioni del giorno <b>${day}</b>:
+      Transazioni del giorno **${day}**:
 
-      <pre>${transactions.replace(/\n$/, '')}</pre>
+      ${transactions}
     noTransactions: 🤷 Nessuna transazione trovata.
   add:
     dontUnderstand: >
