@@ -1,15 +1,16 @@
-import type { NextFunction } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import dayjs from 'dayjs'
 import { parseAmountInput, parseTransactionMessage } from '#root/bot/helpers/amount.js'
 import { TransactionTypeProperty } from '#root/lib/firefly/service.js'
+import { addTransactionMenu } from './add.menu.js'
 import { buildSplit, resolveDefaultAccounts } from './create.js'
 import { openAssetAccountsMenu } from './open-accounts.menu.js'
 import { showRecord } from './record.js'
 
-// Port of v1 addTransaction (legacy add-transaction.ts). Quick mode only here;
-// the amount-only (slow) branch arrives with the category picker (Task 5).
-export async function handleAddText(ctx: Context, next: NextFunction) {
+// Port of v1 addTransaction (legacy add-transaction.ts): quick mode
+// ('description amount') stores at once; amount-only opens the slow flow
+// (category picker, then deposit/transfer submenus).
+export async function handleAddText(ctx: Context) {
   const parsed = parseTransactionMessage(ctx.msg!.text!)
   if (!parsed)
     return ctx.reply(ctx.i18n.t('transactions.add.dontUnderstand'), { parse_mode: 'Markdown' })
@@ -22,8 +23,23 @@ export async function handleAddText(ctx: Context, next: NextFunction) {
   if (!source)
     return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), { reply_markup: openAssetAccountsMenu })
 
-  if (!parsed.description)
-    return next() // Task 5: slow-mode entry (picker menu)
+  if (!parsed.description) {
+    ctx.session.txnFlow = {
+      draft: {
+        amount: String(amount),
+        date: dayjs.unix(ctx.msg!.date).toISOString(),
+        description: 'N/A',
+        sourceAccount: source,
+        destAccount: null, // v1: slow mode sends no destination; Firefly infers it
+        categoryId: null,
+      },
+      categoryPage: 1,
+    }
+    return ctx.reply(ctx.i18n.t('transactions.add.selectCategory', { amount }), {
+      parse_mode: 'Markdown',
+      reply_markup: addTransactionMenu,
+    })
+  }
 
   const tr = await ctx.firefly.storeTransaction(buildSplit({
     amount: String(amount),

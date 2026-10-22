@@ -492,6 +492,8 @@ export function createTestFireflyService(
     async storeTransaction(split) {
       const accounts = fixtures.accounts ?? []
       const nameOf = (id?: string | null) => accounts.find(a => a.id === id)?.attributes.name ?? ''
+      // the real API resolves names on the stored transaction — model it
+      const categoryName = (id?: string | null) => fixtures.categories?.find(c => c.id === id)?.attributes.name
       const read = {
         id: String(nextTransactionId++),
         type: 'transaction',
@@ -500,6 +502,7 @@ export function createTestFireflyService(
             ...split,
             source_name: nameOf(split.source_id),
             destination_name: nameOf(split.destination_id),
+            category_name: categoryName(split.category_id),
             currency_symbol: '$',
           }],
         },
