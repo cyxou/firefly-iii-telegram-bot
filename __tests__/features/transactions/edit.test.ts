@@ -98,3 +98,29 @@ describe('edit category', () => {
     expect((edit.payload as any).text).toContain('Groceries')
   })
 })
+
+describe('edit accounts', () => {
+  it('source picker skips the current destination; picking EUR wallet also syncs currency', async () => {
+    const { api, click, send, firefly } = await setupEdit()
+    await send('Groceries 25') // withdrawal: source=1 Checking, dest inferred (Cash wallet)
+    await click('✏️ Edit')
+    await click('📤 Source account')
+    // the prompt text swaps in (v1 chooseNewSourceAccount)
+    const prompt = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((prompt.payload as any).text).toContain('source account')
+    await click('EUR wallet')
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    expect(split.source_id).toBe('3')
+    expect(split.currency_id).toBe('2') // v1: transaction follows the new source's currency
+  })
+
+  it('destination picker lists cash accounts; picking one updates destination', async () => {
+    const { click, send, firefly } = await setupEdit()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('📥 Destination account')
+    await click('Cash wallet')
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    expect(split.destination_id).toBe('2')
+  })
+})

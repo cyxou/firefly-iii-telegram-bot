@@ -1,9 +1,11 @@
 import type { Context } from '#root/bot/context.js'
-import type { CategoryRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
+import type { AccountRead, CategoryRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
 import { twoColumnRange } from '#root/bot/helpers/menu.js'
+import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { CATEGORIES_PER_PAGE } from './add.menu.js'
 import { showRecord } from './record.js'
+import { pickAccounts } from './transfer.menu.js'
 
 // v1 updateFireflyTransaction port: fetch fresh, re-send the FULL split
 // (source/dest/category/currency/date filled from current) — never rely on the
@@ -62,6 +64,16 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
     range
       .submenu({ text: () => ctx.i18n.t('labels.CHANGE_CATEGORY'), payload: trId }, 'edit-category', enterEditFlow)
       .row()
+      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), payload: trId }, 'edit-source', async (c) => {
+        await enterEditFlow(c)
+        // markup-less edit: navInstaller injects edit-source
+        return c.editMessageText(c.i18n.t('transactions.edit.chooseNewSourceAccount'))
+      })
+      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'), payload: trId }, 'edit-dest', async (c) => {
+        await enterEditFlow(c)
+        return c.editMessageText(c.i18n.t('transactions.edit.chooseNewDestinationAccount'))
+      })
+      .row()
       .url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`)
       .row()
       .text({ text: () => ctx.i18n.t('labels.CLOSE'), payload: trId }, async c => showRecordFromId(c, trId))
@@ -115,4 +127,61 @@ async function onEditCategorySelected(ctx: Context) {
   return showRecord(ctx, updated, true)
 }
 
-editTransactionMenu.register([editCategoryMenu])
+// v1: skip the transaction's current destination — a transfer must not be
+// re-pointed onto itself (fetched fresh here; no session copy).
+export const editSourceMenu = new Menu<Context>('edit-source')
+  .dynamic(async (ctx) => {
+    const range = new MenuRange<Context>()
+    const flow = ctx.session.editFlow
+    if (!flow)
+      return range
+    const cur = (await ctx.firefly.getTransaction(flow.transactionId)).attributes.transactions![0]!
+    const accounts = await pickAccounts(ctx, [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities], cur.destination_id ?? undefined)
+    twoColumnRange(range, accounts, (r, acc) => {
+      r.text({ text: () => acc.attributes.name, payload: acc.id }, onEditSourceSelected)
+    })
+    return range
+  })
+  .text('🔙', cancelTextPrompt)
+
+async function onEditSourceSelected(ctx: Context) {
+  const flow = ctx.session.editFlow
+  const accId = String(ctx.match ?? '')
+  if (!flow || !accId)
+    return staleExit(ctx)
+  // v1: the transaction follows the new source account's currency
+  const account = await ctx.firefly.getAccount(accId)
+  const updated = await applyTransactionUpdate(ctx, flow.transactionId, {
+    source_id: accId,
+    currency_id: account.attributes.currency_id,
+  })
+  ctx.session.editFlow = undefined
+  return showRecord(ctx, updated, true)
+}
+
+// v1 destination trio verbatim: cash + liabilities + expense; no skip.
+export const editDestMenu = new Menu<Context>('edit-dest')
+  .dynamic(async (ctx) => {
+    const range = new MenuRange<Context>()
+    const flow = ctx.session.editFlow
+    if (!flow)
+      return range
+    const accounts: AccountRead[] = await pickAccounts(ctx, [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities, AccountTypeFilter.Expense])
+    twoColumnRange(range, accounts, (r, acc) => {
+      r.text({ text: () => acc.attributes.name, payload: acc.id }, onEditDestSelected)
+    })
+    return range
+  })
+  .text('🔙', cancelTextPrompt)
+
+async function onEditDestSelected(ctx: Context) {
+  const flow = ctx.session.editFlow
+  const accId = String(ctx.match ?? '')
+  if (!flow || !accId)
+    return staleExit(ctx)
+  const updated = await applyTransactionUpdate(ctx, flow.transactionId, { destination_id: accId })
+  ctx.session.editFlow = undefined
+  return showRecord(ctx, updated, true)
+}
+
+editTransactionMenu.register([editCategoryMenu, editSourceMenu, editDestMenu])

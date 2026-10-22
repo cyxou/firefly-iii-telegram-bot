@@ -8,7 +8,7 @@ import { showRecord } from './record.js'
 
 // v1 getAccounts: fetch the types in parallel, filter active (service does),
 // drop the skip id, and REVERSE (top accounts land near the thumb — v1 quirk).
-async function pickAccounts(ctx: Context, types: AccountTypeFilter[], skipId?: string): Promise<AccountRead[]> {
+export async function pickAccounts(ctx: Context, types: AccountTypeFilter[], skipId?: string): Promise<AccountRead[]> {
   const lists = await Promise.all(types.map(t => ctx.firefly.listAccounts(t)))
   return lists.flat().filter(acc => !skipId || acc.id !== skipId).reverse()
 }
