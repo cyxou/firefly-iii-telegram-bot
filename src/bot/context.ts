@@ -26,12 +26,25 @@ export interface TxnFlowState {
   promptMessage?: { chatId: number, messageId: number }
 }
 
+export interface EditFlowState {
+  transactionId: string
+  /** text-input routes; also the editRouter key (own field, never a shared step) */
+  step?: 'amount' | 'description'
+  /** client-side page for the edit category picker (add-flow precedent) */
+  categoryPage?: number
+  /** text prompt to delete once the input lands (plain ids, never a closure) */
+  promptMessage?: { chatId: number, messageId: number }
+}
+
 // One optional field per concurrent flow. NEVER add a shared `step` field
 // (lint-tested in __tests__/lint/architecture.test.ts).
 export interface SessionData {
   settingsFlow?: { step: SettingsFlowStep }
   categoryFlow?: { step: 'add' | 'rename', names?: string[], categoryId?: string }
   txnFlow?: TxnFlowState
+  /** record message Edit-button payload source — v1 currentTransaction.id reduced to an id */
+  recordTrId?: string
+  editFlow?: EditFlowState
   // Per-list view state — the list/pagination standard shape (Phase 3 fills the page counter in)
   lists?: Record<string, { page: number, view?: string, date?: string }>
 }

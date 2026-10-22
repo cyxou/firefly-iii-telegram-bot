@@ -2,6 +2,7 @@ import type { Context } from '#root/bot/context.js'
 import type { TransactionRead } from '#root/lib/firefly/service.js'
 import dayjs from 'dayjs'
 import { escapeMarkdown } from '#root/bot/helpers/markdown.js'
+import { recordMenu } from './record.menu.js'
 
 type Translate = (key: string, params?: Record<string, unknown>) => string
 
@@ -31,14 +32,14 @@ export function formatTransaction(tr: TransactionRead, t: Translate): string {
 }
 
 /**
- * Show a created transaction. `edit` swaps the flow's menu message into the
- * record. Phase 4 attaches the edit menu here; for now the edit passes an
- * EXPLICIT empty keyboard — a markup-less edit would get the flow menu
- * re-injected by @grammyjs/menu's navInstaller.
+ * Show a created/updated transaction with the record menu (Phase 4: ✏️ Edit).
+ * `edit` swaps the flow's menu message into the record. recordTrId feeds the
+ * Edit button's payload (v1 currentTransaction parity — skipped when absent).
  */
 export async function showRecord(ctx: Context, tr: TransactionRead, edit: boolean) {
+  ctx.session.recordTrId = tr.id
   const text = formatTransaction(tr, (key, params) => ctx.i18n.t(key, params as never))
   return edit
-    ? ctx.editMessageText(text, { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [] } })
-    : ctx.reply(text, { parse_mode: 'Markdown' })
+    ? ctx.editMessageText(text, { parse_mode: 'Markdown', reply_markup: recordMenu })
+    : ctx.reply(text, { parse_mode: 'Markdown', reply_markup: recordMenu })
 }
