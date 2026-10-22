@@ -247,6 +247,8 @@ transactions:
     whatToEdit: ❓¿Qué desea modificar?
     updated: Transacción actualizada!
     badAmountTyped: 'El Importe debe ser un número. Ingresa un nuevo Importe por favor:'
+    confirmDeletion: >
+      ¿Seguro que quieres eliminar esta transacción?
     badDescriptionTyped: 'La Descripción debe ser un texto. Ingresa una nueva Descripción por favor:'
     typeNewAmount: >
       Ingresa un nuevo importe.

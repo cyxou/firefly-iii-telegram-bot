@@ -39,6 +39,34 @@ They are conventions backed by lint tests where noted — extend them, never byp
 - `ctx.menu.update()` re-renders the current menu only (keyboard edit) — safe on rich
   messages. menu@1.5: it is lazy and returns void, no `await`.
 
+## Stateless calendar (payload-encoded view state)
+
+When a menu's entire view can be encoded in ≤64 bytes, put the view in the
+payloads instead of the session: every navigation button carries the state it
+navigates TO (`<trId>|m|<YYYY-MM>`), the dynamic render decodes `ctx.match`,
+and handlers re-render via `ctx.menu.update()` / `ctx.menu.nav()`. The menu
+needs `onMenuOutdated: false` (labels derive from `ctx.match`, so a payload
+click always self-invalidates the staleness hash). Session bugs of the v1
+`datePickerState` class (stale pin, TTL loss, cross-flow re-pointing) are
+unreachable by construction. See `src/lib/date-picker/` +
+`features/transactions/edit.menu.ts` (`edit-date`).
+
+menu@1.5 rules this pattern must obey (learned the hard way):
+
+- A payload click re-renders the SAME menu with `ctx.match` = payload, then runs
+  the handler at the clicked `[row][col]` of the RE-RENDERED layout — baked
+  closures at the original position do not run. Every payload must therefore
+  re-render a position-stable layout.
+- **Different view shapes need different menus**: month and year views live in
+  `edit-date` / `edit-year`. A payload that changed the view shape within one
+  menu would land the click on an unrelated button (a year pick at `[2][c]` is a
+  *day* button in the month layout — it would silently change the date).
+  View switches ride grammy navigation instead: the month label is a `.submenu()`
+  into the year menu, year picks `ctx.menu.nav('edit-date')` back.
+- EVERY button carries a payload — including noop weekday-header and blank-grid
+  cells. A payload-less click re-renders with empty `ctx.match`, the dynamic
+  returns an empty range, and menu.js crashes reading the missing position.
+
 ## Rich list rendering
 
 - Tabular data renders as GFM markdown via `markdownTable()` (`bot/helpers/rich.ts`):

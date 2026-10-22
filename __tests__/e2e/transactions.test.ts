@@ -38,20 +38,24 @@ const CONFIGURED = defaultSettings({
 
 async function makeBot() {
   const config = createTestConfig()
+  // ONE fake per bot: ctx.firefly is rebuilt per update from the factory, and
+  // the fake's transactions array is Firefly-server state — it must survive
+  // across updates (edit flows read back what an earlier update stored)
+  const firefly = createTestFireflyService({
+    accounts: [
+      testAccount('1', 'Checking', { type: 'asset', currencyId: '1', currencySymbol: 'USD' }),
+      testAccount('2', 'Cash wallet', { type: 'Cash account', currencyId: '1', currencySymbol: 'USD' }),
+      testAccount('3', 'EUR wallet', { type: 'asset', currencyId: '2', currencySymbol: 'EUR' }),
+      testAccount('4', 'Employer', { type: 'revenue' }),
+    ],
+    categories: [testCategory('1', 'Food')],
+    transactions: [],
+  })
   const bot = createBot(config.botToken, {
     config,
     logger: createTestLogger(),
     settingsStore: createMemorySettingsStore({ 1111111: CONFIGURED }),
-    firefly: () => createTestFireflyService({
-      accounts: [
-        testAccount('1', 'Checking', { type: 'asset', currencyId: '1', currencySymbol: 'USD' }),
-        testAccount('2', 'Cash wallet', { type: 'Cash account', currencyId: '1', currencySymbol: 'USD' }),
-        testAccount('3', 'EUR wallet', { type: 'asset', currencyId: '2', currencySymbol: 'EUR' }),
-        testAccount('4', 'Employer', { type: 'revenue' }),
-      ],
-      categories: [testCategory('1', 'Food')],
-      transactions: [],
-    }),
+    firefly: () => firefly,
     sessionStorage: createSessionStorage(),
   })
   const api = setupMockApi(bot)
@@ -102,5 +106,37 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
     await click('📥 Deposits')
     const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
     expect((edit.payload as any).rich_message).toBeDefined()
+  })
+
+  it('edit round-trip through redis: category change re-renders the record', async () => {
+    const { api, click, send } = await makeBot()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('🔖 Category')
+    await click('Food')
+    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect((edit.payload as any).text).toContain('Food')
+  })
+
+  it('edit amount through redis: typed text updates, prompt deleted, session clean', async () => {
+    const { api, bot, click, send } = await makeBot()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('💸 Amount')
+    await bot.handleUpdate(generateMessageUpdate('30'))
+    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
+    // next text is a NEW add — editFlow did not leak across the redis session
+    await send('Cinema 9')
+    const replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
+    expect(replies.length).toBeGreaterThanOrEqual(3) // record + fresh record + new record
+  })
+
+  it('delete through redis: confirm → YES removes the message and transaction', async () => {
+    const { api, click, send } = await makeBot()
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('❌ Delete')
+    await click('✅ Yes')
+    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
   })
 })
