@@ -107,6 +107,24 @@ describe('settings feature', () => {
     expect((await settingsStore.get(1111111))?.defaultSourceAccount.name).toBe('Checking')
   })
 
+  // Regression: back handlers passed reply_markup explicitly, so @grammyjs/menu's
+  // markup injection never consumed the nav and the library fired a redundant
+  // editMessageReplyMarkup — Telegram 400 "message is not modified" on live.
+  it('navigating back from the account menu renders settings without a redundant markup edit', async () => {
+    const { api, send, click } = await setup({
+      settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),
+      firefly: createTestFireflyService({ accounts: [testAccount('1', 'Checking'), testAccount('2', 'Savings')] }),
+    })
+    await send('/settings')
+    await click('💳 Default asset account')
+    await click('Checking')
+    await click('🔙')
+    const edits = api.getOutgoingRequests().filter(r => r.method === 'editMessageText')
+    expect((edits.at(-1)!.payload as any).text).toContain('*Settings*')
+    expect((edits.at(-1)!.payload as any).reply_markup?.inline_keyboard).toBeDefined()
+    expect(api.getOutgoingRequests().some(r => r.method === 'editMessageReplyMarkup')).toBe(false)
+  })
+
   it('language switch persists to the store', async () => {
     const { send, click, settingsStore } = await setup()
     await send('/settings')

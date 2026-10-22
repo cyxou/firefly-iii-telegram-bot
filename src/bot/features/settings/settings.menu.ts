@@ -55,7 +55,10 @@ export const settingsMenu = new Menu<Context>('settings')
 export const cancelMenu = new Menu<Context>('setting-cancel')
   .back('🔙', async (ctx) => {
     ctx.session.settingsFlow = undefined
-    await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+    // no reply_markup: the menu lib injects the nav target (settingsMenu) into
+    // markup-less edits; passing it explicitly makes the lib re-render on top
+    // -> Telegram 400 "message is not modified" (v1 never passed it either)
+    await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
   })
 
 async function inputStep(ctx: Context, step: 'url' | 'api_url' | 'token', promptKey: string) {
@@ -84,7 +87,8 @@ export const langMenu = new Menu<Context>('switch-lang')
       ).row()
     }
     range.back('🔙', async (ctx) => {
-      await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+      // reply_markup omitted on purpose — injected by the menu lib (see cancelMenu)
+      await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
     })
     return range
   })
@@ -99,7 +103,8 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
         .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${s.fireflyUrl}/accounts/asset`)
         .row()
         .back('🔙', async (ctx) => {
-          await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+          // reply_markup omitted on purpose — injected by the menu lib (see cancelMenu)
+          await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
         })
     }
     for (const acc of accounts) {
@@ -123,7 +128,8 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
       ).row()
     }
     range.back('🔙', async (ctx) => {
-      await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
+      // reply_markup omitted on purpose — injected by the menu lib (see cancelMenu)
+      await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
     })
     return range
   })
