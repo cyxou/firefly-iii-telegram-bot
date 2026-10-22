@@ -10,14 +10,14 @@ FROM node:20-bullseye
 WORKDIR /home/node/app
 
 build-and-release:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --TAG_LATEST=true
+    BUILD --platform=linux/amd64 --platform=linux/arm --platform=linux/arm64 +buildImage --TAG_LATEST=true
     BUILD +release
 
 build-and-push:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage
+    BUILD --platform=linux/amd64 --platform=linux/arm --platform=linux/arm64 +buildImage
 
 build-latest:
-    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --RELEASE_VERSION=latest
+    BUILD --platform=linux/amd64 --platform=linux/arm +buildImage --platform=linux/arm64 --RELEASE_VERSION=latest
 
 validatePR:
     BUILD +runTests
