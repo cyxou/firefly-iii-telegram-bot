@@ -187,3 +187,54 @@ describe('edit amount/description text flows', () => {
     expect(all).toHaveLength(2) // second text was parsed as a new quick add, not an edit
   })
 })
+
+describe('edit date (stateless calendar)', () => {
+  async function openCalendar(click: (l: string) => Promise<void>, send: (t: string) => Promise<unknown>) {
+    await send('Groceries 25')
+    await click('✏️ Edit')
+    await click('📆 Date')
+  }
+
+  it('renders the current month with a day button per date', async () => {
+    const { api, click, send } = await setupEdit()
+    await openCalendar(click, send)
+    const day10 = findButton(api.getOutgoingRequests(), '10') ?? findButton(api.getOutgoingRequests(), '10*') // today renders '10*'
+    expect(day10).toBeDefined()
+    expect(findButton(api.getOutgoingRequests(), '‹')).toBeDefined()
+  })
+
+  it('‹ navigates to the previous month (payload-driven, no session)', async () => {
+    const { api, bot, click, send } = await setupEdit()
+    await openCalendar(click, send)
+    const btn = findButton(api.getOutgoingRequests(), '‹')!
+    await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
+    // the re-rendered keyboard shows the previous month's label
+    const dayjs = (await import('dayjs')).default
+    const prevLabel = dayjs().subtract(1, 'month').format('MMMM YYYY')
+    const kb = (api.getOutgoingRequests().at(-1)!.payload as any).reply_markup.inline_keyboard as { text: string }[][]
+    expect(kb.flat().some(b => b.text === prevLabel)).toBe(true)
+  })
+
+  it('picking a day updates the transaction date', async () => {
+    const { api, bot, click, send, firefly } = await setupEdit()
+    await openCalendar(click, send)
+    const day15 = findButton(api.getOutgoingRequests(), '15') ?? findButton(api.getOutgoingRequests(), '15*')
+    await bot.handleUpdate(generateCallbackQueryUpdate(day15!.data, { messageId: day15!.messageId }))
+    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const dayjs = (await import('dayjs')).default
+    expect(dayjs(split.date).format('D')).toBe('15')
+    expect(dayjs(split.date).format('YYYY-MM')).toBe(dayjs().format('YYYY-MM'))
+  })
+
+  it('month label opens the year view; picking a year returns to months', async () => {
+    const { api, bot, click, send } = await setupEdit()
+    await openCalendar(click, send)
+    const dayjs = (await import('dayjs')).default
+    const label = findButton(api.getOutgoingRequests(), dayjs().format('MMMM YYYY'))!
+    await bot.handleUpdate(generateCallbackQueryUpdate(label.data, { messageId: label.messageId }))
+    const yearBtn = findButton(api.getOutgoingRequests(), `[${dayjs().year()}]`)
+    expect(yearBtn).toBeDefined() // the active year renders bracketed (v1 [YYYY])
+    await bot.handleUpdate(generateCallbackQueryUpdate(yearBtn!.data, { messageId: yearBtn!.messageId }))
+    expect(findButton(api.getOutgoingRequests(), '‹')).toBeDefined() // back in month view
+  })
+})

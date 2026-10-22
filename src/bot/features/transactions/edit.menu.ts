@@ -1,7 +1,10 @@
 import type { Context } from '#root/bot/context.js'
+import type { DatePickerView } from '#root/lib/date-picker/index.js'
 import type { AccountRead, CategoryRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
+import dayjs from 'dayjs'
 import { twoColumnRange } from '#root/bot/helpers/menu.js'
+import { appendDatePicker, appendYearPicker, decodeViewPayload } from '#root/lib/date-picker/index.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { CATEGORIES_PER_PAGE } from './add.menu.js'
 import { showRecord } from './record.js'
@@ -63,6 +66,11 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
       return range // rendered outside an edit click (stale keyboard): empty
     range
       .submenu({ text: () => ctx.i18n.t('labels.CHANGE_CATEGORY'), payload: trId }, 'edit-category', enterEditFlow)
+      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DATE'), payload: trId }, 'edit-date', async (c) => {
+        await enterEditFlow(c)
+        // markup-less edit: navInstaller injects the calendar keyboard
+        return c.editMessageText(c.i18n.t('transactions.edit.typeNewDate'))
+      })
       .row()
       .submenu({ text: () => ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), payload: trId }, 'edit-source', async (c) => {
         await enterEditFlow(c)
@@ -206,4 +214,63 @@ export const editAmountMenu = new Menu<Context>('edit-amount')
 export const editDescriptionMenu = new Menu<Context>('edit-description')
   .text('🔙', cancelTextPrompt)
 
-editTransactionMenu.register([editCategoryMenu, editSourceMenu, editDestMenu, editAmountMenu, editDescriptionMenu])
+function currentView(): DatePickerView {
+  return { mode: 'month', year: dayjs().year(), month: dayjs().month() }
+}
+
+// Host payload decoding: 'm'/'y' views pass through; '<trId>|d|<date>' maps to
+// the month it belongs to (day-click re-render); a bare trId (the CHANGE_DATE
+// attach) means "current month". Foreign/garbage → null → empty range.
+function decodeHost(raw: string): { trId: string, view: DatePickerView } | null {
+  const decoded = decodeViewPayload(raw)
+  if (decoded)
+    return decoded
+  if (raw && !raw.includes('|'))
+    return { trId: raw, view: currentView() }
+  const date = /^(\d+)\|d\|(\d{4})-(\d{2})-\d{2}$/.exec(raw)
+  return date ? { trId: date[1]!, view: { mode: 'month', year: Number(date[2]), month: Number(date[3]) - 1 } } : null
+}
+
+// Month-view host — ALWAYS renders a month layout from (year, month), whatever
+// mode the payload carries: menu@1.5 re-renders this same menu on every click
+// and invokes the handler at the clicked position, so the layout must be
+// position-stable for 'm', 'y' (label click re-render) and 'd' payloads alike.
+// Labels derive from ctx.match → onMenuOutdated: false is REQUIRED; every
+// button handler-backed and payload-carrying (noop header/blank cells too).
+export const editDateMenu = new Menu<Context>('edit-date', { onMenuOutdated: false })
+  .dynamic((ctx) => {
+    const raw = typeof ctx.match === 'string' && ctx.match ? ctx.match : ''
+    const decoded = decodeHost(raw)
+    const range = new MenuRange<Context>()
+    if (!decoded)
+      return range
+    const { trId, view } = decoded
+    appendDatePicker(range, trId, view, 'edit-year', {
+      onDate: async (c, date) => {
+        const updated = await applyTransactionUpdate(c, trId, { date })
+        c.session.editFlow = undefined
+        return showRecord(c, updated, true)
+      },
+      onBack: c => cancelTextPrompt(c),
+      backLabel: ctx.i18n.t('labels.CLOSE'),
+    })
+    return range
+  })
+
+// Year-view host — ALWAYS renders the year layout for whatever (year, month)
+// the payload carries; year picks and back nav to the month menu (grammy nav
+// re-renders it from the same payload).
+export const editYearMenu = new Menu<Context>('edit-year', { onMenuOutdated: false })
+  .dynamic((ctx) => {
+    const raw = typeof ctx.match === 'string' && ctx.match ? ctx.match : ''
+    const decoded = decodeHost(raw)
+    const range = new MenuRange<Context>()
+    if (!decoded)
+      return range
+    appendYearPicker(range, decoded.trId, decoded.view, 'edit-date', ctx.i18n.t('labels.CLOSE'))
+    return range
+  })
+
+editDateMenu.register([editYearMenu])
+
+editTransactionMenu.register([editCategoryMenu, editDateMenu, editSourceMenu, editDestMenu, editAmountMenu, editDescriptionMenu])
