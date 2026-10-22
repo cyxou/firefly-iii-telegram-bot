@@ -5,6 +5,7 @@ import { twoColumnRange } from '#root/bot/helpers/menu.js'
 import { TransactionTypeProperty } from '#root/lib/firefly/service.js'
 import { buildSplit } from './create.js'
 import { showRecord } from './record.js'
+import { newDepositMenu, newDepositTargetMenu, newTransferMenu, newTransferTargetMenu, txnForeignMenu } from './transfer.menu.js'
 
 const CATEGORIES_PER_PAGE = 20 // v1 CATEGORIES_PAGE_LIMIT
 
@@ -44,7 +45,15 @@ export const addTransactionMenu = new Menu<Context>('add-transaction')
     }
     return range.row()
   })
-  // Task 6 appends the TO_DEPOSITS / TO_TRANSFERS submenu rows here, then:
+  .submenu(c => c.i18n.t('labels.TO_DEPOSITS'), 'new-deposit', async (c) => {
+    // markup-less edit injects new-deposit
+    return c.editMessageText(c.i18n.t('transactions.add.selectRevenueAccount', { amount: c.session.txnFlow?.draft.amount ?? '' }), { parse_mode: 'Markdown' })
+  })
+  .row()
+  .submenu(c => c.i18n.t('labels.TO_TRANSFERS'), 'new-transfer', async (c) => {
+    return c.editMessageText(c.i18n.t('transactions.add.selectSourceAccount', { amount: c.session.txnFlow?.draft.amount ?? '' }), { parse_mode: 'Markdown' })
+  })
+  .row()
   .text('🔙', ctx => ctx.deleteMessage())
 
 async function onCategorySelected(ctx: Context) {
@@ -60,3 +69,8 @@ async function onCategorySelected(ctx: Context) {
   ctx.session.txnFlow = undefined
   return showRecord(ctx, tr, true)
 }
+
+addTransactionMenu.register([newDepositMenu, newTransferMenu])
+newDepositMenu.register(newDepositTargetMenu)
+newTransferMenu.register(newTransferTargetMenu)
+newTransferTargetMenu.register(txnForeignMenu)

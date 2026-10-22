@@ -4,9 +4,7 @@ import type { UserSettings } from '#root/lib/settings-store.js'
 import { AccountTypeFilter, TransactionTypeProperty } from '#root/lib/firefly/service.js'
 
 /** Map a Firefly account onto the session-draft shape (v1 AccountAttributes). */
-export function toRef(acc: AccountRead | undefined): TxnAccount | null {
-  if (!acc)
-    return null
+export function toRef(acc: AccountRead): TxnAccount {
   return {
     id: acc.id,
     name: acc.attributes.name,
@@ -23,12 +21,16 @@ export async function resolveDefaultAccounts(
   settings: UserSettings | undefined,
   firefly: FireflyService,
 ): Promise<{ source: TxnAccount | null, destination: TxnAccount | null }> {
+  const firstOf = async (type: AccountTypeFilter) => {
+    const acc = (await firefly.listAccounts(type))[0]
+    return acc ? toRef(acc) : null
+  }
   const source = settings?.defaultSourceAccount.name
     ? { ...settings.defaultSourceAccount }
-    : toRef((await firefly.listAccounts(AccountTypeFilter.Asset))[0])
+    : await firstOf(AccountTypeFilter.Asset)
   const destination = settings?.defaultDestinationAccount.name
     ? { ...settings.defaultDestinationAccount }
-    : toRef((await firefly.listAccounts(AccountTypeFilter.CashAccount))[0])
+    : await firstOf(AccountTypeFilter.CashAccount)
   return { source, destination }
 }
 

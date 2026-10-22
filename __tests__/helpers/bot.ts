@@ -383,14 +383,15 @@ export function testAccount(id: string, name: string, options: {
   type?: string
   active?: boolean
   balance?: string
+  currencyId?: string
   currencySymbol?: string
   decimalPlaces?: number
 } = {}): AccountRead {
-  const { type = 'asset', active = true, balance = '100.00', currencySymbol = 'USD', decimalPlaces = 2 } = options
+  const { type = 'asset', active = true, balance = '100.00', currencyId = '1', currencySymbol = 'USD', decimalPlaces = 2 } = options
   return {
     id,
     type: 'account',
-    attributes: { name, type, active, current_balance: balance, currency_symbol: currencySymbol, currency_decimal_places: decimalPlaces },
+    attributes: { name, type, active, current_balance: balance, currency_id: currencyId, currency_symbol: currencySymbol, currency_decimal_places: decimalPlaces },
   } as unknown as AccountRead
 }
 
