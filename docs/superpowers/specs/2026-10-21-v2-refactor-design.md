@@ -173,3 +173,21 @@ transactions; UX/flow redesign during port; encrypted credential storage at rest
    ids, not closures.
 4. Axios interceptor accumulation → fixed structurally by the service layer.
 5. `bot.start()` before `bot.catch()` → v2 registers error handling first.
+
+## Phase 2 amendments (2026-10-22, owner-approved)
+
+1. **grammy 1.39.3 → 1.46.0; @grammyjs/menu 1.3.1 → 1.5.0; @grammyjs/storage-redis 2.5.1 → 2.6.0.**
+   Enabled by Bot API 10.1+ rich messages. router/runner already latest; i18n stays 0.5.1.
+   The full non-grammy dependency sweep happens at Phase 5 cutover.
+2. **List messages render as native rich tables** (GFM markdown via `sendRichMessage` /
+   `editMessageText({ rich_message })`), replacing v1's `<pre>` ASCII tables built with the
+   `table` npm package (which is NOT re-added — a pure `markdownTable` helper replaces it).
+   Rendering deviation from "behavior-preserving port"; flows, buttons, and locale keys unchanged.
+   Locale *values* for `accounts.list.*` / `categories.transactionsList` drop the `<pre>` wrapper;
+   new shared `tables.*` column-header keys carry the localization.
+3. **`requireSettings` gate moves from Phase 3 to Phase 2** — accounts/categories are the first
+   Firefly-dependent features. One mount in `createBot`, after start+settings, before them.
+4. **Accounts tab bar shows all four account types, active one rendered with menu@1.5 `.disabled()`**
+   (v1 hid the active tab). Delete-confirmations use `.danger()` styling on the YES button.
+5. **Pagination standard only**: `lists` session field + tabs + cookbook now; prev/next page
+   buttons arrive with Phase 3 (transactions), where v1 actually paginated.

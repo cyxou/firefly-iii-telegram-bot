@@ -80,7 +80,7 @@ export const langMenu = new Menu<Context>('switch-lang')
           const s = ctx.settings ?? defaultSettings()
           await ctx.saveSettings({ ...s, language: ctx.match! })
           ctx.i18n.locale(ctx.match!)
-          await ctx.menu.update()
+          ctx.menu.update() // menu@1.5: lazy void — no await needed
           await ctx.reply(generateWelcomeMessage(ctx), { reply_markup: createMainKeyboard(ctx) })
           await ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
         },
@@ -122,7 +122,7 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
             ...current,
             defaultSourceAccount: { id: ctx.match!, name: account.attributes.name, type: account.attributes.type ?? 'asset' },
           })
-          await ctx.menu.update()
+          ctx.menu.update() // menu@1.5: lazy void — no await needed
           await ctx.editMessageText(ctx.i18n.t('settings.selectDefaultAssetAccount'), { parse_mode: 'Markdown' })
         },
       ).row()
