@@ -46,6 +46,25 @@ function envDefaults(config: Config): UserSettings | undefined {
   })
 }
 
+// Credential fields env may seed. A save persists them only when the user
+// chose their own value; otherwise they're dropped so env stays the live
+// source — a language switch must not bake env secrets into settings.json,
+// and rotating the env token must keep reaching such users.
+const CREDENTIAL_FIELDS = ['fireflyUrl', 'fireflyApiUrl', 'fireflyAccessToken'] as const
+
+function toStored(
+  env: UserSettings | undefined,
+  stored: Partial<UserSettings> | undefined,
+  incoming: UserSettings,
+): Partial<UserSettings> {
+  const out: Partial<UserSettings> = { ...incoming }
+  for (const field of CREDENTIAL_FIELDS) {
+    if (incoming[field] === env?.[field] && stored?.[field] === undefined)
+      delete out[field]
+  }
+  return out
+}
+
 export function createBot(token: string, deps: Dependencies, botConfig?: BotConfig<Context>) {
   const bot = new TelegramBot<Context>(token, botConfig)
 
@@ -54,12 +73,15 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
     ctx.config = deps.config
     ctx.logger = deps.logger.child({ update_id: ctx.update.update_id })
     const stored = ctx.from ? await deps.settingsStore.get(ctx.from.id) : undefined
-    // Env credentials (FIREFLY_URL/FIREFLY_ACCESS_TOKEN) seed users with no
-    // stored settings; a user's own /settings saves always win.
-    ctx.settings = stored ?? envDefaults(deps.config)
+    // Stored settings (what the user set themselves) override env credentials
+    // field by field; env backfills the rest and rotates freely underneath.
+    const env = envDefaults(deps.config)
+    ctx.settings = (stored ?? env)
+      ? { ...defaultSettings(), ...env, ...stored }
+      : undefined
     ctx.firefly = deps.firefly(ctx.settings ?? defaultSettings())
     ctx.saveSettings = async (settings) => {
-      await deps.settingsStore.save(ctx.from!.id, settings)
+      await deps.settingsStore.save(ctx.from!.id, toStored(env, stored, settings))
       ctx.settings = settings
     }
     await next()

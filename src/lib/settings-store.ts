@@ -16,9 +16,12 @@ export interface UserSettings {
   language: string
 }
 
+// The store holds only what the user set themselves — env-seeded credentials
+// are merged in at read time (bot/index.ts), never persisted, so rotating the
+// deployment's env keeps reaching users who never chose their own.
 export interface SettingsStore {
-  get: (userId: number) => Promise<UserSettings | undefined>
-  save: (userId: number, settings: UserSettings) => Promise<void>
+  get: (userId: number) => Promise<Partial<UserSettings> | undefined>
+  save: (userId: number, settings: Partial<UserSettings>) => Promise<void>
 }
 
 export function defaultSettings(overrides: Partial<UserSettings> = {}): UserSettings {
@@ -34,7 +37,7 @@ export function defaultSettings(overrides: Partial<UserSettings> = {}): UserSett
 }
 
 export function createFileSettingsStore(filePath: string): SettingsStore {
-  async function readAll(): Promise<Record<string, UserSettings>> {
+  async function readAll(): Promise<Record<string, Partial<UserSettings>>> {
     try {
       return JSON.parse(await readFile(filePath, 'utf8'))
     }
@@ -56,7 +59,7 @@ export function createFileSettingsStore(filePath: string): SettingsStore {
 }
 
 export function createMemorySettingsStore(seed: Record<number, UserSettings> = {}): SettingsStore {
-  const db = new Map(Object.entries(seed).map(([k, v]) => [Number(k), v]))
+  const db = new Map<number, Partial<UserSettings>>(Object.entries(seed).map(([k, v]) => [Number(k), v]))
   return {
     async get(userId) {
       return db.get(userId)

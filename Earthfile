@@ -4,6 +4,8 @@ ARG --global GHCR_REPO=ghcr.io/cyxou/firefly-iii-telegram-bot
 ARG --global GHCR_USERNAME
 ARG --global GHCR_TOKEN
 ARG --global RELEASE_VERSION=latest
+# Major tag derived from the release ref (v3.0.0 -> v3); empty on non-tag builds.
+ARG --global MAJOR_VERSION
 
 FROM oven/bun:1
 
@@ -59,6 +61,9 @@ buildImage:
     CMD ["bun", "run", "./src/main.ts"]
 
     SAVE IMAGE --push $GHCR_REPO:$RELEASE_VERSION
+    IF [ "$MAJOR_VERSION" != "" ]
+        SAVE IMAGE --push $GHCR_REPO:$MAJOR_VERSION
+    END
     IF [ "$TAG_LATEST" = "true" ]
         SAVE IMAGE --push $GHCR_REPO:latest
     END

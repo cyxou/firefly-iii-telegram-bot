@@ -34,8 +34,9 @@ v3 is a major rework. Read this before bumping your image tag:
   `arm64` image. On genuinely 32-bit-only hardware (Pi 1/2 and similar), stay
   on the v2 image.
 - **Redis is now required** (session storage). `compose.yaml` ships one
-  alongside the bot. Set `REDIS_URL` if you run your own (defaults to
-  `redis://localhost:6379`); the bot exits at startup if Redis is unreachable.
+  alongside the bot. Set `REDIS_URL` in `.env` if you run your own (defaults
+  to `redis://localhost:6379` outside compose); the bot exits at startup if
+  Redis is unreachable.
 - **Sessions start from scratch.** v1/v2 file sessions are not migrated —
   any half-finished flow simply restarts. Credentials are the only thing worth
   carrying over: either re-enter them via **Settings** in the bot, or
@@ -71,12 +72,16 @@ reach:
 
 ```shell
 docker run \
-  --rm --init --name firefly-bot \
+  --init --name firefly-bot --restart unless-stopped \
   --env BOT_TOKEN=<your-bot-token> \
   --env REDIS_URL=redis://<your-redis>:6379 \
   -v firefly-bot-data:/app/data \
-  ghcr.io/cyxou/firefly-iii-telegram-bot:latest
+  ghcr.io/cyxou/firefly-iii-telegram-bot:v3
 ```
+
+`--restart unless-stopped` matters: the bot exits at startup when Redis is
+unreachable, so without a restart policy a transient Redis outage (or a host
+reboot) leaves the bot down until restarted by hand.
 
 You may also provide the environment via an `--env-file .env` built from
 _.example.env_.
@@ -92,6 +97,9 @@ For this you need to have [Bun](https://bun.sh) ≥ 1 installed.
  - Clone the repository
  - Install dependencies by running `bun install`
  - Run `export BOT_TOKEN=<your-bot-token>`
+ - Start a Redis reachable at `redis://localhost:6379`, or point
+   `export REDIS_URL=...` at one you already run — v3 stores sessions in
+   Redis and exits at startup if it's unreachable
  - (Optional) Restrict access: `export ALLOWED_TG_USER_IDS=123456,987654321`
    - If not set, the bot will respond to all users.
  - Run `bun run start`
@@ -109,11 +117,11 @@ You can restrict who can use your bot by setting the `ALLOWED_TG_USER_IDS` envir
 Example with restricted access:
 ```shell
 docker run \
-  --rm --init --name firefly-bot \
+  --init --name firefly-bot --restart unless-stopped \
   --env BOT_TOKEN=<your-bot-token> \
   --env ALLOWED_TG_USER_IDS=123456,987654321 \
   --env REDIS_URL=redis://<your-redis>:6379 \
-  ghcr.io/cyxou/firefly-iii-telegram-bot:latest
+  ghcr.io/cyxou/firefly-iii-telegram-bot:v3
 ```
 
 ### Logging Unauthorized Access Attempts
