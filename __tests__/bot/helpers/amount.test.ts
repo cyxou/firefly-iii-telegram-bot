@@ -44,7 +44,10 @@ describe('parseTransactionMessage', () => {
   })
 
   it('description + amount (greedy description keeps inner numbers)', () => {
-    expect(parseTransactionMessage('Groceries 25')).toEqual({ amount: '25', description: 'Groceries' })
+    expect(parseTransactionMessage('Groceries 25')).toEqual({
+      amount: '25',
+      description: 'Groceries',
+    })
     expect(parseTransactionMessage('Café 3,5+1')).toEqual({ amount: '3,5+1', description: 'Café' })
     expect(parseTransactionMessage('a 1 b 2')).toEqual({ amount: '2', description: 'a 1 b' })
   })

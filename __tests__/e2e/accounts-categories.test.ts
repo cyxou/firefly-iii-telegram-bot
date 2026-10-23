@@ -22,12 +22,10 @@ import {
 // rejects a second connect() while connected, so only connect when needed.
 const available = await (async () => {
   try {
-    if (redis.status !== 'ready')
-      await redis.connect()
+    if (redis.status !== 'ready') await redis.connect()
     await redis.ping()
     return true
-  }
-  catch {
+  } catch {
     return false
   }
 })()
@@ -45,21 +43,21 @@ async function makeBot(settings: typeof CONFIGURED | null = CONFIGURED) {
     config,
     logger: createTestLogger(),
     settingsStore: createMemorySettingsStore(settings ? { 1111111: settings } : {}),
-    firefly: () => createTestFireflyService({
-      accounts: [
-        testAccount('1', 'Checking', { balance: '1234.5' }),
-        testAccount('2', 'Wallet', { type: 'expense', balance: '9' }),
-      ],
-      categories: [testCategory('1', 'Groceries'), testCategory('2', 'Utilities')],
-    }),
+    firefly: () =>
+      createTestFireflyService({
+        accounts: [
+          testAccount('1', 'Checking', { balance: '1234.5' }),
+          testAccount('2', 'Wallet', { type: 'expense', balance: '9' }),
+        ],
+        categories: [testCategory('1', 'Groceries'), testCategory('2', 'Utilities')],
+      }),
     sessionStorage: createSessionStorage(),
   })
   const api = setupMockApi(bot)
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   return { bot, api, click }
@@ -69,13 +67,19 @@ describe.skipIf(!available)('accounts + categories (e2e, real redis)', () => {
   it('accounts: rich list renders, tab switch round-trips through redis session', async () => {
     const { bot, api, click } = await makeBot()
     await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.ACCOUNTS')))
-    expect(api.getOutgoingRequests().some(r => r.method === 'sendRichMessage')).toBe(true)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'sendRichMessage')).toBe(true)
     await click(i18n.t('en', 'accounts.labels.expense'))
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).rich_message?.markdown).toContain('Wallet')
     // session.lists survived the redis round-trip: the active tab came back disabled
     const keyboard = (edit.payload as any).reply_markup.inline_keyboard.flat()
-    expect(typeof keyboard.find((b: any) => b.text === i18n.t('en', 'accounts.labels.expense'))?.disabled).toBe('object')
+    expect(
+      typeof keyboard.find((b: any) => b.text === i18n.t('en', 'accounts.labels.expense'))
+        ?.disabled,
+    ).toBe('object')
   })
 
   it('categories: list → details → month nav → delete-cancel', async () => {
@@ -84,17 +88,19 @@ describe.skipIf(!available)('accounts + categories (e2e, real redis)', () => {
     await click('Groceries')
     // mirror the menu's own label helper: '<< ' + capitalized 'MMMM, YYYY' of the PREVIOUS month
     const prev = dayjs().subtract(1, 'month')
-    const prevLabel = prev.format('MMMM, YYYY').replace(/^./, c => c.toLocaleUpperCase())
+    const prevLabel = prev.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
     await click(`<< ${prevLabel}`)
     // two edits happened: details render + prev-month render (stateless nav, no session involved)
-    expect(api.getOutgoingRequests().filter(r => r.method === 'editMessageText').length).toBeGreaterThanOrEqual(2)
+    expect(
+      api.getOutgoingRequests().filter((r) => r.method === 'editMessageText').length,
+    ).toBeGreaterThanOrEqual(2)
   })
 
   it('gate: unconfigured user gets the settings prompt, not a firefly error', async () => {
     const { bot, api } = await makeBot(null)
     await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.ACCOUNTS')))
-    const send = api.getOutgoingRequests().find(r => r.method === 'sendMessage')!
+    const send = api.getOutgoingRequests().find((r) => r.method === 'sendMessage')!
     expect((send.payload as any).text).toContain('Firefly URL')
-    expect(api.getOutgoingRequests().some(r => r.method === 'sendRichMessage')).toBe(false)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'sendRichMessage')).toBe(false)
   })
 })

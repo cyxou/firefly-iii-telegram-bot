@@ -7,8 +7,8 @@
 // amount-only alternative's outer `(...)*` was redundant (two concatenated
 // amount expressions always collapse into one), so `?` is semantically equal.
 const AMOUNT_RE = /^[-+/*]?\d+(?:[.,]\d+)?(?:[-+/*^]\d+(?:[.,]\d+)?)*$/
-const MESSAGE_RE
-  = /^(?<amountOnly>\d+(?:[.,]\d+)?(?:[-+/*^]\d+(?:[.,]\d+)?)?)?$|(?<description>.+)\s(?<amount>\d+(?:[.,]\d+)?(?:[-+/*^]\d+(?:[.,]\d+)?)*)$/
+const MESSAGE_RE =
+  /^(?<amountOnly>\d+(?:[.,]\d+)?(?:[-+/*^]\d+(?:[.,]\d+)?)?)?$|(?<description>.+)\s(?<amount>\d+(?:[.,]\d+)?(?:[-+/*^]\d+(?:[.,]\d+)?)*)$/
 
 /** Evaluate `expr`: numbers and binary + - * / ^ (^ right-associative, mathjs parity). */
 export function evaluateAmount(expr: string): number {
@@ -48,17 +48,17 @@ export function evaluateAmount(expr: string): number {
 
 /** v1 semantics: leading operator (+ - * /) composes with `oldAmount`; result is |x|. */
 export function parseAmountInput(input: string, oldAmount?: string): number | null {
-  if (!AMOUNT_RE.test(input))
-    return null
+  if (!AMOUNT_RE.test(input)) return null
   const expr = oldAmount && /^[-+/*]/.test(input) ? `${oldAmount}${input}` : input
   return Math.abs(evaluateAmount(expr))
 }
 
 /** v1 add-transaction text regex, verbatim: 'amount' | 'description amount'. */
-export function parseTransactionMessage(text: string): { amount: string, description?: string } | null {
+export function parseTransactionMessage(
+  text: string,
+): { amount: string; description?: string } | null {
   const groups = MESSAGE_RE.exec(text)?.groups
-  if (!groups)
-    return null
+  if (!groups) return null
   const amount = groups.amount || groups.amountOnly
   return amount ? { amount, description: groups.description } : null
 }

@@ -18,12 +18,10 @@ import {
 // already have connected; a second connect() throws and must not self-skip us.
 const available = await (async () => {
   try {
-    if (redis.status !== 'ready')
-      await redis.connect()
+    if (redis.status !== 'ready') await redis.connect()
     await redis.ping()
     return true
-  }
-  catch {
+  } catch {
     return false
   }
 })()

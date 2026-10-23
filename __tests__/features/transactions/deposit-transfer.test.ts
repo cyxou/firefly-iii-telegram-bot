@@ -34,8 +34,7 @@ async function setup(accounts = ACCOUNTS) {
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   return {
@@ -59,7 +58,10 @@ describe('deposit flow', () => {
     expect(split.source_id).toBe('4')
     expect(split.destination_id).toBe('1')
     expect(split.amount).toBe('100')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Employer → Checking')
   })
 })
@@ -81,10 +83,13 @@ describe('transfer flow', () => {
     await sendText('50')
     await click('↔️ New transfer')
     await click('Savings USD')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     const kb = (edit.payload as any).reply_markup.inline_keyboard as { text: string }[][]
-    expect(kb.flat().map(b => b.text)).not.toContain('Savings USD')
-    expect(kb.flat().map(b => b.text)).toContain('Checking')
+    expect(kb.flat().map((b) => b.text)).not.toContain('Savings USD')
+    expect(kb.flat().map((b) => b.text)).toContain('Checking')
   })
 
   it('different currencies: foreign-amount prompt → typed amount stores transfer with foreign fields', async () => {
@@ -93,7 +98,10 @@ describe('transfer flow', () => {
     await click('↔️ New transfer')
     await click('Savings USD')
     await click('EUR wallet')
-    const prompt = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const prompt = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((prompt.payload as any).text).toContain('EUR')
     await bot.handleUpdate(generateMessageUpdate('*0.9'))
     const created = await firefly.listTransactions('transfer' as never, '2000-01-01', '2999-12-31')
@@ -101,8 +109,11 @@ describe('transfer flow', () => {
     expect(split.foreign_amount).toBe('90')
     expect(split.foreign_currency_id).toBeDefined()
     // the prompt message is deleted after the record lands
-    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
-    const reply = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
+    const reply = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((reply.payload as any).text).toContain('90')
   })
 
@@ -113,7 +124,10 @@ describe('transfer flow', () => {
     await click('Savings USD')
     await click('EUR wallet')
     await bot.handleUpdate(generateMessageUpdate('not a number'))
-    const reply = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    const reply = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((reply.payload as any).text).toContain('amount should be a number')
     await bot.handleUpdate(generateMessageUpdate('88'))
     const created = await firefly.listTransactions('transfer' as never, '2000-01-01', '2999-12-31')

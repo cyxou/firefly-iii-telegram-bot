@@ -1,10 +1,18 @@
 import type { Context } from '#root/bot/context.js'
 import type { DatePickerView } from '#root/lib/date-picker/index.js'
-import type { AccountRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
+import type {
+  AccountRead,
+  TransactionRead,
+  TransactionSplitUpdate,
+} from '#root/lib/firefly/service.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
 import dayjs from 'dayjs'
 import { twoColumnRange } from '#root/bot/helpers/menu.js'
-import { appendDatePicker, appendYearPicker, decodeViewPayload } from '#root/lib/date-picker/index.js'
+import {
+  appendDatePicker,
+  appendYearPicker,
+  decodeViewPayload,
+} from '#root/lib/date-picker/index.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { appendCategoryPicker } from './add.menu.js'
 import { showRecord, staleFlowExit } from './record.js'
@@ -39,16 +47,14 @@ export async function showRecordFromId(ctx: Context, trId: string) {
 export async function cancelTextPrompt(ctx: Context) {
   const trId = ctx.session.editFlow?.transactionId
   ctx.session.editFlow = undefined
-  if (!trId)
-    return ctx.deleteMessage()
+  if (!trId) return ctx.deleteMessage()
   return showRecordFromId(ctx, trId)
 }
 
 /** Submenu-attach middleware: point editFlow at the payload's transaction. */
 export async function enterEditFlow(ctx: Context) {
   const trId = typeof ctx.match === 'string' && ctx.match ? ctx.match : ''
-  if (trId)
-    ctx.session.editFlow = { transactionId: trId, categoryPage: 1 }
+  if (trId) ctx.session.editFlow = { transactionId: trId, categoryPage: 1 }
 }
 
 // Telegram rejects URL buttons whose host has no dot (localhost, dotless
@@ -61,51 +67,110 @@ function telegramUrlOk(url: string): boolean {
   return host !== undefined && host.includes('.')
 }
 
-export const editTransactionMenu = new Menu<Context>('edit-transaction')
-  .dynamic((ctx) => {
-    // ctx.match is the payload of the button that opened/re-rendered this menu
-    // (always the trId here) — payload is the source of truth, no session copy.
-    const trId = typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined
-    const range = new MenuRange<Context>()
-    if (!trId)
-      return range // rendered outside an edit click (stale keyboard): empty
-    const browserUrl = `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`
-    range
-      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_CATEGORY'), payload: trId }, 'edit-category', enterEditFlow)
-      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DATE'), payload: trId }, 'edit-date', async (c) => {
+export const editTransactionMenu = new Menu<Context>('edit-transaction').dynamic((ctx) => {
+  // ctx.match is the payload of the button that opened/re-rendered this menu
+  // (always the trId here) — payload is the source of truth, no session copy.
+  const trId = typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined
+  const range = new MenuRange<Context>()
+  if (!trId) return range // rendered outside an edit click (stale keyboard): empty
+  const browserUrl = `${ctx.settings!.fireflyUrl}/transactions/show/${trId}`
+  range
+    .submenu(
+      {
+        text: () => ctx.i18n.t('labels.CHANGE_CATEGORY'),
+        payload: trId,
+      },
+      'edit-category',
+      enterEditFlow,
+    )
+    .submenu(
+      {
+        text: () => ctx.i18n.t('labels.CHANGE_DATE'),
+        payload: trId,
+      },
+      'edit-date',
+      async (c) => {
         await enterEditFlow(c)
         // markup-less edit: navInstaller injects the calendar keyboard
         return c.editMessageText(c.i18n.t('transactions.edit.typeNewDate'))
-      })
-      .row()
-      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'), payload: trId }, 'edit-source', async (c) => {
+      },
+    )
+    .row()
+    .submenu(
+      {
+        text: () => ctx.i18n.t('labels.CHANGE_SOURCE_ACCOUNT'),
+        payload: trId,
+      },
+      'edit-source',
+      async (c) => {
         await enterEditFlow(c)
         // markup-less edit: navInstaller injects edit-source
         return c.editMessageText(c.i18n.t('transactions.edit.chooseNewSourceAccount'))
-      })
-      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'), payload: trId }, 'edit-dest', async (c) => {
+      },
+    )
+    .submenu(
+      {
+        text: () => ctx.i18n.t('labels.CHANGE_DEST_ACCOUNT'),
+        payload: trId,
+      },
+      'edit-dest',
+      async (c) => {
         await enterEditFlow(c)
         return c.editMessageText(c.i18n.t('transactions.edit.chooseNewDestinationAccount'))
-      })
-      .row()
-      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_DESCRIPTION'), payload: trId }, 'edit-description', async (c) => {
-        c.session.editFlow = { transactionId: trId, step: 'description', promptMessage: promptOf(c) }
+      },
+    )
+    .row()
+    .submenu(
+      {
+        text: () => ctx.i18n.t('labels.CHANGE_DESCRIPTION'),
+        payload: trId,
+      },
+      'edit-description',
+      async (c) => {
+        c.session.editFlow = {
+          transactionId: trId,
+          step: 'description',
+          promptMessage: promptOf(c),
+        }
         // markup-less edit: navInstaller injects edit-description (the 🔙 prompt keyboard)
         return c.editMessageText(c.i18n.t('transactions.edit.typeNewDescription'))
-      })
-      .submenu({ text: () => ctx.i18n.t('labels.CHANGE_AMOUNT'), payload: trId }, 'edit-amount', async (c) => {
-        c.session.editFlow = { transactionId: trId, step: 'amount', promptMessage: promptOf(c) }
+      },
+    )
+    .submenu(
+      {
+        text: () => ctx.i18n.t('labels.CHANGE_AMOUNT'),
+        payload: trId,
+      },
+      'edit-amount',
+      async (c) => {
+        c.session.editFlow = {
+          transactionId: trId,
+          step: 'amount',
+          promptMessage: promptOf(c),
+        }
         return c.editMessageText(c.i18n.t('transactions.edit.typeNewAmount'))
-      })
-      .row()
-    if (telegramUrlOk(browserUrl))
-      range.url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), browserUrl).row()
-    range
-      .text({ text: () => ctx.i18n.t('labels.DELETE'), payload: trId }, askDeleteConfirm)
-      .row()
-      .text({ text: () => ctx.i18n.t('labels.CLOSE'), payload: trId }, async c => showRecordFromId(c, trId))
-    return range
-  })
+      },
+    )
+    .row()
+  if (telegramUrlOk(browserUrl)) range.url(ctx.i18n.t('labels.OPEN_IN_BROWSER'), browserUrl).row()
+  range
+    .text(
+      {
+        text: () => ctx.i18n.t('labels.DELETE'),
+        payload: trId,
+      },
+      askDeleteConfirm,
+    )
+    .row()
+    .text(
+      {
+        text: () => ctx.i18n.t('labels.CLOSE'),
+        payload: trId,
+      },
+      async (c) => showRecordFromId(c, trId),
+    )
+  return range
+})
 
 // Edit category picker: the add-flow picker, but the page counter and trId
 // live in editFlow (render reads session, handlers mutate).
@@ -113,8 +178,7 @@ export const editCategoryMenu = new Menu<Context>('edit-category')
   .dynamic(async (ctx) => {
     const range = new MenuRange<Context>()
     const flow = ctx.session.editFlow
-    if (!flow)
-      return range // rendered outside a live flow (stale attach): empty grid
+    if (!flow) return range // rendered outside a live flow (stale attach): empty grid
     await appendCategoryPicker(ctx, range, flow.categoryPage, onEditCategorySelected, (c, page) => {
       c.session.editFlow!.categoryPage = page
     })
@@ -125,8 +189,7 @@ export const editCategoryMenu = new Menu<Context>('edit-category')
 async function onEditCategorySelected(ctx: Context) {
   const flow = ctx.session.editFlow
   const categoryId = String(ctx.match ?? '')
-  if (!flow || !categoryId)
-    return staleFlowExit(ctx)
+  if (!flow || !categoryId) return staleFlowExit(ctx)
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, { category_id: categoryId })
   ctx.session.editFlow = undefined
   return showRecord(ctx, updated, true)
@@ -138,12 +201,21 @@ export const editSourceMenu = new Menu<Context>('edit-source')
   .dynamic(async (ctx) => {
     const range = new MenuRange<Context>()
     const flow = ctx.session.editFlow
-    if (!flow)
-      return range
+    if (!flow) return range
     const cur = (await ctx.firefly.getTransaction(flow.transactionId)).attributes.transactions![0]!
-    const accounts = await pickAccounts(ctx, [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities], cur.destination_id ?? undefined)
+    const accounts = await pickAccounts(
+      ctx,
+      [AccountTypeFilter.Asset, AccountTypeFilter.Liabilities],
+      cur.destination_id ?? undefined,
+    )
     twoColumnRange(range, accounts, (r, acc) => {
-      r.text({ text: () => acc.attributes.name, payload: acc.id }, onEditSourceSelected)
+      r.text(
+        {
+          text: () => acc.attributes.name,
+          payload: acc.id,
+        },
+        onEditSourceSelected,
+      )
     })
     return range
   })
@@ -152,8 +224,7 @@ export const editSourceMenu = new Menu<Context>('edit-source')
 async function onEditSourceSelected(ctx: Context) {
   const flow = ctx.session.editFlow
   const accId = String(ctx.match ?? '')
-  if (!flow || !accId)
-    return staleFlowExit(ctx)
+  if (!flow || !accId) return staleFlowExit(ctx)
   // v1: the transaction follows the new source account's currency
   const account = await ctx.firefly.getAccount(accId)
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, {
@@ -169,11 +240,20 @@ export const editDestMenu = new Menu<Context>('edit-dest')
   .dynamic(async (ctx) => {
     const range = new MenuRange<Context>()
     const flow = ctx.session.editFlow
-    if (!flow)
-      return range
-    const accounts: AccountRead[] = await pickAccounts(ctx, [AccountTypeFilter.CashAccount, AccountTypeFilter.Liabilities, AccountTypeFilter.Expense])
+    if (!flow) return range
+    const accounts: AccountRead[] = await pickAccounts(ctx, [
+      AccountTypeFilter.CashAccount,
+      AccountTypeFilter.Liabilities,
+      AccountTypeFilter.Expense,
+    ])
     twoColumnRange(range, accounts, (r, acc) => {
-      r.text({ text: () => acc.attributes.name, payload: acc.id }, onEditDestSelected)
+      r.text(
+        {
+          text: () => acc.attributes.name,
+          payload: acc.id,
+        },
+        onEditDestSelected,
+      )
     })
     return range
   })
@@ -182,8 +262,7 @@ export const editDestMenu = new Menu<Context>('edit-dest')
 async function onEditDestSelected(ctx: Context) {
   const flow = ctx.session.editFlow
   const accId = String(ctx.match ?? '')
-  if (!flow || !accId)
-    return staleFlowExit(ctx)
+  if (!flow || !accId) return staleFlowExit(ctx)
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, { destination_id: accId })
   ctx.session.editFlow = undefined
   return showRecord(ctx, updated, true)
@@ -191,26 +270,39 @@ async function onEditDestSelected(ctx: Context) {
 
 // ---- delete confirm (owner-approved deviation: v1 deleted instantly) ----
 
-export const txnDeleteConfirmMenu = new Menu<Context>('txn-delete-confirm')
-  .dynamic((ctx) => {
-    // ctx.match here is the DELETE button's payload (the trId) — it is what
-    // bakes YES/CANCEL correctly at the confirm-menu attach render
-    const trId = typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined
-    const range = new MenuRange<Context>()
-    if (!trId)
-      return range
-    range
-      .text({ text: c => c.i18n.t('labels.YES'), payload: trId }, async (c) => {
+export const txnDeleteConfirmMenu = new Menu<Context>('txn-delete-confirm').dynamic((ctx) => {
+  // ctx.match here is the DELETE button's payload (the trId) — it is what
+  // bakes YES/CANCEL correctly at the confirm-menu attach render
+  const trId = typeof ctx.match === 'string' && ctx.match ? ctx.match : undefined
+  const range = new MenuRange<Context>()
+  if (!trId) return range
+  range
+    .text(
+      {
+        text: (c) => c.i18n.t('labels.YES'),
+        payload: trId,
+      },
+      async (c) => {
         await c.firefly.deleteTransaction(trId)
         await c.deleteMessage() // v1: the message just vanishes
-      })
-      .danger() // menu@1.5 destructive styling
-    range.text({ text: c => c.i18n.t('labels.CANCEL'), payload: trId }, async c => showRecordFromId(c, trId))
-    return range
-  })
+      },
+    )
+    .danger() // menu@1.5 destructive styling
+  range.text(
+    {
+      text: (c) => c.i18n.t('labels.CANCEL'),
+      payload: trId,
+    },
+    async (c) => showRecordFromId(c, trId),
+  )
+  return range
+})
 
 async function askDeleteConfirm(ctx: Context) {
-  await ctx.editMessageText(ctx.i18n.t('transactions.edit.confirmDeletion'), { parse_mode: 'Markdown', reply_markup: txnDeleteConfirmMenu })
+  await ctx.editMessageText(ctx.i18n.t('transactions.edit.confirmDeletion'), {
+    parse_mode: 'Markdown',
+    reply_markup: txnDeleteConfirmMenu,
+  })
 }
 
 function promptOf(ctx: Context) {
@@ -219,27 +311,44 @@ function promptOf(ctx: Context) {
 }
 
 // Prompt keyboards while waiting for text (v1 stub menus: 🔙 only).
-export const editAmountMenu = new Menu<Context>('edit-amount')
-  .text('🔙', cancelTextPrompt)
+export const editAmountMenu = new Menu<Context>('edit-amount').text('🔙', cancelTextPrompt)
 
-export const editDescriptionMenu = new Menu<Context>('edit-description')
-  .text('🔙', cancelTextPrompt)
+export const editDescriptionMenu = new Menu<Context>('edit-description').text(
+  '🔙',
+  cancelTextPrompt,
+)
 
 function currentView(): DatePickerView {
-  return { mode: 'month', year: dayjs().year(), month: dayjs().month() }
+  return {
+    mode: 'month',
+    year: dayjs().year(),
+    month: dayjs().month(),
+  }
 }
 
 // Host payload decoding: 'm'/'y' views pass through; '<trId>|d|<date>' maps to
 // the month it belongs to (day-click re-render); a bare trId (the CHANGE_DATE
 // attach) means "current month". Foreign/garbage → null → empty range.
-function decodeHost(raw: string): { trId: string, view: DatePickerView } | null {
+function decodeHost(raw: string): { trId: string; view: DatePickerView } | null {
   const decoded = decodeViewPayload(raw)
-  if (decoded)
-    return decoded
-  if (raw && !raw.includes('|'))
-    return { trId: raw, view: currentView() }
+  if (decoded) return decoded
+  if (raw && !raw.includes('|')) {
+    return {
+      trId: raw,
+      view: currentView(),
+    }
+  }
   const date = /^(\d+)\|d\|(\d{4})-(\d{2})-\d{2}$/.exec(raw)
-  return date ? { trId: date[1]!, view: { mode: 'month', year: Number(date[2]), month: Number(date[3]) - 1 } } : null
+  return date
+    ? {
+        trId: date[1]!,
+        view: {
+          mode: 'month',
+          year: Number(date[2]),
+          month: Number(date[3]) - 1,
+        },
+      }
+    : null
 }
 
 // Month-view host — ALWAYS renders a month layout from (year, month), whatever
@@ -248,13 +357,12 @@ function decodeHost(raw: string): { trId: string, view: DatePickerView } | null 
 // position-stable for 'm', 'y' (label click re-render) and 'd' payloads alike.
 // Labels derive from ctx.match → onMenuOutdated: false is REQUIRED; every
 // button handler-backed and payload-carrying (noop header/blank cells too).
-export const editDateMenu = new Menu<Context>('edit-date', { onMenuOutdated: false })
-  .dynamic((ctx) => {
+export const editDateMenu = new Menu<Context>('edit-date', { onMenuOutdated: false }).dynamic(
+  (ctx) => {
     const raw = typeof ctx.match === 'string' && ctx.match ? ctx.match : ''
     const decoded = decodeHost(raw)
     const range = new MenuRange<Context>()
-    if (!decoded)
-      return range
+    if (!decoded) return range
     const { trId, view } = decoded
     appendDatePicker(range, trId, view, 'edit-year', {
       onDate: async (c, date) => {
@@ -262,26 +370,34 @@ export const editDateMenu = new Menu<Context>('edit-date', { onMenuOutdated: fal
         c.session.editFlow = undefined
         return showRecord(c, updated, true)
       },
-      onBack: c => cancelTextPrompt(c),
+      onBack: (c) => cancelTextPrompt(c),
       backLabel: ctx.i18n.t('labels.CLOSE'),
     })
     return range
-  })
+  },
+)
 
 // Year-view host — ALWAYS renders the year layout for whatever (year, month)
 // the payload carries; year picks and back nav to the month menu (grammy nav
 // re-renders it from the same payload).
-export const editYearMenu = new Menu<Context>('edit-year', { onMenuOutdated: false })
-  .dynamic((ctx) => {
+export const editYearMenu = new Menu<Context>('edit-year', { onMenuOutdated: false }).dynamic(
+  (ctx) => {
     const raw = typeof ctx.match === 'string' && ctx.match ? ctx.match : ''
     const decoded = decodeHost(raw)
     const range = new MenuRange<Context>()
-    if (!decoded)
-      return range
+    if (!decoded) return range
     appendYearPicker(range, decoded.trId, decoded.view, 'edit-date', ctx.i18n.t('labels.CLOSE'))
     return range
-  })
+  },
+)
 
 editDateMenu.register([editYearMenu])
 
-editTransactionMenu.register([editCategoryMenu, editDateMenu, editSourceMenu, editDestMenu, editAmountMenu, editDescriptionMenu])
+editTransactionMenu.register([
+  editCategoryMenu,
+  editDateMenu,
+  editSourceMenu,
+  editDestMenu,
+  editAmountMenu,
+  editDescriptionMenu,
+])

@@ -19,8 +19,7 @@ export function updateLogger(): Middleware<Context> {
     const startTime = performance.now()
     try {
       await next()
-    }
-    finally {
+    } finally {
       ctx.logger.debug({ msg: 'Update processed', elapsed: performance.now() - startTime })
     }
   }

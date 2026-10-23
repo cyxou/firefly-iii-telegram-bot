@@ -5,15 +5,20 @@ describe('markdownTable', () => {
   it('renders a GFM table with header, separator and alignment', () => {
     const table = markdownTable(
       ['Name', 'Balance', 'Currency'],
-      [['Checking', '1234.50', 'USD'], ['Savings', '980.00', 'USD']],
+      [
+        ['Checking', '1234.50', 'USD'],
+        ['Savings', '980.00', 'USD'],
+      ],
       ['left', 'right', 'left'],
     )
-    expect(table).toBe([
-      '| Name | Balance | Currency |',
-      '| --- | ---: | --- |',
-      '| Checking | 1234.50 | USD |',
-      '| Savings | 980.00 | USD |',
-    ].join('\n'))
+    expect(table).toBe(
+      [
+        '| Name | Balance | Currency |',
+        '| --- | ---: | --- |',
+        '| Checking | 1234.50 | USD |',
+        '| Savings | 980.00 | USD |',
+      ].join('\n'),
+    )
   })
 
   it('escapes pipes and collapses newlines inside cells', () => {

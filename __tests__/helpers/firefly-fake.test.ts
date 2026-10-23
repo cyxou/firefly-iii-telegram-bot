@@ -53,8 +53,12 @@ describe('createTestFireflyService insights (fake parity for Phase 5)', () => {
         { name: 'Rent', currency: 'EUR', amount: 550 },
       ],
     })
-    expect(await firefly.insightIncomeTotal('2026-10-01', '2026-10-31')).toEqual([{ currency: 'EUR', amount: 4200 }])
-    expect(await firefly.insightExpenseTotal('2026-10-01', '2026-10-31')).toEqual([{ currency: 'EUR', amount: -2871.35 }])
+    expect(await firefly.insightIncomeTotal('2026-10-01', '2026-10-31')).toEqual([
+      { currency: 'EUR', amount: 4200 },
+    ])
+    expect(await firefly.insightExpenseTotal('2026-10-01', '2026-10-31')).toEqual([
+      { currency: 'EUR', amount: -2871.35 },
+    ])
     expect(await firefly.insightExpenseByCategory('2026-10-01', '2026-10-31')).toEqual([
       { name: 'Groceries', currency: 'EUR', amount: 612.4 },
       { name: 'Rent', currency: 'EUR', amount: 550 },
@@ -70,8 +74,12 @@ describe('createTestFireflyService insights (fake parity for Phase 5)', () => {
 
   it('id-scoped category insight still works under its new name', async () => {
     const firefly = createTestFireflyService({
-      categoryInsights: { 7: [{ currency: 'USD', difference: -45.3 }] },
+      categoryInsights: {
+        7: [{ currency: 'USD', difference: -45.3 }],
+      },
     })
-    expect(await firefly.insightExpenseForCategory('s', 'e', 7)).toEqual([{ currency: 'USD', difference: -45.3 }])
+    expect(await firefly.insightExpenseForCategory('s', 'e', 7)).toEqual([
+      { currency: 'USD', difference: -45.3 },
+    ])
   })
 })

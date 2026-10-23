@@ -35,69 +35,110 @@ describe('buildSplit', () => {
   })
 
   it('mimics Firefly type rules (v1 verbatim): asset→liability = withdrawal', () => {
-    const split = buildSplit(draft({ destAccount: { id: '4', name: 'Loan', type: 'liability' } }))
+    const split = buildSplit(
+      draft({
+        destAccount: { id: '4', name: 'Loan', type: 'liability' },
+      }),
+    )
     expect(split.type).toBe(TransactionTypeProperty.Withdrawal)
   })
 
   it('revenue or liability source = deposit', () => {
-    expect(buildSplit(draft({ sourceAccount: { id: '3', name: 'Employer', type: 'revenue' } })).type)
-      .toBe(TransactionTypeProperty.Deposit)
-    expect(buildSplit(draft({ sourceAccount: { id: '4', name: 'Loan', type: 'liability' } })).type)
-      .toBe(TransactionTypeProperty.Deposit)
+    expect(
+      buildSplit(
+        draft({
+          sourceAccount: { id: '3', name: 'Employer', type: 'revenue' },
+        }),
+      ).type,
+    ).toBe(TransactionTypeProperty.Deposit)
+    expect(
+      buildSplit(
+        draft({
+          sourceAccount: { id: '4', name: 'Loan', type: 'liability' },
+        }),
+      ).type,
+    ).toBe(TransactionTypeProperty.Deposit)
   })
 
   it('asset on either side otherwise = transfer; foreign fields only then', () => {
-    const split = buildSplit(draft({
-      destAccount: { id: '2', name: 'Wallet', type: 'asset', currencyId: '5' },
-      foreignAmount: '30',
-    }))
+    const split = buildSplit(
+      draft({
+        destAccount: {
+          id: '2',
+          name: 'Wallet',
+          type: 'asset',
+          currencyId: '5',
+        },
+        foreignAmount: '30',
+      }),
+    )
     expect(split.type).toBe(TransactionTypeProperty.Transfer)
     expect(split.foreign_amount).toBe('30')
     expect(split.foreign_currency_id).toBe('5')
   })
 
   it('no foreign fields without foreignAmount', () => {
-    const split = buildSplit(draft({ destAccount: { id: '2', name: 'Wallet', type: 'asset' } }))
+    const split = buildSplit(
+      draft({
+        destAccount: { id: '2', name: 'Wallet', type: 'asset' },
+      }),
+    )
     expect(split.foreign_amount).toBeUndefined()
     expect(split.foreign_currency_id).toBeUndefined()
   })
 
   it('fallback type is withdrawal', () => {
-    expect(buildSplit(draft({
-      sourceAccount: { id: '9', name: 'X', type: 'expense' },
-      destAccount: { id: '8', name: 'Y', type: 'expense' },
-    })).type).toBe(TransactionTypeProperty.Withdrawal)
+    expect(
+      buildSplit(
+        draft({
+          sourceAccount: { id: '9', name: 'X', type: 'expense' },
+          destAccount: { id: '8', name: 'Y', type: 'expense' },
+        }),
+      ).type,
+    ).toBe(TransactionTypeProperty.Withdrawal)
   })
 })
 
 describe('resolveDefaultAccounts', () => {
   it('stored defaults win without API calls', async () => {
     const firefly = createTestFireflyService({ accounts: ACCOUNTS })
-    const { source, destination } = await resolveDefaultAccounts(defaultSettings({
-      defaultSourceAccount: { id: '1', type: 'asset', name: 'Checking' },
-      defaultDestinationAccount: { id: '2', type: 'cash_account', name: 'Cash wallet' },
-    }), firefly)
+    const { source, destination } = await resolveDefaultAccounts(
+      defaultSettings({
+        defaultSourceAccount: { id: '1', type: 'asset', name: 'Checking' },
+        defaultDestinationAccount: { id: '2', type: 'cash_account', name: 'Cash wallet' },
+      }),
+      firefly,
+    )
     expect(source).toMatchObject({ id: '1' })
     expect(destination).toMatchObject({ id: '2' })
   })
 
   it('falls back to first active asset / first cash account', async () => {
-    const { source, destination } = await resolveDefaultAccounts(defaultSettings(), createTestFireflyService({ accounts: ACCOUNTS }))
+    const { source, destination } = await resolveDefaultAccounts(
+      defaultSettings(),
+      createTestFireflyService({ accounts: ACCOUNTS }),
+    )
     expect(source).toMatchObject({ id: '1' })
     expect(destination).toMatchObject({ id: '2' })
   })
 
   it('no asset accounts → source null (error path)', async () => {
-    const { source } = await resolveDefaultAccounts(defaultSettings(), createTestFireflyService({
-      accounts: [testAccount('2', 'Cash wallet', { type: 'Cash account' })],
-    }))
+    const { source } = await resolveDefaultAccounts(
+      defaultSettings(),
+      createTestFireflyService({
+        accounts: [testAccount('2', 'Cash wallet', { type: 'Cash account' })],
+      }),
+    )
     expect(source).toBeNull()
   })
 
   it('no cash account → destination null (quick mode sends destination_id undefined)', async () => {
-    const { destination } = await resolveDefaultAccounts(defaultSettings(), createTestFireflyService({
-      accounts: [testAccount('1', 'Checking', { type: 'asset' })],
-    }))
+    const { destination } = await resolveDefaultAccounts(
+      defaultSettings(),
+      createTestFireflyService({
+        accounts: [testAccount('1', 'Checking', { type: 'asset' })],
+      }),
+    )
     expect(destination).toBeNull()
   })
 })

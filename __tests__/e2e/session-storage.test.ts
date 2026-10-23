@@ -6,12 +6,10 @@ import { createSessionStorage } from '#root/lib/session.js'
 // rejects a second connect() while connected, so only connect when needed.
 const available = await (async () => {
   try {
-    if (redis.status !== 'ready')
-      await redis.connect()
+    if (redis.status !== 'ready') await redis.connect()
     await redis.ping()
     return true
-  }
-  catch {
+  } catch {
     return false
   }
 })()
@@ -19,8 +17,12 @@ const available = await (async () => {
 describe.skipIf(!available)('redis session storage (e2e)', () => {
   it('writes and reads a session key', async () => {
     const storage = createSessionStorage()
-    await storage.write('e2e-key', { settingsFlow: { step: 'url' } })
-    expect(await storage.read('e2e-key')).toEqual({ settingsFlow: { step: 'url' } })
+    await storage.write('e2e-key', {
+      settingsFlow: { step: 'url' },
+    })
+    expect(await storage.read('e2e-key')).toEqual({
+      settingsFlow: { step: 'url' },
+    })
     await storage.delete('e2e-key')
     expect(await storage.read('e2e-key')).toBeUndefined()
   })

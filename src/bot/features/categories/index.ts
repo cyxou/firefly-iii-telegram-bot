@@ -22,5 +22,7 @@ categoriesFeature.use(categoriesMenu)
 categoriesFeature.use(categoriesRouter)
 
 for (const locale of locales) {
-  categoriesFeature.hears(i18n.t(locale, 'labels.CATEGORIES'), async ctx => showCategoriesList(ctx, false))
+  categoriesFeature.hears(i18n.t(locale, 'labels.CATEGORIES'), async (ctx) =>
+    showCategoriesList(ctx, false),
+  )
 }

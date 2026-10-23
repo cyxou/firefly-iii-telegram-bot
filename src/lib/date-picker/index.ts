@@ -16,7 +16,11 @@ import type { MenuRange } from '@grammyjs/menu'
 import type { Context } from 'grammy'
 import dayjs from 'dayjs'
 
-export interface DatePickerView { mode: 'month' | 'year', year: number, month: number } // month 0-11
+export interface DatePickerView {
+  mode: 'month' | 'year'
+  year: number
+  month: number
+} // month 0-11
 
 /** '<trId>|m|<YYYY-MM>' month view · '<trId>|y|<YYYY>-<M>' year view */
 export function encodeViewPayload(trId: string, view: DatePickerView): string {
@@ -30,20 +34,23 @@ export function encodeDatePayload(trId: string, date: string): string {
   return `${trId}|d|${date}`
 }
 
-export function decodeViewPayload(raw: string): { trId: string, view: DatePickerView } | null {
+export function decodeViewPayload(raw: string): { trId: string; view: DatePickerView } | null {
   const [trId, kind, data] = raw.split('|')
-  if (!trId || !data)
-    return null
+  if (!trId || !data) return null
   const [y, m] = data.split('-').map(Number)
-  const view = kind === 'm'
-    ? { mode: 'month' as const, year: y, month: m - 1 }
-    : kind === 'y'
-      ? { mode: 'year' as const, year: y, month: m }
-      : null
-  if (!view)
-    return null
-  const ok = Number.isInteger(view.year) && view.year > 0
-    && Number.isInteger(view.month) && view.month >= 0 && view.month <= 11
+  const view =
+    kind === 'm'
+      ? { mode: 'month' as const, year: y, month: m - 1 }
+      : kind === 'y'
+        ? { mode: 'year' as const, year: y, month: m }
+        : null
+  if (!view) return null
+  const ok =
+    Number.isInteger(view.year) &&
+    view.year > 0 &&
+    Number.isInteger(view.month) &&
+    view.month >= 0 &&
+    view.month <= 11
   return ok ? { trId, view } : null
 }
 
@@ -72,14 +79,50 @@ export function appendDatePicker<C extends Context>(
   const prev = current.subtract(1, 'month')
   const next = current.add(1, 'month')
   const now = encodeViewPayload(trId, { mode: 'month', year: view.year, month: view.month })
-  range.row()
-    .text({ text: '‹', payload: encodeViewPayload(trId, { mode: 'month', year: prev.year(), month: prev.month() }) }, ctx => ctx.menu.update())
-    .submenu({ text: current.format('MMMM YYYY'), payload: encodeViewPayload(trId, { mode: 'year', year: view.year, month: view.month }) }, yearMenuId)
-    .text({ text: '›', payload: encodeViewPayload(trId, { mode: 'month', year: next.year(), month: next.month() }) }, ctx => ctx.menu.update())
+  range
+    .row()
+    .text(
+      {
+        text: '‹',
+        payload: encodeViewPayload(trId, {
+          mode: 'month',
+          year: prev.year(),
+          month: prev.month(),
+        }),
+      },
+      (ctx) => ctx.menu.update(),
+    )
+    .submenu(
+      {
+        text: current.format('MMMM YYYY'),
+        payload: encodeViewPayload(trId, { mode: 'year', year: view.year, month: view.month }),
+      },
+      yearMenuId,
+    )
+    .text(
+      {
+        text: '›',
+        payload: encodeViewPayload(trId, {
+          mode: 'month',
+          year: next.year(),
+          month: next.month(),
+        }),
+      },
+      (ctx) => ctx.menu.update(),
+    )
   // weekday header (Monday-first; v1 rendered these as noop buttons)
   range.row()
-  for (let i = 0; i < 7; i++)
-    range.text({ text: dayjs().day((i + 1) % 7).format('dd'), payload: now }, () => {})
+  for (let i = 0; i < 7; i++) {
+    range.text(
+      {
+        text: dayjs()
+          .day((i + 1) % 7)
+          .format('dd'),
+        payload: now,
+      },
+      () => {},
+    )
+  }
   // day grid; today renders as 'N*' (v1)
   const blanks = leadingBlanks(view.year, view.month)
   const days = current.daysInMonth()
@@ -89,15 +132,20 @@ export function appendDatePicker<C extends Context>(
     for (let d = weekStart; d < weekStart + 7; d++) {
       if (d < 1 || d > days) {
         range.text({ text: ' ', payload: now }, () => {}) // blank cell (v1)
-      }
-      else {
+      } else {
         const date = current.date(d).format('YYYY-MM-DD')
         const label = date === today ? `${d}*` : String(d)
-        range.text({ text: label, payload: encodeDatePayload(trId, date) }, ctx => handlers.onDate(ctx, date))
+        range.text(
+          {
+            text: label,
+            payload: encodeDatePayload(trId, date),
+          },
+          (ctx) => handlers.onDate(ctx, date),
+        )
       }
     }
   }
-  range.row().text({ text: handlers.backLabel, payload: now }, ctx => handlers.onBack(ctx))
+  range.row().text({ text: handlers.backLabel, payload: now }, (ctx) => handlers.onBack(ctx))
 }
 
 /** Year-view decade grid into `range`; picks/back nav to `monthMenuId`. */
@@ -110,11 +158,25 @@ export function appendYearPicker<C extends Context>(
 ): void {
   const start = Math.floor(view.year / 10) * 10
   const now = encodeViewPayload(trId, { mode: 'year', year: view.year, month: view.month })
-  const toMonth = (year: number) => encodeViewPayload(trId, { mode: 'month', year, month: view.month })
-  range.row()
-    .text({ text: '‹‹', payload: encodeViewPayload(trId, { mode: 'year', year: start - 10, month: view.month }) }, ctx => ctx.menu.update())
+  const toMonth = (year: number) =>
+    encodeViewPayload(trId, { mode: 'month', year, month: view.month })
+  range
+    .row()
+    .text(
+      {
+        text: '‹‹',
+        payload: encodeViewPayload(trId, { mode: 'year', year: start - 10, month: view.month }),
+      },
+      (ctx) => ctx.menu.update(),
+    )
     .text({ text: `${start}-${start + 9}`, payload: now }, () => {}) // decade label (v1 noop)
-    .text({ text: '››', payload: encodeViewPayload(trId, { mode: 'year', year: start + 10, month: view.month }) }, ctx => ctx.menu.update())
+    .text(
+      {
+        text: '››',
+        payload: encodeViewPayload(trId, { mode: 'year', year: start + 10, month: view.month }),
+      },
+      (ctx) => ctx.menu.update(),
+    )
   // 2 rows of 5 years; active year bracketed (v1). Picking (or back) returns
   // to the month view — nav re-renders the month menu from this payload.
   for (let row = 0; row < 2; row++) {
@@ -122,8 +184,20 @@ export function appendYearPicker<C extends Context>(
     for (let col = 0; col < 5; col++) {
       const year = start + row * 5 + col
       const label = year === view.year ? `[${year}]` : String(year)
-      range.text({ text: label, payload: toMonth(year) }, ctx => ctx.menu.nav(monthMenuId))
+      range.text(
+        {
+          text: label,
+          payload: toMonth(year),
+        },
+        (ctx) => ctx.menu.nav(monthMenuId),
+      )
     }
   }
-  range.row().text({ text: backLabel, payload: toMonth(view.year) }, ctx => ctx.menu.nav(monthMenuId))
+  range.row().text(
+    {
+      text: backLabel,
+      payload: toMonth(view.year),
+    },
+    (ctx) => ctx.menu.nav(monthMenuId),
+  )
 }

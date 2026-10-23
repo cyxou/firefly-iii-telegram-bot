@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: 'Version bump level'
+        description: Version bump level
         type: choice
         required: true
         default: patch

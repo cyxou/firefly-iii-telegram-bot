@@ -20,12 +20,10 @@ import {
 // rejects a second connect() while connected, so only connect when needed.
 const available = await (async () => {
   try {
-    if (redis.status !== 'ready')
-      await redis.connect()
+    if (redis.status !== 'ready') await redis.connect()
     await redis.ping()
     return true
-  }
-  catch {
+  } catch {
     return false
   }
 })()
@@ -44,7 +42,11 @@ async function makeBot() {
   const firefly = createTestFireflyService({
     accounts: [
       testAccount('1', 'Checking', { type: 'asset', currencyId: '1', currencySymbol: 'USD' }),
-      testAccount('2', 'Cash wallet', { type: 'Cash account', currencyId: '1', currencySymbol: 'USD' }),
+      testAccount('2', 'Cash wallet', {
+        type: 'Cash account',
+        currencyId: '1',
+        currencySymbol: 'USD',
+      }),
       testAccount('3', 'EUR wallet', { type: 'asset', currencyId: '2', currencySymbol: 'EUR' }),
       testAccount('4', 'Employer', { type: 'revenue' }),
     ],
@@ -62,8 +64,7 @@ async function makeBot() {
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   const send = (text: string) => bot.handleUpdate(generateMessageUpdate(text))
@@ -74,7 +75,10 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
   it('quick add: "Groceries 25" → withdrawal record; session survives (no flow leak)', async () => {
     const { api, send } = await makeBot()
     await send('Groceries 25')
-    const reply = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    const reply = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((reply.payload as any).text).toContain('Groceries')
   })
 
@@ -82,7 +86,10 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
     const { api, click, send } = await makeBot()
     await send('12')
     await click('Food')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Food')
   })
 
@@ -93,18 +100,24 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
     await click('Checking')
     await click('EUR wallet')
     await bot.handleUpdate(generateMessageUpdate('90'))
-    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
-    const reply = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
+    const reply = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((reply.payload as any).text).toContain('90')
   })
 
   it('list: tabs + day nav re-render through redis-backed menus', async () => {
     const { api, click, send } = await makeBot()
     await send('🔀 Transactions')
-    const first = api.getOutgoingRequests().find(r => r.method === 'sendRichMessage')
+    const first = api.getOutgoingRequests().find((r) => r.method === 'sendRichMessage')
     expect(first).toBeDefined()
     await click('📥 Deposits')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).rich_message).toBeDefined()
   })
 
@@ -114,7 +127,10 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
     await click('✏️ Edit')
     await click('🔖 Category')
     await click('Food')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Food')
   })
 
@@ -124,10 +140,10 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
     await click('✏️ Edit')
     await click('💸 Amount')
     await bot.handleUpdate(generateMessageUpdate('30'))
-    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
     // next text is a NEW add — editFlow did not leak across the redis session
     await send('Cinema 9')
-    const replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
+    const replies = api.getOutgoingRequests().filter((r) => r.method === 'sendMessage')
     expect(replies.length).toBeGreaterThanOrEqual(3) // record + fresh record + new record
   })
 
@@ -137,6 +153,6 @@ describe.skipIf(!available)('transactions (e2e, real redis)', () => {
     await click('✏️ Edit')
     await click('❌ Delete')
     await click('✅ Yes')
-    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
   })
 })

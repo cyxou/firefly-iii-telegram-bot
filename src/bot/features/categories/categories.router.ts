@@ -4,10 +4,13 @@ import { categoriesConfirmMenu, showCategoriesList } from './categories.menu.js'
 
 // Keyed on this flow's OWN session field — flows cannot re-point each other
 // (the v1 shared `step` router corruption mode, structurally impossible here).
-export const categoriesRouter = new Router<Context>(ctx => ctx.session.categoryFlow?.step)
+export const categoriesRouter = new Router<Context>((ctx) => ctx.session.categoryFlow?.step)
 
 categoriesRouter.route('add', async (ctx) => {
-  const names = (ctx.msg?.text ?? '').split('\n').map(s => s.trim()).filter(Boolean)
+  const names = (ctx.msg?.text ?? '')
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
   ctx.session.categoryFlow = { step: 'add', names }
   await ctx.reply(ctx.i18n.t('categories.confirmCreation', { categories: names }), {
     parse_mode: 'Markdown',

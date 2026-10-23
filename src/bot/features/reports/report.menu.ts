@@ -6,7 +6,7 @@ import { escapeRichMarkdown, markdownTable } from '#root/bot/helpers/rich.js'
 // Local 2-liner, same as categories.menu.ts — extracting a shared month-label
 // helper for two users is not worth a new module.
 function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, c => c.toLocaleUpperCase())
+  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
 function money(amount: number, currency: string): string {
@@ -23,15 +23,28 @@ function parseAnchor(match: unknown): dayjs.Dayjs {
 // onMenuOutdated: false + fixed layout + every button handler-backed.
 // Hears-entry attach renders with no payload → parseAnchor falls back to the
 // current month, so the fresh message gets a nav row too.
-export const reportsMenu = new Menu<Context>('reports', { onMenuOutdated: false })
-  .dynamic((ctx) => {
+export const reportsMenu = new Menu<Context>('reports', { onMenuOutdated: false }).dynamic(
+  (ctx) => {
     const anchor = parseAnchor(ctx.match)
     const prev = anchor.subtract(1, 'month')
     const next = anchor.add(1, 'month')
     return new MenuRange<Context>()
-      .text({ text: () => `<< ${monthLabel(prev)}`, payload: prev.format('YYYY-MM-DD') }, showReportFor)
-      .text({ text: () => `${monthLabel(next)} >>`, payload: next.format('YYYY-MM-DD') }, showReportFor)
-  })
+      .text(
+        {
+          text: () => `<< ${monthLabel(prev)}`,
+          payload: prev.format('YYYY-MM-DD'),
+        },
+        showReportFor,
+      )
+      .text(
+        {
+          text: () => `${monthLabel(next)} >>`,
+          payload: next.format('YYYY-MM-DD'),
+        },
+        showReportFor,
+      )
+  },
+)
 
 export async function showCurrentReport(ctx: Context) {
   const markdown = await reportMarkdown(ctx, dayjs())
@@ -52,8 +65,12 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
     ctx.firefly.insightExpenseByCategory(start, end),
   ])
 
-  const lines = [ctx.i18n.t('reports.title', { monthName: escapeRichMarkdown(monthLabel(anchor)) })]
-  const currencies = [...new Set([...incomeTotals, ...expenseTotals].map(t => t.currency))]
+  const lines = [
+    ctx.i18n.t('reports.title', {
+      monthName: escapeRichMarkdown(monthLabel(anchor)),
+    }),
+  ]
+  const currencies = [...new Set([...incomeTotals, ...expenseTotals].map((t) => t.currency))]
 
   if (!currencies.length) {
     lines.push('', ctx.i18n.t('reports.empty'))
@@ -62,8 +79,8 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
 
   // One block per currency; expense amounts arrive signed-negative from the API.
   for (const currency of currencies) {
-    const income = incomeTotals.find(t => t.currency === currency)?.amount ?? 0
-    const expense = expenseTotals.find(t => t.currency === currency)?.amount ?? 0
+    const income = incomeTotals.find((t) => t.currency === currency)?.amount ?? 0
+    const expense = expenseTotals.find((t) => t.currency === currency)?.amount ?? 0
     const net = income + expense
     lines.push(
       '',
@@ -76,13 +93,14 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
   if (byCategory.length) {
     const rows = [...byCategory]
       .sort((a, b) => b.amount - a.amount)
-      .map(c => [escapeRichMarkdown(c.name), money(c.amount, c.currency)])
+      .map((c) => [escapeRichMarkdown(c.name), money(c.amount, c.currency)])
     // leading \n = blank line before the table (GFM tables can't interrupt a paragraph)
-    lines.push(`\n${markdownTable(
-      [ctx.i18n.t('tables.category'), ctx.i18n.t('tables.amount')],
-      rows,
-      ['left', 'right'],
-    )}`)
+    lines.push(
+      `\n${markdownTable([ctx.i18n.t('tables.category'), ctx.i18n.t('tables.amount')], rows, [
+        'left',
+        'right',
+      ])}`,
+    )
   }
   return lines.join('\n')
 }

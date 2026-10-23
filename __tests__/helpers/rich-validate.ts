@@ -21,17 +21,19 @@ export function validateRichMarkdown(markdown: string): string[] {
   const lines = markdown.split('\n')
   const violations: string[] = []
   for (let i = 0; i < lines.length; i++) {
-    if (!isTableRow(lines[i]))
-      continue
+    if (!isTableRow(lines[i])) continue
     // start of a table run (previous line is not itself a table row)
-    if (i > 0 && isTableRow(lines[i - 1]))
-      continue
+    if (i > 0 && isTableRow(lines[i - 1])) continue
     const prev = i > 0 ? lines[i - 1].trim() : ''
     if (prev !== '')
-      violations.push(`GFM table at line ${i + 1} interrupts a paragraph (needs a blank line before it): ${lines[i].slice(0, 60)}`)
+      violations.push(
+        `GFM table at line ${i + 1} interrupts a paragraph (needs a blank line before it): ${lines[i].slice(0, 60)}`,
+      )
     const next = lines[i + 1]
     if (next === undefined || !isDelimiterRow(next))
-      violations.push(`pipe row at line ${i + 1} has no GFM separator row after it (renders as literal text): ${lines[i].slice(0, 60)}`)
+      violations.push(
+        `pipe row at line ${i + 1} has no GFM separator row after it (renders as literal text): ${lines[i].slice(0, 60)}`,
+      )
   }
   return violations
 }

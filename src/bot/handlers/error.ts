@@ -17,8 +17,7 @@ export async function errorHandler(error: BotError<Context>) {
   // itself can fail (or i18n may not be attached if the error predates that middleware).
   try {
     await ctx.reply(ctx.i18n.t('common.errorOccurred'))
-  }
-  catch {
+  } catch {
     // logged above — nothing further to do
   }
 }

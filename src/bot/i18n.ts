@@ -19,7 +19,10 @@ const i18n = new I18n({
   defaultLanguageOnMissing: true,
   useSession: false, // v1 had true; v2 keeps the language of record in the settings store
   allowMissing: false,
-  templateData: { pluralize, uppercase: (value: string) => value.toUpperCase() },
+  templateData: {
+    pluralize,
+    uppercase: (value: string) => value.toUpperCase(),
+  },
 })
 
 const locales = ['ru', 'it', 'en', 'es'] as const

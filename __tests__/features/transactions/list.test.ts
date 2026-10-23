@@ -22,18 +22,30 @@ const CONFIGURED = defaultSettings({
 
 const TODAY = dayjs().format('YYYY-MM-DD')
 
-async function setup(transactions = [
-  testTransaction('Coffee', { type: 'withdrawal', amount: '4.5', date: `${TODAY}T08:30:00+00:00` }),
-  testTransaction('Salary', { type: 'deposit', amount: '1000', date: `${TODAY}T09:00:00+00:00` }),
-  testTransaction('To savings', { type: 'transfer', amount: '200', date: `${TODAY}T10:00:00+00:00` }),
-]) {
-  const { bot } = createTestBot({ settings: CONFIGURED, firefly: createTestFireflyService({ transactions }) })
+async function setup(
+  transactions = [
+    testTransaction('Coffee', {
+      type: 'withdrawal',
+      amount: '4.5',
+      date: `${TODAY}T08:30:00+00:00`,
+    }),
+    testTransaction('Salary', { type: 'deposit', amount: '1000', date: `${TODAY}T09:00:00+00:00` }),
+    testTransaction('To savings', {
+      type: 'transfer',
+      amount: '200',
+      date: `${TODAY}T10:00:00+00:00`,
+    }),
+  ],
+) {
+  const { bot } = createTestBot({
+    settings: CONFIGURED,
+    firefly: createTestFireflyService({ transactions }),
+  })
   const api = setupMockApi(bot)
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   return { bot, api, click }
@@ -59,7 +71,10 @@ describe('transactions list', () => {
     await sendTransactionsLabel(bot)
     // switch to deposits
     await click(i18n.t('en', 'labels.SHOW_DEPOSITS'))
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     const markdown = (edit.payload as any).rich_message.markdown as string
     expect(markdown).toContain('Salary')
     expect(markdown).not.toContain('Coffee')
@@ -67,8 +82,13 @@ describe('transactions list', () => {
     const btn = findButton(api.getOutgoingRequests(), i18n.t('en', 'labels.SHOW_TRANSFERS'))!
     expect(btn.data).toContain('transfer|')
     await click(i18n.t('en', 'labels.SHOW_TRANSFERS'))
-    const transferEdit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
-    expect(((transferEdit.payload as any).rich_message as { markdown: string }).markdown).toContain('To savings')
+    const transferEdit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
+    expect(((transferEdit.payload as any).rich_message as { markdown: string }).markdown).toContain(
+      'To savings',
+    )
   })
 
   it('day navigation: << edits to yesterday and back', async () => {
@@ -76,7 +96,10 @@ describe('transactions list', () => {
     await sendTransactionsLabel(bot)
     const prevLabel = `<< ${dayjs(TODAY).subtract(1, 'day').format('ll')}`
     await click(prevLabel)
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     const markdown = (edit.payload as any).rich_message.markdown as string
     expect(markdown).toContain(dayjs(TODAY).subtract(1, 'day').format('LL'))
     expect(markdown).toContain('No transactions')
@@ -85,9 +108,9 @@ describe('transactions list', () => {
   it('dONE deletes the list message', async () => {
     const { bot, api, click } = await setup()
     await sendTransactionsLabel(bot)
-    const send = api.getOutgoingRequests().find(r => r.method === 'sendRichMessage')!
+    const send = api.getOutgoingRequests().find((r) => r.method === 'sendRichMessage')!
     await click(i18n.t('en', 'labels.DONE'))
-    const del = api.getOutgoingRequests().find(r => r.method === 'deleteMessage')!
+    const del = api.getOutgoingRequests().find((r) => r.method === 'deleteMessage')!
     expect((del.payload as any).message_id).toBe(send.resultMessageId)
   })
 })

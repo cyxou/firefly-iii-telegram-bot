@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
-// E2E: real Redis from docker-compose.tests.yaml (port 6380). Telegram is still mocked.
+// E2E: real Redis from compose.tests.yaml (port 6380). Telegram is still mocked.
 export default defineConfig({
   test: {
     include: ['__tests__/e2e/**/*.test.ts'],
@@ -10,5 +10,9 @@ export default defineConfig({
     testTimeout: 20000,
     globals: true,
   },
-  resolve: { alias: { '#root': path.resolve(import.meta.dirname, './src') } },
+  resolve: {
+    alias: {
+      '#root': path.resolve(import.meta.dirname, './src'),
+    },
+  },
 })

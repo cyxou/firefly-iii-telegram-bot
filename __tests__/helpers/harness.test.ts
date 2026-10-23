@@ -5,7 +5,7 @@ import { generateMessageUpdate, initializeBot, setupMockApi } from './bot.js'
 describe('mock API harness', () => {
   it('records sendMessage calls', async () => {
     const bot = new Bot<any>('123456:ABCdef')
-    bot.on('message:text', ctx => ctx.reply(`echo:${ctx.msg.text}`))
+    bot.on('message:text', (ctx) => ctx.reply(`echo:${ctx.msg.text}`))
     const api = setupMockApi(bot)
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate('hi'))
@@ -19,6 +19,8 @@ describe('mock API harness', () => {
     const bot = new Bot<any>('123456:ABCdef')
     setupMockApi(bot)
     await initializeBot(bot)
-    await expect(bot.api.editMessageText(1111111, 999, 'x')).rejects.toThrow('message to edit not found')
+    await expect(bot.api.editMessageText(1111111, 999, 'x')).rejects.toThrow(
+      'message to edit not found',
+    )
   })
 })

@@ -10,8 +10,7 @@ import { createMainKeyboard } from '#root/bot/helpers/keyboard.js'
 // configured users, so a stale keyboard fails into the error boundary like v1.
 export function requireSettings(): Middleware<Context> {
   return async (ctx, next) => {
-    if (ctx.callbackQuery)
-      return next()
+    if (ctx.callbackQuery) return next()
     if (!ctx.settings?.fireflyUrl) {
       return ctx.reply(ctx.i18n.t('mdlwr.noFireflyURLFound'), {
         parse_mode: 'Markdown',

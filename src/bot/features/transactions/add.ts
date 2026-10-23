@@ -21,7 +21,9 @@ export async function handleAddText(ctx: Context) {
 
   const { source, destination } = await resolveDefaultAccounts(ctx.settings, ctx.firefly)
   if (!source)
-    return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), { reply_markup: openAssetAccountsMenu })
+    return ctx.reply(ctx.i18n.t('common.noDefaultSourceAccountExist'), {
+      reply_markup: openAssetAccountsMenu,
+    })
 
   if (!parsed.description) {
     ctx.session.txnFlow = {
@@ -42,14 +44,19 @@ export async function handleAddText(ctx: Context) {
     })
   }
 
-  const tr = await ctx.firefly.storeTransaction(buildSplit({
-    amount: String(amount),
-    date: dayjs.unix(ctx.msg!.date).toISOString(),
-    description: parsed.description,
-    sourceAccount: source,
-    destAccount: destination,
-    categoryId: null,
-  }, TransactionTypeProperty.Withdrawal))
+  const tr = await ctx.firefly.storeTransaction(
+    buildSplit(
+      {
+        amount: String(amount),
+        date: dayjs.unix(ctx.msg!.date).toISOString(),
+        description: parsed.description,
+        sourceAccount: source,
+        destAccount: destination,
+        categoryId: null,
+      },
+      TransactionTypeProperty.Withdrawal,
+    ),
+  )
   // Drop any half-finished flow, else its menu message can later resume with a
   // stale amount/date (v1 session-cleanup semantics, scoped to our field)
   ctx.session.txnFlow = undefined

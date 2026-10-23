@@ -27,7 +27,9 @@ transactionsFeature.use(editRouter)
 // hears ABOVE on('message:text') — the main-keyboard label must not be parsed
 // as a transaction amount
 for (const locale of locales) {
-  transactionsFeature.hears(i18n.t(locale, 'labels.TRANSACTIONS'), async ctx => showTransactions(ctx, false))
+  transactionsFeature.hears(i18n.t(locale, 'labels.TRANSACTIONS'), async (ctx) =>
+    showTransactions(ctx, false),
+  )
 }
 
 transactionsFeature.on('message:text', handleAddText)

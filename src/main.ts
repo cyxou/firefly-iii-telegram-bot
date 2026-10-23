@@ -27,7 +27,9 @@ async function main() {
     // The ping rejects with an opaque MaxRetriesPerRequestError; the cause
     // above is what an operator actually needs to see.
     const cause = lastConnectionError?.message ?? (error as Error).message
-    throw new Error(`Redis is unreachable at ${REDIS_URL} — ${cause}. Is Redis running?`, { cause: error })
+    throw new Error(`Redis is unreachable at ${REDIS_URL} — ${cause}. Is Redis running?`, {
+      cause: error,
+    })
   }
 
   const bot = createBot(config.botToken, {

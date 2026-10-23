@@ -20,10 +20,12 @@ export function markdownTable(
   rows: readonly (readonly string[])[],
   aligns: readonly ('left' | 'right' | 'center')[] = [],
 ): string {
-  const row = (cells: readonly string[]) => `| ${cells.map(c => escapeCell(c)).join(' | ')} |`
-  const separator = `| ${header.map((_, i) => {
-    const a = aligns[i]
-    return a === 'right' ? '---:' : a === 'center' ? ':---:' : '---'
-  }).join(' | ')} |`
+  const row = (cells: readonly string[]) => `| ${cells.map((c) => escapeCell(c)).join(' | ')} |`
+  const separator = `| ${header
+    .map((_, i) => {
+      const a = aligns[i]
+      return a === 'right' ? '---:' : a === 'center' ? ':---:' : '---'
+    })
+    .join(' | ')} |`
   return [row(header), separator, ...rows.map(row)].join('\n')
 }

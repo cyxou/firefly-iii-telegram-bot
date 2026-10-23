@@ -1,5 +1,5 @@
 // E2E: pin the shared Redis client to the ephemeral test container
-// (docker-compose.tests.yaml, port 6380) and flush it before every file.
+// (compose.tests.yaml, port 6380) and flush it before every file.
 import { afterEach } from 'vitest'
 import { expectNoRichViolations } from '../helpers/rich-validate.js'
 
@@ -16,7 +16,6 @@ try {
   const { redis } = await import('#root/lib/redis.js')
   await redis.connect()
   await redis.flushdb()
-}
-catch {
+} catch {
   // No Redis available — session-dependent e2e tests self-skip
 }

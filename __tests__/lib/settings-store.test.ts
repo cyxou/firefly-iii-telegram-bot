@@ -10,7 +10,7 @@ import {
 
 const dirs: string[] = []
 afterEach(async () => {
-  await Promise.all(dirs.map(d => rm(d, { recursive: true, force: true })))
+  await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true })))
   dirs.length = 0
 })
 
@@ -21,7 +21,10 @@ describe('settings store', () => {
     const file = path.join(dir, 'settings.json')
     const store = createFileSettingsStore(file)
 
-    const s = defaultSettings({ fireflyUrl: 'https://ff.example.com', fireflyApiUrl: 'https://ff.example.com/api' })
+    const s = defaultSettings({
+      fireflyUrl: 'https://ff.example.com',
+      fireflyApiUrl: 'https://ff.example.com/api',
+    })
     await store.save(1111111, s)
 
     const onDisk = JSON.parse(await readFile(file, 'utf8'))

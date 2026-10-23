@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxlint/configuration/schema.json",
+  "ignorePatterns": [
+    "node_modules/**",
+    "**/node_modules/**",
+    "legacy/**",
+    "dist/**",
+    "docs/**",
+    "data/**",
+    "src/lib/firefly/generated/**"
+  ]
+}

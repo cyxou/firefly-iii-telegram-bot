@@ -50,7 +50,7 @@ welcome: >
   Può anche gestire alcune entità di Firefly.
 needToSet: 'Per iniziare a lavorare con il bot, è necessario specificare quanto segue:'
 setFireflyUrl: '  - *🔗 Firefly URL* - Indirizzo URL della tua istanza Firefly III'
-setFireflyAccessToken: '  - *🔑 Access Token* creato nell''interfaccia web di Firefly III'
+setFireflyAccessToken: "  - *🔑 Access Token* creato nell'interfaccia web di Firefly III"
 navigateToSettings: Per procedere ulteriormente, vai su *🔧 Impostazioni*.
 
 help: >

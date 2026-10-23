@@ -14,12 +14,18 @@ startFeature.command(command.START, async (ctx) => {
   })
 })
 
-startFeature.command(command.HELP, ctx =>
-  ctx.reply(ctx.i18n.t('help'), { parse_mode: 'Markdown', reply_markup: createMainKeyboard(ctx) }))
+startFeature.command(command.HELP, (ctx) =>
+  ctx.reply(ctx.i18n.t('help'), {
+    parse_mode: 'Markdown',
+    reply_markup: createMainKeyboard(ctx),
+  }),
+)
 
 function setBotCommands(ctx: Context) {
-  return ctx.api.setMyCommands(Object.values(command).map(c => ({
-    command: c,
-    description: ctx.i18n.t(`commands.${c}`),
-  })))
+  return ctx.api.setMyCommands(
+    Object.values(command).map((c) => ({
+      command: c,
+      description: ctx.i18n.t(`commands.${c}`),
+    })),
+  )
 }

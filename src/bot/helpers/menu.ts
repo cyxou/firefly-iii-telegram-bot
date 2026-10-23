@@ -12,7 +12,6 @@ export function twoColumnRange<C extends Context, T>(
 ): void {
   items.forEach((item, i) => {
     add(range, item)
-    if (i % 2 !== 0 || i === items.length - 1)
-      range.row()
+    if (i % 2 !== 0 || i === items.length - 1) range.row()
   })
 }

@@ -28,13 +28,15 @@ function resErrorInterceptor(axiosError: AxiosError) {
   if (axiosError.response?.status === 401 && axiosError.response.statusText === 'Unauthorized')
     return Promise.reject(new AuthenticationError(axiosError?.code))
   if (
-    axiosError.code === 'ERR_BAD_REQUEST'
-    && (axiosError.response?.data as any)?.exception === 'NotFoundHttpException'
+    axiosError.code === 'ERR_BAD_REQUEST' &&
+    (axiosError.response?.data as any)?.exception === 'NotFoundHttpException'
   ) {
     return Promise.reject(new ResourceNotFoundError(axiosError.code))
   }
   if (axiosError.code === 'ERR_BAD_REQUEST')
-    return Promise.reject(new BadRequestError((axiosError.response?.data as any)?.message || axiosError.code))
+    return Promise.reject(
+      new BadRequestError((axiosError.response?.data as any)?.message || axiosError.code),
+    )
   if (axiosError.code === 'ENOTFOUND' || axiosError.code === 'ECONNREFUSED')
     return Promise.reject(new HostNotFoundError(axiosError.code))
   return Promise.reject(axiosError)
@@ -54,8 +56,7 @@ export function createFireflyClients(settings: {
 }): FireflyClients {
   const key = `${settings.fireflyApiUrl}|${settings.fireflyAccessToken}`
   const cached = cache.get(key)
-  if (cached)
-    return cached
+  if (cached) return cached
 
   if (!interceptorsRegistered) {
     axios.interceptors.response.use(resSuccessInterceptor, resErrorInterceptor)

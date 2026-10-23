@@ -7,5 +7,5 @@ export const accountsFeature = new Composer<Context>()
 
 accountsFeature.use(accountsMenu)
 for (const locale of locales) {
-  accountsFeature.hears(i18n.t(locale, 'labels.ACCOUNTS'), async ctx => showAccounts(ctx, false))
+  accountsFeature.hears(i18n.t(locale, 'labels.ACCOUNTS'), async (ctx) => showAccounts(ctx, false))
 }

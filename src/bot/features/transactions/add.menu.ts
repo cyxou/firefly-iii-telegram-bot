@@ -5,7 +5,13 @@ import { twoColumnRange } from '#root/bot/helpers/menu.js'
 import { TransactionTypeProperty } from '#root/lib/firefly/service.js'
 import { buildSplit } from './create.js'
 import { showRecord, staleFlowExit } from './record.js'
-import { newDepositMenu, newDepositTargetMenu, newTransferMenu, newTransferTargetMenu, txnForeignMenu } from './transfer.menu.js'
+import {
+  newDepositMenu,
+  newDepositTargetMenu,
+  newTransferMenu,
+  newTransferTargetMenu,
+  txnForeignMenu,
+} from './transfer.menu.js'
 
 export const CATEGORIES_PER_PAGE = 20 // v1 CATEGORIES_PAGE_LIMIT
 
@@ -25,15 +31,20 @@ export async function appendCategoryPicker(
   let categories: CategoryRead[] = []
   try {
     categories = await ctx.firefly.listCategories()
-  }
-  catch (err) {
+  } catch (err) {
     ctx.logger.warn({ err }, 'category picker render failed') // dead range, live nav rows
   }
   const current = page ?? 1
   const totalPages = Math.max(1, Math.ceil(categories.length / CATEGORIES_PER_PAGE))
   const slice = categories.slice((current - 1) * CATEGORIES_PER_PAGE, current * CATEGORIES_PER_PAGE)
   twoColumnRange(range, slice, (r, category) => {
-    r.text({ text: () => category.attributes.name, payload: category.id }, onPick)
+    r.text(
+      {
+        text: () => category.attributes.name,
+        payload: category.id,
+      },
+      onPick,
+    )
   })
   if (current > 1) {
     range.text('<<', async (c) => {
@@ -55,32 +66,50 @@ export const addTransactionMenu = new Menu<Context>('add-transaction')
   .dynamic(async (ctx) => {
     const range = new MenuRange<Context>()
     const flow = ctx.session.txnFlow
-    if (!flow)
-      return range // rendered outside a live flow (stale attach): empty grid
+    if (!flow) return range // rendered outside a live flow (stale attach): empty grid
     await appendCategoryPicker(ctx, range, flow.categoryPage, onCategorySelected, (c, page) => {
       c.session.txnFlow!.categoryPage = page
     })
     return range
   })
-  .submenu(c => c.i18n.t('labels.TO_DEPOSITS'), 'new-deposit', async (c) => {
-    // markup-less edit injects new-deposit
-    return c.editMessageText(c.i18n.t('transactions.add.selectRevenueAccount', { amount: c.session.txnFlow?.draft.amount ?? '' }), { parse_mode: 'Markdown' })
-  })
+  .submenu(
+    (c) => c.i18n.t('labels.TO_DEPOSITS'),
+    'new-deposit',
+    async (c) => {
+      // markup-less edit injects new-deposit
+      return c.editMessageText(
+        c.i18n.t('transactions.add.selectRevenueAccount', {
+          amount: c.session.txnFlow?.draft.amount ?? '',
+        }),
+        { parse_mode: 'Markdown' },
+      )
+    },
+  )
   .row()
-  .submenu(c => c.i18n.t('labels.TO_TRANSFERS'), 'new-transfer', async (c) => {
-    return c.editMessageText(c.i18n.t('transactions.add.selectSourceAccount', { amount: c.session.txnFlow?.draft.amount ?? '' }), { parse_mode: 'Markdown' })
-  })
+  .submenu(
+    (c) => c.i18n.t('labels.TO_TRANSFERS'),
+    'new-transfer',
+    async (c) => {
+      return c.editMessageText(
+        c.i18n.t('transactions.add.selectSourceAccount', {
+          amount: c.session.txnFlow?.draft.amount ?? '',
+        }),
+        { parse_mode: 'Markdown' },
+      )
+    },
+  )
   .row()
-  .text('🔙', ctx => ctx.deleteMessage())
+  .text('🔙', (ctx) => ctx.deleteMessage())
 
 async function onCategorySelected(ctx: Context) {
   const flow = ctx.session.txnFlow
   const categoryId = String(ctx.match ?? '')
   // stale keyboard after the flow ended (finished elsewhere, or 24h TTL)
-  if (!flow || !categoryId)
-    return staleFlowExit(ctx)
+  if (!flow || !categoryId) return staleFlowExit(ctx)
   flow.draft.categoryId = categoryId
-  const tr = await ctx.firefly.storeTransaction(buildSplit(flow.draft, TransactionTypeProperty.Withdrawal))
+  const tr = await ctx.firefly.storeTransaction(
+    buildSplit(flow.draft, TransactionTypeProperty.Withdrawal),
+  )
   ctx.session.txnFlow = undefined
   return showRecord(ctx, tr, true)
 }

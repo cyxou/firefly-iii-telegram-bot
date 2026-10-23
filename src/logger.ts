@@ -8,13 +8,32 @@ import { pino } from 'pino'
 const level = process.env.LOG_LEVEL ?? 'info'
 
 const targets: TransportTargetOptions[] = process.stdout.isTTY
-  ? [{ target: 'pino-pretty', level, options: { ignore: 'pid,hostname', translateTime: true } }]
-  : [{ target: 'pino/file', level, options: { destination: 1 } }] // stdout
+  ? [
+      {
+        target: 'pino-pretty',
+        level,
+        options: { ignore: 'pid,hostname', translateTime: true },
+      },
+    ]
+  : [
+      {
+        target: 'pino/file',
+        level,
+        options: { destination: 1 },
+      },
+    ] // stdout
 
 if (process.env.LOG_FILE) {
-  targets.push({ target: 'pino/file', level, options: { destination: process.env.LOG_FILE, mkdir: true } })
+  targets.push({
+    target: 'pino/file',
+    level,
+    options: { destination: process.env.LOG_FILE, mkdir: true },
+  })
 }
 
-export const logger = pino({ level, transport: { targets } })
+export const logger = pino({
+  level,
+  transport: { targets },
+})
 
 export type Logger = typeof logger

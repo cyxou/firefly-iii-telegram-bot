@@ -9,7 +9,9 @@ describe('validateRichMarkdown', () => {
   })
 
   it('accepts a table after a blank line', () => {
-    expect(validateRichMarkdown('Heading:\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\nSUM: 1')).toEqual([])
+    expect(
+      validateRichMarkdown('Heading:\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\nSUM: 1'),
+    ).toEqual([])
   })
 
   it('flags a table interrupting a paragraph (live bug 8wh)', () => {
