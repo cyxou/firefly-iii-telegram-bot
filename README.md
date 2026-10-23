@@ -230,8 +230,6 @@ which is hard-coded in `codegen` npm task.
   created upon first creation of a transaction via the Firefly UI. Until that
   built-in "(cash)" account is created, the default Expense account will be an
   account without a name which is weird.
-- Do not try to edit multiple transactions at once, because of the shared state of
-  the transaction under edit. Doing so will result in unexpected behavior.
 
 ## Feedback
 
