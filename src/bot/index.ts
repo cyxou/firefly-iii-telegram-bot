@@ -2,7 +2,7 @@ import type { BotConfig, StorageAdapter } from 'grammy'
 import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
 import type { FireflyServiceFactory } from '#root/lib/firefly/service.js'
-import type { SettingsStore } from '#root/lib/settings-store.js'
+import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
 import type { Logger } from '#root/logger.js'
 import { sequentialize } from '@grammyjs/runner'
 import { session, Bot as TelegramBot } from 'grammy'
@@ -33,6 +33,19 @@ function getSessionKey(ctx: Omit<Context, 'session'>) {
   return ctx.chat?.id.toString()
 }
 
+// Settings a user gets before they've saved any of their own: env-provided
+// Firefly credentials, or undefined when the deployment set none (unconfigured
+// users keep hitting the /settings gate).
+function envDefaults(config: Config): UserSettings | undefined {
+  if (!config.fireflyUrl && !config.fireflyAccessToken)
+    return undefined
+  return defaultSettings({
+    fireflyUrl: config.fireflyUrl,
+    fireflyApiUrl: config.fireflyApiUrl,
+    fireflyAccessToken: config.fireflyAccessToken,
+  })
+}
+
 export function createBot(token: string, deps: Dependencies, botConfig?: BotConfig<Context>) {
   const bot = new TelegramBot<Context>(token, botConfig)
 
@@ -40,7 +53,10 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
   bot.use(async (ctx, next) => {
     ctx.config = deps.config
     ctx.logger = deps.logger.child({ update_id: ctx.update.update_id })
-    ctx.settings = ctx.from ? await deps.settingsStore.get(ctx.from.id) : undefined
+    const stored = ctx.from ? await deps.settingsStore.get(ctx.from.id) : undefined
+    // Env credentials (FIREFLY_URL/FIREFLY_ACCESS_TOKEN) seed users with no
+    // stored settings; a user's own /settings saves always win.
+    ctx.settings = stored ?? envDefaults(deps.config)
     ctx.firefly = deps.firefly(ctx.settings ?? defaultSettings())
     ctx.saveSettings = async (settings) => {
       await deps.settingsStore.save(ctx.from!.id, settings)

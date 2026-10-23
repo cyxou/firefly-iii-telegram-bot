@@ -40,7 +40,7 @@ deps:
 runTests:
     COPY +deps/node_modules ./node_modules
     COPY package.json bun.lock tsconfig.json vitest.config.ts vitest.config.e2e.ts eslint.config.js .npmrc ./
-    COPY --dir src __tests__ locales scripts ./
+    COPY --dir src __tests__ locales ./
 
     # e2e expects Redis on :6380 (docker-compose.tests.yaml locally). The daemon
     # must share the RUN with the tests — Earthly tears down daemons between layers.

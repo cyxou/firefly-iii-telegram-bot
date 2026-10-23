@@ -13,7 +13,7 @@ bunx vitest run            # Unit + integration tests (no external services need
 docker compose -f docker-compose.tests.yaml up -d   # ephemeral Redis for e2e
 bun run test:e2e           # e2e (real Redis, Telegram still mocked)
 bun run codegen            # Regenerate Firefly client into src/lib/firefly/generated
-bun run scripts/migrate-v1-sessions.ts sessions data/settings.json
+docker compose -f compose.firefly.yaml up -d        # DEV local Firefly III + MariaDB
 ```
 
 ## Architecture
@@ -31,6 +31,8 @@ features → unhandled (last).
 - **Session** (`src/bot/context.ts`): one optional field per flow (e.g. `settingsFlow`).
   NEVER a shared `step` string (lint-tested). Flow state may expire (24h Redis TTL).
 - **Credentials** live in `src/lib/settings-store.ts` (data/settings.json), never in session.
+  Env (`FIREFLY_URL`/`FIREFLY_ACCESS_TOKEN`) seeds users with no stored settings
+  (`bot/index.ts` `envDefaults`) — stored settings always win.
 - **Firefly access** only through `FireflyService` (`src/lib/firefly/service.ts`).
   `src/lib/firefly/generated/` is codegen output — never hand-edit (except
   `model/currency-update.ts`, hand-preserved across regens).

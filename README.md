@@ -21,37 +21,69 @@ Your understanding and cooperation are appreciated.
 ### Version Compatibility
 
 - Version v2 of this bot has been tested with Firefly III v6.0.30.
+- Version v3's API client is generated from Firefly III v6.7.8.
 - All other versions of Firefly III might not work properly with this bot.
+
+## ⚠ Upgrading from v2 to v3
+
+v3 is a major rework. Read this before bumping your image tag:
+
+- **32-bit ARM (`arm/v7`) images are gone.** v3 images are `amd64` + `arm64`
+  only — the Bun runtime is not published for 32-bit ARM. If you run a 32-bit
+  OS on Raspberry Pi 3/4/5 (all 64-bit-capable), flash a 64-bit OS and use the
+  `arm64` image. On genuinely 32-bit-only hardware (Pi 1/2 and similar), stay
+  on the v2 image.
+- **Redis is now required** (session storage). `compose.yaml` ships one
+  alongside the bot. Set `REDIS_URL` if you run your own (defaults to
+  `redis://localhost:6379`); the bot exits at startup if Redis is unreachable.
+- **Sessions start from scratch.** v1/v2 file sessions are not migrated —
+  any half-finished flow simply restarts. Credentials are the only thing worth
+  carrying over: either re-enter them via **Settings** in the bot, or
+  pre-configure them with the new `FIREFLY_URL` + `FIREFLY_ACCESS_TOKEN` env
+  vars (see `.example.env`) — env credentials apply to every user who hasn't
+  saved their own.
+- **Volume change:** the old `-v $(pwd)/sessions:/home/node/app/sessions` mount
+  does nothing in v3. Per-user settings now live in `/app/data` (only needed if
+  you configure via **Settings** instead of env vars — `compose.yaml` mounts it).
+- **`DEBUG` env var is gone** — use `LOG_LEVEL` (trace|debug|info|warn|error).
 
 ## Setup
 First you'll have to [generate a Telegram Bot token through BotFather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token). Once you generate the token, keep it safe.
 
-### Docker (Recommended)
+### Docker Compose (Recommended)
+
+Copy _.example.env_ to _.env_, fill in `BOT_TOKEN` (and optionally
+`FIREFLY_URL` + `FIREFLY_ACCESS_TOKEN` to skip in-bot configuration), then:
+
+```shell
+docker compose up -d
+```
+
+This starts the bot plus a Redis for sessions (see _compose.yaml_). If you
+configure credentials via **Settings** in the bot instead of env vars, the
+compose's `bot_data` volume keeps them across upgrades.
+
+### Docker with your own Redis
 
 The image runs the bot directly from TypeScript source with Bun — there is no
-build step or `dist/` bundle. Bot sessions live in Redis (`REDIS_URL`, defaults
-to `redis://localhost:6379` — point it at your Redis instance, e.g. a linked
-container or a `--network` service).
+build step or `dist/` bundle. Point `REDIS_URL` at a Redis the container can
+reach:
 
 ```shell
 docker run \
-  --rm --it --init --name firefly-bot \
+  --rm --init --name firefly-bot \
   --env BOT_TOKEN=<your-bot-token> \
+  --env REDIS_URL=redis://<your-redis>:6379 \
+  -v firefly-bot-data:/app/data \
   ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
 
-You may also provide BOT_TOKEN via the .env file. For this just rename the
-_example.env_ file to _.env_ and update it with your values. Then you can pass it
-to docker like so:
-```shell
-docker run \
-  --rm --it --init --name firefly-bot \
-  --env-file .env \
-  ghcr.io/cyxou/firefly-iii-telegram-bot:latest
-```
+You may also provide the environment via an `--env-file .env` built from
+_.example.env_.
 
 Once the bot is running, navigate to its **Settings** and provide all the
-necessary information to connect it to your Firefly III instance.
+necessary information to connect it to your Firefly III instance (unless
+pre-configured via env vars).
 
 ### Manual
 
@@ -77,9 +109,10 @@ You can restrict who can use your bot by setting the `ALLOWED_TG_USER_IDS` envir
 Example with restricted access:
 ```shell
 docker run \
-  --rm --it --init --name firefly-bot \
+  --rm --init --name firefly-bot \
   --env BOT_TOKEN=<your-bot-token> \
   --env ALLOWED_TG_USER_IDS=123456,987654321 \
+  --env REDIS_URL=redis://<your-redis>:6379 \
   ghcr.io/cyxou/firefly-iii-telegram-bot:latest
 ```
 
@@ -102,6 +135,7 @@ bun run lint          # ESLint (bun run fix to auto-fix)
 bunx vitest run       # unit + integration tests
 docker compose -f docker-compose.tests.yaml up -d   # ephemeral Redis for e2e
 bun run test:e2e      # e2e (real Redis, Telegram still mocked)
+docker compose -f compose.firefly.yaml up -d        # local Firefly III + MariaDB (dev)
 ```
 
 To build docker images you would need to install additional tools and packages.

@@ -13,6 +13,6 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "include": ["src", "__tests__", "scripts"],
+  "include": ["src", "__tests__"],
   "exclude": ["legacy", "node_modules", "dist"]
 }
