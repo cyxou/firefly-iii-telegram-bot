@@ -27,27 +27,41 @@ Your understanding and cooperation are appreciated.
 
 ## ⚠ Upgrading from v2 to v3
 
-v3 is a major rework. Read this before bumping your image tag:
+> [!WARNING]
+> v3 is a major rework — read this before bumping your image tag.
 
-- **32-bit ARM (`arm/v7`) images are gone.** v3 images are `amd64` + `arm64`
+### What changed
+
+| Area | v2 | v3 |
+| --- | --- | --- |
+| 🚅 Runtime | Node.js | Bun |
+| 📦 Architectures | `amd64` · `arm/v7` · `arm64` | `amd64` + `arm64` only |
+| 🗄️ Session storage | JSON files on disk | **Redis** (required) |
+| 💾 Per-user settings | inside the session file | `/app/data` volume |
+| 📝 Debug env var | `DEBUG` | `LOG_LEVEL` |
+
+### The details
+
+- 📦 **32-bit ARM (`arm/v7`) images are gone.** v3 images are `amd64` + `arm64`
   only — the Bun runtime is not published for 32-bit ARM. If you run a 32-bit
   OS on Raspberry Pi 3/4/5 (all 64-bit-capable), flash a 64-bit OS and use the
   `arm64` image. On genuinely 32-bit-only hardware (Pi 1/2 and similar), stay
   on the v2 image.
-- **Redis is now required** (session storage). `compose.yaml` ships one
+- 🗄️ **Redis is now required** (session storage). `compose.yaml` ships one
   alongside the bot. Set `REDIS_URL` in `.env` if you run your own (defaults
   to `redis://localhost:6379` outside compose); the bot exits at startup if
   Redis is unreachable.
-- **Sessions start from scratch.** v1/v2 file sessions are not migrated —
+- 🔄 **Sessions start from scratch.** v1/v2 file sessions are not migrated —
   any half-finished flow simply restarts. Credentials are the only thing worth
   carrying over: either re-enter them via **Settings** in the bot, or
   pre-configure them with the new `FIREFLY_URL` + `FIREFLY_ACCESS_TOKEN` env
   vars (see `.example.env`) — env credentials apply to every user who hasn't
   saved their own.
-- **Volume change:** the old `-v $(pwd)/sessions:/home/node/app/sessions` mount
-  does nothing in v3. Per-user settings now live in `/app/data` (only needed if
-  you configure via **Settings** instead of env vars — `compose.yaml` mounts it).
-- **`DEBUG` env var is gone** — use `LOG_LEVEL` (trace|debug|info|warn|error).
+- 💾 **Volume change.** The old `-v $(pwd)/sessions:/home/node/app/sessions`
+  mount does nothing in v3. Per-user settings now live in `/app/data` (only
+  needed if you configure via **Settings** instead of env vars — `compose.yaml`
+  mounts it).
+- 📝 **`DEBUG` env var is gone** — use `LOG_LEVEL` (trace|debug|info|warn|error).
 
 ## Setup
 
@@ -179,7 +193,7 @@ More info [here](https://docs.earthly.dev/docs/guides/multi-platform).
 - [x] Configure CI/CD so that it builds and pushes docker images on merges to master
 - [x] Reports
 - [ ] Proper error handling
-- [ ] Firefly API tests
+- [x] End to end tests
 - [x] Add JSON database for persistence (used @grammyjs/storage-file)
 - [x] Add date picker when editing transaction (adopt https://github.com/VDS13/telegram-inline-calendar)
 - [x] Migrate from home grown Mapper to Grammy's Menu plugin (partially done)
@@ -216,8 +230,6 @@ which is hard-coded in `codegen` npm task.
   created upon first creation of a transaction via the Firefly UI. Until that
   built-in "(cash)" account is created, the default Expense account will be an
   account without a name which is weird.
-- Do not try to edit multiple transactions at once, because of the shared state of
-  the transaction under edit. Doing so will result in unexpected behavior.
 
 ## Feedback
 
