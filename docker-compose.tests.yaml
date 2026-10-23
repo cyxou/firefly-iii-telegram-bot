@@ -1,0 +1,13 @@
+services:
+  redis-test:
+    image: redis:7-alpine
+    container_name: firefly-bot-redis-test
+    restart: no
+    ports:
+      - '6380:6379'
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 3s

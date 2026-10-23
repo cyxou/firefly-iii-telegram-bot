@@ -1,8 +1,7 @@
 /* tslint:disable */
-/* eslint-disable */
 /**
  * Firefly III API v1.5.4
- * This is the documentation of the Firefly III API. You can find accompanying documentation on the website of Firefly III itself (see below). Please report any bugs or issues. You may use the \"Authorize\" button to try the API below. This file was last generated on 2021-09-25T14:21:28+00:00 
+ * This is the documentation of the Firefly III API. You can find accompanying documentation on the website of Firefly III itself (see below). Please report any bugs or issues. You may use the \"Authorize\" button to try the API below. This file was last generated on 2021-09-25T14:21:28+00:00
  *
  * The version of the OpenAPI document: 1.5.4
  * Contact: james@firefly-iii.org
@@ -12,34 +11,31 @@
  * Do not edit the class manually.
  */
 
-
-
-export * from './api/about-api';
-export * from './api/accounts-api';
-export * from './api/attachments-api';
-export * from './api/autocomplete-api';
-export * from './api/available-budgets-api';
-export * from './api/bills-api';
-export * from './api/budgets-api';
-export * from './api/categories-api';
-export * from './api/charts-api';
-// export * from './api/configuration-api';
-export * from './api/currencies-api';
-export * from './api/currency-exchange-rates-api';
-export * from './api/data-api';
-export * from './api/insight-api';
-export * from './api/links-api';
-export * from './api/object-groups-api';
-export * from './api/piggy-banks-api';
-export * from './api/preferences-api';
-export * from './api/recurrences-api';
-export * from './api/rule-groups-api';
-export * from './api/rules-api';
-export * from './api/search-api';
-export * from './api/summary-api';
-export * from './api/tags-api';
-export * from './api/transactions-api';
-export * from './api/users-api';
-export * from './api/user-groups-api';
-export * from './api/webhooks-api';
-
+export * from './generated/api/about-api'
+export * from './generated/api/accounts-api'
+export * from './generated/api/attachments-api'
+export * from './generated/api/autocomplete-api'
+export * from './generated/api/available-budgets-api'
+export * from './generated/api/bills-api'
+export * from './generated/api/budgets-api'
+export * from './generated/api/categories-api'
+export * from './generated/api/charts-api'
+// export * from './generated/api/configuration-api';
+export * from './generated/api/currencies-api'
+export * from './generated/api/currency-exchange-rates-api'
+export * from './generated/api/data-api'
+export * from './generated/api/insight-api'
+export * from './generated/api/links-api'
+export * from './generated/api/object-groups-api'
+export * from './generated/api/piggy-banks-api'
+export * from './generated/api/preferences-api'
+export * from './generated/api/recurrences-api'
+export * from './generated/api/rule-groups-api'
+export * from './generated/api/rules-api'
+export * from './generated/api/search-api'
+export * from './generated/api/summary-api'
+export * from './generated/api/tags-api'
+export * from './generated/api/transactions-api'
+export * from './generated/api/user-groups-api'
+export * from './generated/api/users-api'
+export * from './generated/api/webhooks-api'

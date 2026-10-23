@@ -1,0 +1,325 @@
+commands:
+  start: Старт (приветственное сообщение)
+  settings: Настройки
+  help: Помощь
+
+labels:
+  ACCOUNTS: 💳 Счета
+  ADD_CATEGORIES: ➕ Добавить категории
+  CANCEL: ✖ Отмена
+  CATEGORIES: 🔖 Категории
+  CHANGE_CATEGORY: 🔖 Категорию
+  CHANGE_DATE: 📆 Дату
+  CHANGE_AMOUNT: 💸 Сумму
+  CHANGE_DESCRIPTION: 📝 Описание
+  CHANGE_SOURCE_ACCOUNT: 📤 Счет списания
+  CHANGE_DEST_ACCOUNT: 📥 Счет зачисления
+  CLASSIFICATION: 🏷️  Классификация
+  CLOSE: 🔙 Назад
+  DECLINE_CATEGORIES_LIST: ✏️ Нет, ввести заново
+  DEFAULT_ASSET_ACCOUNT_BUTTON: 💳 Счет по умолчанию
+  DELETE: ❌ Удалить
+  OPEN_IN_BROWSER: 🔗 Открыть в браузере
+  OPEN_ASSET_ACCOUNTS_IN_BROWSER: 🔗 Перейти в Основные счета
+  DONE: ✅ OK
+  EDIT_TRANSACTION: ✏️ Изменить
+  FIREFLY_ACCESS_TOKEN_BUTTON: 🔑 Access Token
+  FIREFLY_URL_BUTTON: 🔗 Firefly URL
+  FIREFLY_API_URL_BUTTON: 🔗 Firefly API URL
+  LIST_TAGS: 🏷️  Тэг
+  RENAME_CATEGORY: ✏️ Переименовать
+  REPORTS: 📈 Отчеты
+  SETTINGS: 🔧 Настройки
+  TEST_CONNECTION: 🔌 Проверка соединения
+  TO_WITHDRAWALS: 📤 К расходам
+  TO_DEPOSITS: 📥 Новый доход
+  TO_TRANSFERS: ↔️ Новый перевод
+  SHOW_DEPOSITS: 📥 Доходы
+  SHOW_TRANSFERS: ↔️ Переводы
+  SHOW_WITHDRAWALS: 📤 Расходы
+  TRANSACTIONS: 🔀 Транзакции
+  YES: ✅ Да
+  SWITCH_LANG: 🌐Язык
+  SWITCH_TO_EN: 🇬🇧 Английский
+  SWITCH_TO_ES: 🇪🇸 Испанский
+  SWITCH_TO_RU: 🇷🇺 Русский
+  SWITCH_TO_IT: 🇮🇹 Итальянский
+
+welcome: >
+  👋 Привет! Этот бот помогает быстро создавать транзакции в Firefly III,
+  а также управлять некоторыми его сущностями.
+needToSet: 'Для работы с ботом необходимо указать:'
+setFireflyUrl: '  - *🔗 Firefly URL* - адрес сайта Firefly III'
+setFireflyAccessToken: '  - *🔑 Access Token*, созданный в веб-интерфейсе Firefly'
+navigateToSettings: Загляните в *🔧 Настройки* для продолжения работы.
+
+help: >
+  🤖 Перед использованием бота, пожалуйста, зайдите в его *🔧 Настройки* и укажите необходимые параметры.
+
+  ❕ Для добавления транзакции, отправьте боту сумму транзакции. Это может быть число
+  или математическое выражение, например `100-5*3`.
+  После чего бот предложит выбрать дополнительные параметры транзакции.
+
+  Вы также можете создавать транзакции без дополнительных вопросов от бота просто
+  послав ему текст описания транзакции и сумму. Например:
+
+  `Кафе 35`
+
+  В этом случае будет создана транзакция списания со счета по умолчанию в размере
+  `35` с названием `Кафе`.
+
+  ✨ А если вы еще настроите *Правила* в соответствующем разделе Firefly, то
+  транзакции будут дополнительно обработаны настроенными для них правилами перед
+  созданием.
+
+common:
+  errorOccurred: Произошла ошибка!
+  noDefaultSourceAccountExist: |
+    🙈 Упс! У вас пока нет ни одного Основного счета для списания средств!
+
+    🙏 Пожалуйста, перейдите на сайт Firefly III и создайте хотя бы один Основной счет.
+tables:
+  name: Название
+  balance: Баланс
+  currency: Валюта
+  date: Дата
+  time: Время
+  description: Описание
+  amount: Сумма
+  category: Категория
+reports:
+  title: '📊 ${monthName}'
+  income: 'Доход: ${amount}'
+  expense: 'Расход: ${amount}'
+  net: 'Итог: ${amount}'
+  empty: В этом месяце ничего нет.
+mdlwr:
+  noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
+  noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
+settings:
+  selectBotLang: 'Выберите язык бота:'
+  notSpecified: 🚨<НЕ УКАЗАН>
+  inputFireflyUrl: >
+    Введите URL-адрес вашего сервера Firefly III.
+    Он должен быть в таком же формате, как этот: *https://firefly.example.com*
+    или этот: *http://localhost:8080*
+  inputFireflyApiUrl: >
+    Введите URL-адрес конечной точки Firefly III API.
+    Обычно это URL-адрес вашего сервера Firefly, но с подкаталогом `/api`, например: *https://firefly.example.com/api*
+    или *http://localhost:8080/api*
+  inputFireflyAccessToken: >
+    Введите ваш персональный Access Token.
+    Его можно создать и скопировать из веб-интерфейса Firefly по следующему пути:
+    *Параметры → Профиль → OAuth → Создать новый токен*
+  defaultAssetAccountSet: Счет по умолчанию установлен!
+  whatDoYouWantToChange: >
+    🔧 *Настройки*
+
+    Что Вы хотите изменить?
+
+    *🔗 Firefly URL*: ${fireflyUrl || '🚨<НЕ УКАЗАН>'}
+
+    *🔗 Firefly API URL*: ${fireflyApiUrl || '🚨<НЕ УКАЗАН>'}
+
+    *🔑 Access Token*: ${accessToken || '🚨<НЕ УКАЗАН>'}
+
+    *💳 Счет по умолчанию*: ${defaultSourceAccount.name || '🚨<НЕ УКАЗАН>'}
+  selectDefaultAssetAccount: >
+    Выберите счет, с которого будут списываться деньги по умолчанию.
+    Если его не задать, то будет использован самый первый счет из списка ниже:
+  specifySmthFirst: Сперва укажите ${smth}.
+  connectionFailed: Соединение НЕ установлено!
+  connectionFailedUnauthenticated: Ошибка аутентификации! Скорее всего вы некоректно указали ваш Access Token или он более недействителен.
+  resourceNotFound: >
+    Ресурс не найден!
+    Убедитесь, что вы указали корректный Firefly API URL.
+    Также возможно, что ресурс, который вы пытаетесь получить или изменить, больше не существует.
+  connectionFailedBadUrl: >
+    Ошибка соединения с сервером Firefly!
+    Убедитесь, что вы указали корректный *🔗 Firefly API URL*.
+  connectionSuccess: >
+    🎉 Соединение установлено!
+
+    👋 Привет, ${email}!
+  badAccessToken: Введеный текст не похож на Access Token. Попробуйте еще раз, пожалуйста.
+  badUrl: >
+    Введеный текст не похож на URL. Проверьте, возможно опечатались.
+    Введите URL адрес вашего сервера Firefly III, например https://firefly.example.com:
+
+accounts:
+  labels:
+    asset: Основные счета
+    expense: Счета расходов
+    revenue: Счета доходов
+    liability: Счета долгов
+  list:
+    noAccounts: Счетов пока нет 🤷
+    asset: >
+      Баланс ваших основных счетов:
+
+      ${accounts}
+
+      ИТОГО: ${sums ? sums : '0'}
+    expense: >
+      Баланс ваших счетов расходов:
+
+      ${accounts}
+
+      ИТОГО: ${sums ? sums : '0'}
+    revenue: >
+      Баланс ваших счетов доходов:
+
+      ${accounts}
+
+      ИТОГО: ${sums ? sums : '0'}
+    liability: >
+      Баланс ваших долговых счетов:
+
+      ${accounts}
+
+      ИТОГО: ${sums ? sums : '0'}
+
+transactions:
+  list:
+    withdrawal: >
+      Ваши расходы за **${day}**:
+
+      ${transactions}
+
+      ──────────────────
+
+      ИТОГО: ${sums ? sums : '0'}
+    deposit: >
+      Ваши доходы за **${day}**:
+
+      ${transactions}
+
+      ──────────────────
+
+      ИТОГО: ${sums ? sums : '0'}
+    transfer: >
+      Ваши переводы за **${day}**:
+
+      ${transactions}
+    noTransactions: 🤷 Транзакций нет
+  add:
+    dontUnderstand: >
+      🤖 Я пока такое не понимаю.
+
+      Введите сумму транзакции, это должно быть число!
+
+      Или введите описание транзации и ее сумму, например, `Продукты 25`.
+    withdrawalMessage: >
+      📆 ${date}
+
+      📤 Добавлено ${description === 'N/A' ? '' : '*' + description + '*'}
+      *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}
+
+      ${source} → ${destination}
+    depositMessage: >
+      📆 ${date}
+
+      📥 Добавлено ${description === 'N/A' ? '' : '*' + description + '* '}
+      *${amount}* *${currency}*${category ? ' в категорию *' + category + '*' : ''}
+
+      from ${source} → ${destination}
+    transferMessage: >
+      📆 ${date}
+
+      ↔️ Перевод *${amount}* *${currency}* со счета *${source}* на счет *${destination}*${foreignAmount ? " (" + foreignAmount + " " + foreignCurrencySymbol +  ")" : ''}${category ? ' в категорию *' + category + '*' : ''}
+    selectCategory: В какую категорию добавить *${amount}*?
+    noCategoriesYet: |
+      🤷 Вы пока не создали ни одну категорию расходов.
+      Транзакция будет создана без категории. Продолжить?
+
+      💡 Категории расходов можно создать через кнопку бота *🔖 Категории*
+    transactionDeleted: Транзакция удалена!
+    couldNotDelete: 'Не удалось удалить транзакцию по id: ${id}'
+    selectRevenueAccount: С какого счета доходов списать *${amount}*?
+    selectAssetAccount: На какой счет добавить *${amount}*?
+    selectSourceAccount: С какого счета перевести *${amount}*?
+    selectDestAccount: На какой счет произвести перевод?
+    transactionError: '❗😰 Произошла ошибка при создании транзакции: *${message}*'
+    created: Транзакция создана!
+    typeForeignAmount: >
+      ⚠️ The destination account currency (*${destCurrency}*) is different than the source account currency (*${sourceCurrency}*)!
+      Type in the foreign amount i.e. the amount in the destination account currency.
+
+      💡 You can use the arithmetic signs for addition, subtraction, multiplication and division to
+      perform the appropriate operation on the source account amount of the transaction.
+
+      For example, `*15` would multiply the initial amount by 15 to get the foreign amount.
+
+  edit:
+    whatToEdit: ❓Что вы хотите изменить?
+    updated: Транзакция обновлена!
+    badAmountTyped: 'Сумма транзакции должна быть числом. Введите новое значение суммы:'
+    confirmDeletion: >
+      Вы уверены, что хотите удалить эту транзакцию?
+    badDescriptionTyped: 'Описание транзакции должно быть текстовым. Введите новое описание:'
+    typeNewAmount: >
+      Введите новое значение суммы.
+
+      💡 Вы можете использовать арифметические знаки сложения, вычитания, умножения и деления чтобы произвести соответствующую операцию над текущим значением транзакции.
+
+      Например, "+35" - увеличит текущее значение транзакции на 35.'
+    noCategoriesYet: |
+      🤷 Вы пока не создали ни одну категорию расходов.
+
+      💡 Категории расходов можно создать через кнопку бота *🔖 Категории*
+    typeNewDescription: 'Введите новое описание транзакции:'
+    typeNewDate: 'Выберите новую дату для транзакции:'
+    chooseNewCategory: 'Выберите новую категорию для транзакции:'
+    chooseNewSourceAccount: 'Выберите счет списания транзакции:'
+    chooseNewDestinationAccount: 'Выберите счет зачисления транзакции:'
+    chooseNewRevenueAccount: 'Выберите новый счет дохода для транзакции:'
+    noSuchTransactionAnymore: |
+      🤖Эта транзакция (${id}) больше не существует!
+      Скорее всего она была удалена через сайт Firefly.
+
+categories:
+  listEmpty: Список ваших категорий расходов пуст.
+  list: >
+    Для просмотра расходов по категории, выберите ее из списка ниже.
+    Там же вы сможете переименовать или удалить категорию.
+  typeCategories: >
+    Введите названия категорий ваших расходов, так чтобы каждая отдельная категория была с новой строки, например:
+
+    💡 Коммуналка
+
+    👕 Одежда и обувь
+
+    🥦 Продукты
+
+    *P.S.*: Названия категорий расходов в дальнейшем можно будет изменить.
+
+    *P.P.S.*: Ничего страшного, если категория с таким именем уже существует.
+  confirmCreation: >
+    Будет создано ${categories.length} новых категорий:
+
+    ${categories.join('\n')}
+
+    Все правильно?
+  typeNewName: 'Введите новое имя для категории:'
+  confirmDeletion: >
+    Уверены, что хотите удалить эту категорию?
+    Соответствующие транзакции при этом удалены не будут.
+    Их можно будет найти в разделе *🔀 Транзакции*
+  deleted: Категория удалена!
+  created: Категории созданы!
+  noTransactions: Транзакций не было
+  transactionsList: >
+    Расходы по категории *${categoryName}* за *${monthName}*:
+
+    ${transactions}
+
+    ИТОГО: ${sums ? sums : '0'}
+
+datePicker:
+  selectDate: 'Выберите дату:'
+  backToMonth: 🔙 Назад
+  navigation:
+    prevMonth: ‹
+    nextMonth: ›
+    prevYear: ‹‹
+    nextYear: ››
