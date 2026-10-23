@@ -21,9 +21,15 @@ describe('mock API rich messages', () => {
   it('keeps findButton working on rich-message keyboards', async () => {
     const bot = new Bot<any>('123456:ABCdef')
     bot.on('message:text', async (ctx) => {
-      await ctx.api.sendRichMessage(ctx.chat.id, { markdown: 'x' }, {
-        reply_markup: { inline_keyboard: [[{ text: 'Tab', callback_data: 'tab:1' }]] },
-      })
+      await ctx.api.sendRichMessage(
+        ctx.chat.id,
+        { markdown: 'x' },
+        {
+          reply_markup: {
+            inline_keyboard: [[{ text: 'Tab', callback_data: 'tab:1' }]],
+          },
+        },
+      )
     })
     const api = setupMockApi(bot)
     await initializeBot(bot)

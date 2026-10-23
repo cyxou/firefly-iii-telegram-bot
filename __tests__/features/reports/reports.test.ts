@@ -37,8 +37,7 @@ async function setup(fixtures: Parameters<typeof createTestFireflyService>[0] = 
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   const reports = () => bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.REPORTS')))
@@ -46,7 +45,7 @@ async function setup(fixtures: Parameters<typeof createTestFireflyService>[0] = 
 }
 
 function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, c => c.toLocaleUpperCase())
+  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
 describe('reports feature', () => {
@@ -70,7 +69,7 @@ describe('reports feature', () => {
     await reports()
     const prev = dayjs().subtract(1, 'month')
     await click(`<< ${monthLabel(prev)}`)
-    const edits = api.getOutgoingRequests().filter(r => r.method === 'editMessageText')
+    const edits = api.getOutgoingRequests().filter((r) => r.method === 'editMessageText')
     expect(edits).toHaveLength(1)
     // the nav behavior under test: the message re-rendered for the PREVIOUS month
     // (the fake's insight fixtures are date-blind, so amounts repeat — only the
@@ -99,7 +98,11 @@ describe('reports feature', () => {
   })
 
   it('fully empty month renders the empty note', async () => {
-    const { api, reports } = await setup({ incomeTotals: [], expenseTotals: [], expenseByCategory: [] })
+    const { api, reports } = await setup({
+      incomeTotals: [],
+      expenseTotals: [],
+      expenseByCategory: [],
+    })
     await reports()
     const md = getLastRichMarkdown(api.getOutgoingRequests())!
     expect(md).toContain(monthLabel(dayjs()))
@@ -112,8 +115,8 @@ describe('reports feature', () => {
     const api = setupMockApi(bot)
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.REPORTS')))
-    const send = api.getOutgoingRequests().find(r => r.method === 'sendMessage')!
+    const send = api.getOutgoingRequests().find((r) => r.method === 'sendMessage')!
     expect((send.payload as any).text).toContain('Firefly URL')
-    expect(api.getOutgoingRequests().some(r => r.method === 'sendRichMessage')).toBe(false)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'sendRichMessage')).toBe(false)
   })
 })

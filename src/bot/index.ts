@@ -37,8 +37,7 @@ function getSessionKey(ctx: Omit<Context, 'session'>) {
 // Firefly credentials, or undefined when the deployment set none (unconfigured
 // users keep hitting the /settings gate).
 function envDefaults(config: Config): UserSettings | undefined {
-  if (!config.fireflyUrl && !config.fireflyAccessToken)
-    return undefined
+  if (!config.fireflyUrl && !config.fireflyAccessToken) return undefined
   return defaultSettings({
     fireflyUrl: config.fireflyUrl,
     fireflyApiUrl: config.fireflyApiUrl,
@@ -59,8 +58,7 @@ function toStored(
 ): Partial<UserSettings> {
   const out: Partial<UserSettings> = { ...incoming }
   for (const field of CREDENTIAL_FIELDS) {
-    if (incoming[field] === env?.[field] && stored?.[field] === undefined)
-      delete out[field]
+    if (incoming[field] === env?.[field] && stored?.[field] === undefined) delete out[field]
   }
   return out
 }
@@ -76,9 +74,14 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
     // Stored settings (what the user set themselves) override env credentials
     // field by field; env backfills the rest and rotates freely underneath.
     const env = envDefaults(deps.config)
-    ctx.settings = (stored ?? env)
-      ? { ...defaultSettings(), ...env, ...stored }
-      : undefined
+    ctx.settings =
+      (stored ?? env)
+        ? {
+            ...defaultSettings(),
+            ...env,
+            ...stored,
+          }
+        : undefined
     ctx.firefly = deps.firefly(ctx.settings ?? defaultSettings())
     ctx.saveSettings = async (settings) => {
       await deps.settingsStore.save(ctx.from!.id, toStored(env, stored, settings))
@@ -94,7 +97,13 @@ export function createBot(token: string, deps: Dependencies, botConfig?: BotConf
   protectedBot.use(updateLogger())
   protectedBot.use(accessControl(deps.config))
   protectedBot.use(sequentialize(getSessionKey))
-  protectedBot.use(session({ getSessionKey, storage: deps.sessionStorage, initial: () => ({}) }))
+  protectedBot.use(
+    session({
+      getSessionKey,
+      storage: deps.sessionStorage,
+      initial: () => ({}),
+    }),
+  )
   protectedBot.use(i18n.middleware())
   protectedBot.use(setLocaleFromSettings())
   protectedBot.use(startFeature)

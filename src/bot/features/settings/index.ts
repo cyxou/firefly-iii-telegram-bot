@@ -2,7 +2,13 @@ import type { Context } from '#root/bot/context.js'
 import { Composer } from 'grammy'
 import { command } from '#root/bot/constants.js'
 import { i18n, locales } from '#root/bot/i18n.js'
-import { cancelMenu, defaultAccountMenu, langMenu, settingsMenu, settingsText } from './settings.menu.js'
+import {
+  cancelMenu,
+  defaultAccountMenu,
+  langMenu,
+  settingsMenu,
+  settingsText,
+} from './settings.menu.js'
 import { settingsRouter } from './settings.router.js'
 
 export const settingsFeature = new Composer<Context>()

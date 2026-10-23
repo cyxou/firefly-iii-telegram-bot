@@ -7,5 +7,5 @@ export const reportsFeature = new Composer<Context>()
 
 reportsFeature.use(reportsMenu)
 for (const locale of locales) {
-  reportsFeature.hears(i18n.t(locale, 'labels.REPORTS'), async ctx => showCurrentReport(ctx))
+  reportsFeature.hears(i18n.t(locale, 'labels.REPORTS'), async (ctx) => showCurrentReport(ctx))
 }

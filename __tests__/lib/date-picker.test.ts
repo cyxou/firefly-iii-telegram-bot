@@ -11,13 +11,19 @@ describe('date picker codec', () => {
   it('month payloads round-trip', () => {
     const raw = encodeViewPayload('19', { mode: 'month', year: 2026, month: 9 })
     expect(raw).toBe('19|m|2026-10')
-    expect(decodeViewPayload(raw)).toEqual({ trId: '19', view: { mode: 'month', year: 2026, month: 9 } })
+    expect(decodeViewPayload(raw)).toEqual({
+      trId: '19',
+      view: { mode: 'month', year: 2026, month: 9 },
+    })
   })
 
   it('year payloads round-trip and keep the month', () => {
     const raw = encodeViewPayload('19', { mode: 'year', year: 2026, month: 9 })
     expect(raw).toBe('19|y|2026-9')
-    expect(decodeViewPayload(raw)).toEqual({ trId: '19', view: { mode: 'year', year: 2026, month: 9 } })
+    expect(decodeViewPayload(raw)).toEqual({
+      trId: '19',
+      view: { mode: 'year', year: 2026, month: 9 },
+    })
   })
 
   it('date payload encodes', () => {

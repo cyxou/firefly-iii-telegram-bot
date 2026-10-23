@@ -35,7 +35,11 @@ describe('quick add (description + amount)', () => {
     await bot.handleUpdate(generateMessageUpdate('Groceries 25'))
     // the fake's storeTransaction appends to the array listTransactions filters,
     // so a list call doubles as the assertion on what was stored
-    const created = await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    const created = await firefly.listTransactions(
+      'withdrawal' as never,
+      '2000-01-01',
+      '2999-12-31',
+    )
     expect(created).toHaveLength(1)
     const split = created[0]!.attributes.transactions![0]!
     expect(split.type).toBe('withdrawal')
@@ -49,7 +53,10 @@ describe('quick add (description + amount)', () => {
   it('record reply carries description, amount and account names (Markdown)', async () => {
     const { bot, api } = await setupReal()
     await bot.handleUpdate(generateMessageUpdate('Groceries 25'))
-    const send = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    const send = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((send.payload as any).parse_mode).toBe('Markdown')
     expect((send.payload as any).text).toContain('Groceries')
     expect((send.payload as any).text).toContain('Checking → Cash wallet')
@@ -58,23 +65,36 @@ describe('quick add (description + amount)', () => {
   it('arithmetic amount is evaluated (Lunch 10+5)', async () => {
     const { bot, firefly } = await setupReal()
     await bot.handleUpdate(generateMessageUpdate('Lunch 10+5'))
-    const created = await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    const created = await firefly.listTransactions(
+      'withdrawal' as never,
+      '2000-01-01',
+      '2999-12-31',
+    )
     expect(created[0]!.attributes.transactions![0]!.amount).toBe('15')
   })
 
   it('no asset accounts → guidance reply with an open-in-browser url button', async () => {
     const { bot, api } = await setupReal({ accounts: [] })
     await bot.handleUpdate(generateMessageUpdate('Groceries 25'))
-    const send = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    const send = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((send.payload as any).text).toContain('Asset accounts')
-    const kb = (send.payload as any).reply_markup.inline_keyboard as { text: string, url?: string }[][]
-    expect(kb.flat().find(b => b.url)?.url).toBe('https://ff.example.com/accounts/asset')
+    const kb = (send.payload as any).reply_markup.inline_keyboard as {
+      text: string
+      url?: string
+    }[][]
+    expect(kb.flat().find((b) => b.url)?.url).toBe('https://ff.example.com/accounts/asset')
   })
 
   it('garbage text → dontUnderstand', async () => {
     const { bot, api } = await setupReal()
     await bot.handleUpdate(generateMessageUpdate('hello world'))
-    const send = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
-    expect((send.payload as any).text).toContain('don\'t understand')
+    const send = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
+    expect((send.payload as any).text).toContain("don't understand")
   })
 })

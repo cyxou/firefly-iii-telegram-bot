@@ -22,13 +22,9 @@ export function generateWelcomeMessage(ctx: Context) {
   const isConfigured = !!(fireflyUrl && fireflyAccessToken)
 
   let msg = ctx.i18n.t('welcome')
-  if (!isConfigured)
-    msg += `\n${ctx.i18n.t('needToSet')}`
-  if (!fireflyUrl)
-    msg += `\n${ctx.i18n.t('setFireflyUrl')}`
-  if (!fireflyAccessToken)
-    msg += `\n${ctx.i18n.t('setFireflyAccessToken')}`
-  if (!isConfigured)
-    msg += `\n\n${ctx.i18n.t('navigateToSettings')}`
+  if (!isConfigured) msg += `\n${ctx.i18n.t('needToSet')}`
+  if (!fireflyUrl) msg += `\n${ctx.i18n.t('setFireflyUrl')}`
+  if (!fireflyAccessToken) msg += `\n${ctx.i18n.t('setFireflyAccessToken')}`
+  if (!isConfigured) msg += `\n\n${ctx.i18n.t('navigateToSettings')}`
   return msg
 }

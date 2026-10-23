@@ -20,12 +20,10 @@ import {
 // rejects a second connect() while connected, so only connect when needed.
 const available = await (async () => {
   try {
-    if (redis.status !== 'ready')
-      await redis.connect()
+    if (redis.status !== 'ready') await redis.connect()
     await redis.ping()
     return true
-  }
-  catch {
+  } catch {
     return false
   }
 })()
@@ -37,7 +35,7 @@ const CONFIGURED = defaultSettings({
 })
 
 function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, c => c.toLocaleUpperCase())
+  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
 async function makeBot() {
@@ -63,8 +61,7 @@ async function makeBot() {
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   return { bot, api, click }
@@ -74,10 +71,13 @@ describe.skipIf(!available)('reports (e2e, real redis)', () => {
   it('reports label renders the summary; month nav round-trips without session', async () => {
     const { bot, api, click } = await makeBot()
     await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.REPORTS')))
-    expect(api.getOutgoingRequests().some(r => r.method === 'sendRichMessage')).toBe(true)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'sendRichMessage')).toBe(true)
     const prev = dayjs().subtract(1, 'month')
     await click(`<< ${monthLabel(prev)}`)
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).rich_message?.markdown).toContain(monthLabel(prev))
     expect((edit.payload as any).rich_message?.markdown).not.toContain(monthLabel(dayjs()))
   })

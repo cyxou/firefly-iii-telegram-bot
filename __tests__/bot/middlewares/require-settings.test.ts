@@ -16,9 +16,10 @@ const CONFIGURED = defaultSettings({
 })
 
 function gateTexts(api: ReturnType<typeof setupMockApi>) {
-  return api.getOutgoingRequests()
-    .filter(r => r.method === 'sendMessage')
-    .map(r => (r.payload as { text: string }).text)
+  return api
+    .getOutgoingRequests()
+    .filter((r) => r.method === 'sendMessage')
+    .map((r) => (r.payload as { text: string }).text)
 }
 
 describe('requireSettings gate', () => {
@@ -27,7 +28,7 @@ describe('requireSettings gate', () => {
     const api = setupMockApi(bot)
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.ACCOUNTS')))
-    const send = api.getOutgoingRequests().find(r => r.method === 'sendMessage')!
+    const send = api.getOutgoingRequests().find((r) => r.method === 'sendMessage')!
     expect((send.payload as any).text).toContain('Firefly URL')
     expect((send.payload as any).reply_markup?.keyboard).toBeDefined()
   })
@@ -47,7 +48,9 @@ describe('requireSettings gate', () => {
     const api = setupMockApi(bot)
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate('blah'))
-    expect(gateTexts(api).at(-1)).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10))
+    expect(gateTexts(api).at(-1)).toContain(
+      i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10),
+    )
   })
 
   it('lets env-provided credentials through when nothing is stored', async () => {
@@ -62,7 +65,9 @@ describe('requireSettings gate', () => {
     await initializeBot(bot)
     await bot.handleUpdate(generateMessageUpdate('blah'))
     expect(gateTexts(api).at(-1)).not.toContain('To work with the bot')
-    expect(gateTexts(api).at(-1)).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10))
+    expect(gateTexts(api).at(-1)).toContain(
+      i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10),
+    )
   })
 
   it('never gates /start, /settings, or callback queries', async () => {
@@ -77,6 +82,6 @@ describe('requireSettings gate', () => {
     expect(texts[1]).toContain(i18n.t('en', 'settings.notSpecified').slice(0, 8))
     // no GATE prompt anywhere — 'To work with the bot' is the gate copy's stable
     // fragment ('Firefly URL' alone collides with the settings screen's own display)
-    expect(texts.some(t => t.includes('To work with the bot'))).toBe(false)
+    expect(texts.some((t) => t.includes('To work with the bot'))).toBe(false)
   })
 })

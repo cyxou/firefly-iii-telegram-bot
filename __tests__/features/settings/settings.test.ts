@@ -23,8 +23,7 @@ async function setup(opts: Parameters<typeof createTestBot>[0] = {}) {
   const send = (text: string) => bot.handleUpdate(generateMessageUpdate(text, { isCommand: true }))
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   return { bot, settingsStore, api, send, click }
@@ -34,7 +33,8 @@ describe('settings feature', () => {
   it('shows NOT SPECIFIED markers for a fresh user', async () => {
     const { api, send } = await setup()
     await send('/settings')
-    const text = (api.getOutgoingRequests().find(r => r.method === 'sendMessage')?.payload as any).text
+    const text = (api.getOutgoingRequests().find((r) => r.method === 'sendMessage')?.payload as any)
+      .text
     expect(text).toContain(i18n.t('en', 'settings.notSpecified'))
   })
 
@@ -43,14 +43,14 @@ describe('settings feature', () => {
     await send('/settings')
     await click(URL_BUTTON)
     await send('not a url')
-    let replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
+    let replies = api.getOutgoingRequests().filter((r) => r.method === 'sendMessage')
     expect((replies.at(-1)!.payload as any).text).toContain(i18n.t('en', 'settings.badUrl'))
 
     await send('https://ff.example.com')
     const saved = await settingsStore.get(1111111)
     expect(saved?.fireflyUrl).toBe('https://ff.example.com')
     expect(saved?.fireflyApiUrl).toBe('https://ff.example.com/api')
-    replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
+    replies = api.getOutgoingRequests().filter((r) => r.method === 'sendMessage')
     expect((replies.at(-1)!.payload as any).text).toContain('ff.example.com')
   })
 
@@ -59,13 +59,13 @@ describe('settings feature', () => {
     await send('/settings')
     await click(TOKEN_BUTTON)
     await send('short')
-    let replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
+    let replies = api.getOutgoingRequests().filter((r) => r.method === 'sendMessage')
     expect((replies.at(-1)!.payload as any).text).toContain(i18n.t('en', 'settings.badAccessToken'))
 
     const longToken = 't'.repeat(500)
     await send(longToken)
     expect((await settingsStore.get(1111111))?.fireflyAccessToken).toBe(longToken)
-    replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
+    replies = api.getOutgoingRequests().filter((r) => r.method === 'sendMessage')
     expect((replies.at(-1)!.payload as any).text).toContain('t...')
   })
 
@@ -80,26 +80,38 @@ describe('settings feature', () => {
       }),
     })
     await send('/settings')
-    const text = (api.getOutgoingRequests().find(r => r.method === 'sendMessage')?.payload as any).text
+    const text = (api.getOutgoingRequests().find((r) => r.method === 'sendMessage')?.payload as any)
+      .text
     expect(text).toContain('r\\_cs')
     expect(text).toContain('my\\_host')
   })
 
   it('check connection reports the firefly user email', async () => {
     const { api, send, click } = await setup({
-      settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),
+      settings: defaultSettings({
+        fireflyUrl: 'https://ff',
+        fireflyApiUrl: 'https://ff/api',
+        fireflyAccessToken: 'x'.repeat(500),
+      }),
     })
     await send('/settings')
     await click(CHECK_BUTTON)
-    const replies = api.getOutgoingRequests().filter(r => r.method === 'sendMessage')
-    expect((replies.at(-1)!.payload as any).text)
-      .toContain(i18n.t('en', 'settings.connectionSuccess', { email: 'test@example.com' }))
+    const replies = api.getOutgoingRequests().filter((r) => r.method === 'sendMessage')
+    expect((replies.at(-1)!.payload as any).text).toContain(
+      i18n.t('en', 'settings.connectionSuccess', { email: 'test@example.com' }),
+    )
   })
 
   it('default asset account selection persists to the store', async () => {
     const { send, click, settingsStore } = await setup({
-      settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),
-      firefly: createTestFireflyService({ accounts: [testAccount('1', 'Checking'), testAccount('2', 'Savings')] }),
+      settings: defaultSettings({
+        fireflyUrl: 'https://ff',
+        fireflyApiUrl: 'https://ff/api',
+        fireflyAccessToken: 'x'.repeat(500),
+      }),
+      firefly: createTestFireflyService({
+        accounts: [testAccount('1', 'Checking'), testAccount('2', 'Savings')],
+      }),
     })
     await send('/settings')
     await click('💳 Default asset account')
@@ -112,17 +124,23 @@ describe('settings feature', () => {
   // editMessageReplyMarkup — Telegram 400 "message is not modified" on live.
   it('navigating back from the account menu renders settings without a redundant markup edit', async () => {
     const { api, send, click } = await setup({
-      settings: defaultSettings({ fireflyUrl: 'https://ff', fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'x'.repeat(500) }),
-      firefly: createTestFireflyService({ accounts: [testAccount('1', 'Checking'), testAccount('2', 'Savings')] }),
+      settings: defaultSettings({
+        fireflyUrl: 'https://ff',
+        fireflyApiUrl: 'https://ff/api',
+        fireflyAccessToken: 'x'.repeat(500),
+      }),
+      firefly: createTestFireflyService({
+        accounts: [testAccount('1', 'Checking'), testAccount('2', 'Savings')],
+      }),
     })
     await send('/settings')
     await click('💳 Default asset account')
     await click('Checking')
     await click('🔙')
-    const edits = api.getOutgoingRequests().filter(r => r.method === 'editMessageText')
+    const edits = api.getOutgoingRequests().filter((r) => r.method === 'editMessageText')
     expect((edits.at(-1)!.payload as any).text).toContain('*Settings*')
     expect((edits.at(-1)!.payload as any).reply_markup?.inline_keyboard).toBeDefined()
-    expect(api.getOutgoingRequests().some(r => r.method === 'editMessageReplyMarkup')).toBe(false)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'editMessageReplyMarkup')).toBe(false)
   })
 
   it('language switch persists to the store', async () => {
@@ -156,7 +174,12 @@ describe('settings feature', () => {
       // env credentials still backfill the user after the partial save, so
       // rotating the env token keeps reaching them
       await send('/settings')
-      const text = (api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!.payload as any).text
+      const text = (
+        api
+          .getOutgoingRequests()
+          .filter((r) => r.method === 'sendMessage')
+          .at(-1)!.payload as any
+      ).text
       expect(text).toContain('env-firefly.example.com')
     })
 
@@ -170,7 +193,9 @@ describe('settings feature', () => {
         config: envConfig,
       })
       await send('/settings')
-      const text = (api.getOutgoingRequests().find(r => r.method === 'sendMessage')?.payload as any).text
+      const text = (
+        api.getOutgoingRequests().find((r) => r.method === 'sendMessage')?.payload as any
+      ).text
       expect(text).toContain('my-firefly.example.com')
       expect(text).not.toContain('env-firefly.example.com')
     })

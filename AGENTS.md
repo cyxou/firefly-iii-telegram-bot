@@ -7,14 +7,17 @@ bun install                # Install dependencies
 bun run dev                # Dev with watch-reload
 bun run start              # Run the bot (polling)
 bunx tsc --noEmit          # Typecheck
-bun run lint / bun run fix # ESLint
+bun run lint / bun run fix # oxlint (lint) / oxfmt (format) — no eslint in the toolchain
 LOG_FILE=logs/bot.log LOG_LEVEL=debug bun run start  # Debug run with file logging (logs/ gitignored)
 bunx vitest run            # Unit + integration tests (no external services needed)
-docker compose -f docker-compose.tests.yaml up -d   # ephemeral Redis for e2e
+docker compose -f compose.tests.yaml up -d   # ephemeral Redis for e2e
 bun run test:e2e           # e2e (real Redis, Telegram still mocked)
 bun run codegen            # Regenerate Firefly client into src/lib/firefly/generated
 docker compose -f compose.firefly.yaml up -d        # DEV local Firefly III + MariaDB
 ```
+
+Dependency refreshes: use the `/update-deps` skill (`.claude/skills/update-deps/`)
+— it encodes the pin exceptions, overrides mechanics, and CI-gate landmines.
 
 ## Architecture
 
@@ -27,7 +30,7 @@ Middleware order (load-bearing): deps → errorBoundary → accessControl →
 sequentialize → session(Redis) → i18n → setLocaleFromSettings →
 features → unhandled (last).
 
-- **Features** live in `src/bot/features/<name>/` (composer index.ts + *.menu.ts + *.router.ts).
+- **Features** live in `src/bot/features/<name>/` (composer index.ts + \*.menu.ts + \*.router.ts).
 - **Session** (`src/bot/context.ts`): one optional field per flow (e.g. `settingsFlow`).
   NEVER a shared `step` string (lint-tested). Flow state may expire (24h Redis TTL).
 - **Credentials** live in `src/lib/settings-store.ts` (data/settings.json), never in session.
@@ -59,6 +62,10 @@ rules live in `__tests__/lint/` — extend them, never bypass.
 - pino via `ctx.logger` (per-update child). No console.log, no debug.
 - Handlers return the reply promise.
 - Non-null assertions allowed (`ctx.msg!.text`).
+- Lint/format: **oxlint** (`.oxlintrc.json`) + **oxfmt** (`.oxfmtrc.json`,
+  prettier-style: no semi, single quotes). No eslint — typescript-eslint caps at
+  TS <6.1 and this repo runs TS 7. oxlint warnings on test helpers
+  (no-unsafe-optional-chaining) are accepted; don't churn test code for them.
 
 ## Beads Issue Tracker
 

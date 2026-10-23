@@ -33,6 +33,7 @@ bd dolt push
 ### Working with Issues
 
 Issues in Beads are:
+
 - **Git-native**: Stored in Dolt database with version control and branching
 - **AI-friendly**: CLI-first design works perfectly with AI coding agents
 - **Branch-aware**: Issues can follow your branch workflow
@@ -41,16 +42,19 @@ Issues in Beads are:
 ## Why Beads?
 
 ✨ **AI-Native Design**
+
 - Built specifically for AI-assisted development workflows
 - CLI-first interface works seamlessly with AI coding agents
 - No context switching to web UIs
 
 🚀 **Developer Focused**
+
 - Issues live in your repo, right next to your code
 - Works offline, syncs when you push
 - Fast, lightweight, and stays out of your way
 
 🔧 **Git Integration**
+
 - Dolt-native sync via bd dolt push / bd dolt pull
 - Branch-aware issue tracking
 - Dolt-native three-way merge resolution
@@ -78,4 +82,4 @@ bd create "Try out Beads"
 
 ---
 
-*Beads: Issue tracking that moves at the speed of thought* ⚡
+_Beads: Issue tracking that moves at the speed of thought_ ⚡

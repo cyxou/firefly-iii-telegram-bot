@@ -12,11 +12,12 @@ type Translate = (key: string, params?: Record<string, unknown>) => string
 // otherwise Telegram-400s the whole message.
 export function formatTransaction(tr: TransactionRead, t: Translate): string {
   const split = tr.attributes.transactions![0]!
-  const key = split.type === 'withdrawal'
-    ? 'transactions.add.withdrawalMessage'
-    : split.type === 'deposit'
-      ? 'transactions.add.depositMessage'
-      : 'transactions.add.transferMessage'
+  const key =
+    split.type === 'withdrawal'
+      ? 'transactions.add.withdrawalMessage'
+      : split.type === 'deposit'
+        ? 'transactions.add.depositMessage'
+        : 'transactions.add.transferMessage'
   return t(key, {
     amount: Number.parseFloat(split.amount),
     foreignAmount: split.foreign_amount ? Number.parseFloat(split.foreign_amount) : '',
@@ -33,7 +34,9 @@ export function formatTransaction(tr: TransactionRead, t: Translate): string {
 
 /** Stale keyboard after the flow ended — explicit empty keyboard: a markup-less edit would re-inject this menu. */
 export function staleFlowExit(ctx: Context) {
-  return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), { reply_markup: { inline_keyboard: [] } })
+  return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), {
+    reply_markup: { inline_keyboard: [] },
+  })
 }
 
 /**

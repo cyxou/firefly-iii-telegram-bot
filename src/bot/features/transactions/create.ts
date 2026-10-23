@@ -1,5 +1,9 @@
 import type { TxnAccount, TxnDraft } from '#root/bot/context.js'
-import type { AccountRead, FireflyService, TransactionSplitStore } from '#root/lib/firefly/service.js'
+import type {
+  AccountRead,
+  FireflyService,
+  TransactionSplitStore,
+} from '#root/lib/firefly/service.js'
 import type { UserSettings } from '#root/lib/settings-store.js'
 import { AccountTypeFilter, TransactionTypeProperty } from '#root/lib/firefly/service.js'
 
@@ -20,7 +24,7 @@ export function toRef(acc: AccountRead): TxnAccount {
 export async function resolveDefaultAccounts(
   settings: UserSettings | undefined,
   firefly: FireflyService,
-): Promise<{ source: TxnAccount | null, destination: TxnAccount | null }> {
+): Promise<{ source: TxnAccount | null; destination: TxnAccount | null }> {
   const firstOf = async (type: AccountTypeFilter) => {
     const acc = (await firefly.listAccounts(type))[0]
     return acc ? toRef(acc) : null
@@ -47,14 +51,12 @@ export function buildSplit(draft: TxnDraft, type?: TransactionTypeProperty): Tra
   const isLiability = (t?: string) => t === 'liability' || t === 'liabilities'
   let trType = type
   if (!trType) {
-    if (sourceType === 'asset' && isLiability(destType))
-      trType = TransactionTypeProperty.Withdrawal
+    if (sourceType === 'asset' && isLiability(destType)) trType = TransactionTypeProperty.Withdrawal
     else if (isLiability(sourceType) || sourceType === 'revenue')
       trType = TransactionTypeProperty.Deposit
     else if (sourceType === 'asset' || destType === 'asset')
       trType = TransactionTypeProperty.Transfer
-    else
-      trType = TransactionTypeProperty.Withdrawal
+    else trType = TransactionTypeProperty.Withdrawal
   }
   const split: TransactionSplitStore = {
     type: trType,

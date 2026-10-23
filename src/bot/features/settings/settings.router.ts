@@ -6,7 +6,7 @@ import { cancelMenu, settingsMenu, settingsText } from './settings.menu.js'
 // Keyed on this flow's OWN session field — flows cannot re-point each other.
 // (v1 keyed every flow off the shared session.step string; that design bug is
 // what the per-flow fields + lint rule replace.)
-export const settingsRouter = new Router<Context>(ctx => ctx.session.settingsFlow?.step)
+export const settingsRouter = new Router<Context>((ctx) => ctx.session.settingsFlow?.step)
 
 settingsRouter.route('url', async (ctx) => {
   const text = ctx.msg!.text!
@@ -15,7 +15,11 @@ settingsRouter.route('url', async (ctx) => {
     return
   }
   const s = ctx.settings ?? defaultSettings()
-  await ctx.saveSettings({ ...s, fireflyUrl: text, fireflyApiUrl: `${text.replace(/\/+$/, '')}/api` })
+  await ctx.saveSettings({
+    ...s,
+    fireflyUrl: text,
+    fireflyApiUrl: `${text.replace(/\/+$/, '')}/api`,
+  })
   ctx.session.settingsFlow = undefined
   await ctx.reply(settingsText(ctx), { parse_mode: 'Markdown', reply_markup: settingsMenu })
 })

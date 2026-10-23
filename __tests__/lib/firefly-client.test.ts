@@ -30,7 +30,10 @@ describe('createFireflyClients', () => {
   })
 
   it('wires the Insight api', () => {
-    const clients = createFireflyClients({ fireflyApiUrl: 'https://ff/api', fireflyAccessToken: 'tok-insight' })
+    const clients = createFireflyClients({
+      fireflyApiUrl: 'https://ff/api',
+      fireflyAccessToken: 'tok-insight',
+    })
     expect(typeof clients.Insight.insightExpenseCategory).toBe('function')
   })
 })

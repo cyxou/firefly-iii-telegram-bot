@@ -10,5 +10,9 @@ export default defineConfig({
     testTimeout: 10000,
     globals: true,
   },
-  resolve: { alias: { '#root': path.resolve(import.meta.dirname, './src') } },
+  resolve: {
+    alias: {
+      '#root': path.resolve(import.meta.dirname, './src'),
+    },
+  },
 })

@@ -33,8 +33,7 @@ async function setupEdit() {
   await initializeBot(bot)
   const click = async (label: string) => {
     const btn = findButton(api.getOutgoingRequests(), label)
-    if (!btn)
-      throw new Error(`button not found: ${label}`)
+    if (!btn) throw new Error(`button not found: ${label}`)
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   const send = (text: string) => bot.handleUpdate(generateMessageUpdate(text))
@@ -55,9 +54,12 @@ describe('record menu + edit shell', () => {
     await send('Groceries 25')
     await click('✏️ Edit')
     const last = api.getOutgoingRequests().at(-1)!
-    const kb = (last.payload as any).reply_markup.inline_keyboard as { text: string, url?: string }[][]
-    expect(kb.flat().find(b => b.url)?.url).toBe('https://ff.example.com/transactions/show/200')
-    expect(kb.flat().some(b => b.text === '🔙 Back')).toBe(true)
+    const kb = (last.payload as any).reply_markup.inline_keyboard as {
+      text: string
+      url?: string
+    }[][]
+    expect(kb.flat().find((b) => b.url)?.url).toBe('https://ff.example.com/transactions/show/200')
+    expect(kb.flat().some((b) => b.text === '🔙 Back')).toBe(true)
   })
 
   it('🔙 Back re-renders the record with the Edit button again', async () => {
@@ -65,14 +67,20 @@ describe('record menu + edit shell', () => {
     await send('Groceries 25')
     await click('✏️ Edit')
     await click('🔙 Back')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Groceries')
     expect(findButton(api.getOutgoingRequests(), '✏️ Edit')).toBeDefined()
   })
 
   it('localhost fireflyUrl: edit shell renders without the URL button (Telegram vetoes dotless hosts)', async () => {
     const firefly = createTestFireflyService({
-      accounts: [testAccount('1', 'Checking', { type: 'asset' }), testAccount('2', 'Cash wallet', { type: 'Cash account' })],
+      accounts: [
+        testAccount('1', 'Checking', { type: 'asset' }),
+        testAccount('2', 'Cash wallet', { type: 'Cash account' }),
+      ],
       transactions: [],
     })
     const { bot } = createTestBot({
@@ -89,11 +97,19 @@ describe('record menu + edit shell', () => {
     const btn = findButton(api.getOutgoingRequests(), '✏️ Edit')!
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
     // no error-boundary reply — the menu opened, minus the unusable URL button
-    expect(api.getOutgoingRequests().some(r => r.method === 'sendMessage' && (r.payload as any).text === 'An error occurred!')).toBe(false)
+    expect(
+      api
+        .getOutgoingRequests()
+        .some(
+          (r) => r.method === 'sendMessage' && (r.payload as any).text === 'An error occurred!',
+        ),
+    ).toBe(false)
     expect(findButton(api.getOutgoingRequests(), '🔖 Category')).toBeDefined()
     expect(api.getOutgoingRequests().slice(-1)[0]!.method).toBe('editMessageReplyMarkup')
-    const kb = (api.getOutgoingRequests().at(-1)!.payload as any).reply_markup.inline_keyboard as { url?: string }[][]
-    expect(kb.flat().some(b => b.url !== undefined)).toBe(false)
+    const kb = (api.getOutgoingRequests().at(-1)!.payload as any).reply_markup.inline_keyboard as {
+      url?: string
+    }[][]
+    expect(kb.flat().some((b) => b.url !== undefined)).toBe(false)
   })
 })
 
@@ -104,9 +120,14 @@ describe('edit category', () => {
     await click('✏️ Edit')
     await click('🔖 Category')
     await click('Food')
-    const updated = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!
+    const updated = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!
     expect(updated.attributes.transactions![0]!.category_id).toBe('1')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Food')
   })
 
@@ -116,11 +137,16 @@ describe('edit category', () => {
     await click('✏️ Edit')
     await click('🔖 Category')
     await click('🔙')
-    const updated = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!
+    const updated = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!
     // buildSplit sent category_id: '' (v1: Firefly treats '' as absent) — the
     // untouched stored value IS that empty string, i.e. no category was set
     expect(updated.attributes.transactions![0]!.category_id).toBe('')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Groceries')
   })
 })
@@ -132,10 +158,15 @@ describe('edit accounts', () => {
     await click('✏️ Edit')
     await click('📤 Source account')
     // the prompt text swaps in (v1 chooseNewSourceAccount)
-    const prompt = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const prompt = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((prompt.payload as any).text).toContain('source account')
     await click('EUR wallet')
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     expect(split.source_id).toBe('3')
     expect(split.currency_id).toBe('2') // v1: transaction follows the new source's currency
   })
@@ -146,7 +177,9 @@ describe('edit accounts', () => {
     await click('✏️ Edit')
     await click('📥 Destination account')
     await click('Cash wallet')
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     expect(split.destination_id).toBe('2')
   })
 })
@@ -157,13 +190,21 @@ describe('edit amount/description text flows', () => {
     await send('Groceries 25')
     await click('✏️ Edit')
     await click('💸 Amount')
-    const prompt = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const prompt = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((prompt.payload as any).text).toContain('amount')
     await send('30')
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     expect(split.amount).toBe('30')
-    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
-    const reply = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
+    const reply = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((reply.payload as any).text).toContain('30')
   })
 
@@ -173,7 +214,9 @@ describe('edit amount/description text flows', () => {
     await click('✏️ Edit')
     await click('💸 Amount')
     await send('+5')
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     expect(split.amount).toBe('30')
   })
 
@@ -183,10 +226,15 @@ describe('edit amount/description text flows', () => {
     await click('✏️ Edit')
     await click('💸 Amount')
     await send('abc')
-    const err = api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!
+    const err = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'sendMessage')
+      .at(-1)!
     expect((err.payload as any).text).toContain('amount')
     await send('40')
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     expect(split.amount).toBe('40')
   })
 
@@ -196,7 +244,9 @@ describe('edit amount/description text flows', () => {
     await click('✏️ Edit')
     await click('📝 Description')
     await send('Beer')
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     expect(split.description).toBe('Beer')
   })
 
@@ -206,7 +256,10 @@ describe('edit amount/description text flows', () => {
     await click('✏️ Edit')
     await click('💸 Amount')
     await click('🔙')
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Groceries')
     await send('Cinema 9')
     const all = await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
@@ -215,7 +268,10 @@ describe('edit amount/description text flows', () => {
 })
 
 describe('edit date (stateless calendar)', () => {
-  async function openCalendar(click: (l: string) => Promise<void>, send: (t: string) => Promise<unknown>) {
+  async function openCalendar(
+    click: (l: string) => Promise<void>,
+    send: (t: string) => Promise<unknown>,
+  ) {
     await send('Groceries 25')
     await click('✏️ Edit')
     await click('📆 Date')
@@ -224,7 +280,8 @@ describe('edit date (stateless calendar)', () => {
   it('renders the current month with a day button per date', async () => {
     const { api, click, send } = await setupEdit()
     await openCalendar(click, send)
-    const day10 = findButton(api.getOutgoingRequests(), '10') ?? findButton(api.getOutgoingRequests(), '10*') // today renders '10*'
+    const day10 =
+      findButton(api.getOutgoingRequests(), '10') ?? findButton(api.getOutgoingRequests(), '10*') // today renders '10*'
     expect(day10).toBeDefined()
     expect(findButton(api.getOutgoingRequests(), '‹')).toBeDefined()
   })
@@ -237,16 +294,23 @@ describe('edit date (stateless calendar)', () => {
     // the re-rendered keyboard shows the previous month's label
     const dayjs = (await import('dayjs')).default
     const prevLabel = dayjs().subtract(1, 'month').format('MMMM YYYY')
-    const kb = (api.getOutgoingRequests().at(-1)!.payload as any).reply_markup.inline_keyboard as { text: string }[][]
-    expect(kb.flat().some(b => b.text === prevLabel)).toBe(true)
+    const kb = (api.getOutgoingRequests().at(-1)!.payload as any).reply_markup.inline_keyboard as {
+      text: string
+    }[][]
+    expect(kb.flat().some((b) => b.text === prevLabel)).toBe(true)
   })
 
   it('picking a day updates the transaction date', async () => {
     const { api, bot, click, send, firefly } = await setupEdit()
     await openCalendar(click, send)
-    const day15 = findButton(api.getOutgoingRequests(), '15') ?? findButton(api.getOutgoingRequests(), '15*')
-    await bot.handleUpdate(generateCallbackQueryUpdate(day15!.data, { messageId: day15!.messageId }))
-    const split = (await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))[0]!.attributes.transactions![0]!
+    const day15 =
+      findButton(api.getOutgoingRequests(), '15') ?? findButton(api.getOutgoingRequests(), '15*')
+    await bot.handleUpdate(
+      generateCallbackQueryUpdate(day15!.data, { messageId: day15!.messageId }),
+    )
+    const split = (
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+    )[0]!.attributes.transactions![0]!
     const dayjs = (await import('dayjs')).default
     expect(dayjs(split.date).format('D')).toBe('15')
     expect(dayjs(split.date).format('YYYY-MM')).toBe(dayjs().format('YYYY-MM'))
@@ -260,7 +324,9 @@ describe('edit date (stateless calendar)', () => {
     await bot.handleUpdate(generateCallbackQueryUpdate(label.data, { messageId: label.messageId }))
     const yearBtn = findButton(api.getOutgoingRequests(), `[${dayjs().year()}]`)
     expect(yearBtn).toBeDefined() // the active year renders bracketed (v1 [YYYY])
-    await bot.handleUpdate(generateCallbackQueryUpdate(yearBtn!.data, { messageId: yearBtn!.messageId }))
+    await bot.handleUpdate(
+      generateCallbackQueryUpdate(yearBtn!.data, { messageId: yearBtn!.messageId }),
+    )
     expect(findButton(api.getOutgoingRequests(), '‹')).toBeDefined() // back in month view
   })
 })
@@ -271,11 +337,19 @@ describe('delete confirmation', () => {
     await send('Groceries 25')
     await click('✏️ Edit')
     await click('❌ Delete')
-    const confirm = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    const confirm = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((confirm.payload as any).text).toContain('Are you sure')
     await click('✖ Cancel')
-    expect((await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))).toHaveLength(1)
-    const edit = api.getOutgoingRequests().filter(r => r.method === 'editMessageText').at(-1)!
+    expect(
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'),
+    ).toHaveLength(1)
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
     expect((edit.payload as any).text).toContain('Groceries')
   })
 
@@ -285,7 +359,9 @@ describe('delete confirmation', () => {
     await click('✏️ Edit')
     await click('❌ Delete')
     await click('✅ Yes')
-    expect((await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'))).toHaveLength(0)
-    expect(api.getOutgoingRequests().some(r => r.method === 'deleteMessage')).toBe(true)
+    expect(
+      await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31'),
+    ).toHaveLength(0)
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
   })
 })

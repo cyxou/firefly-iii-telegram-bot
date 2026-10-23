@@ -5,7 +5,15 @@ import type { Update } from '@grammyjs/types'
 import type { Bot as TelegramBot } from 'grammy'
 import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
-import type { AccountRead, CategoryExpense, CategoryExpenseSummary, CategoryRead, CurrencyTotal, FireflyService, TransactionRead } from '#root/lib/firefly/service.js'
+import type {
+  AccountRead,
+  CategoryExpense,
+  CategoryExpenseSummary,
+  CategoryRead,
+  CurrencyTotal,
+  FireflyService,
+  TransactionRead,
+} from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
 import type { Logger } from '#root/logger.js'
 import dayjs from 'dayjs'
@@ -33,7 +41,10 @@ export interface OutgoingRequest {
 
 // Telegram-shaped error thrown by the mock API for calls the real API would reject
 export class MockApiError extends Error {
-  constructor(readonly error_code: number, description: string) {
+  constructor(
+    readonly error_code: number,
+    description: string,
+  ) {
     super(description)
     this.name = 'MockApiError'
   }
@@ -69,9 +80,9 @@ export function setupMockApi(bot: TelegramBot<Context>) {
 
     // structural GFM check (see rich-validate.ts) — records violations; the
     // shared setup's afterEach fails the test that produced them
-    const richMarkdown = (payload as { rich_message?: { markdown?: string } })?.rich_message?.markdown
-    if (typeof richMarkdown === 'string')
-      noteRichMarkdown(richMarkdown)
+    const richMarkdown = (payload as { rich_message?: { markdown?: string } })?.rich_message
+      ?.markdown
+    if (typeof richMarkdown === 'string') noteRichMarkdown(richMarkdown)
 
     const p = payload as {
       chat_id?: number
@@ -85,15 +96,16 @@ export function setupMockApi(bot: TelegramBot<Context>) {
     // on one bad URL (live bug: localhost fireflyUrl vetoed the whole Edit
     // menu). Mirror that here so this class fails in tests, not in production.
     const keyboard = (payload as { reply_markup?: { inline_keyboard?: { url?: string }[][] } })
-      ?.reply_markup
-      ?.inline_keyboard
+      ?.reply_markup?.inline_keyboard
     if (keyboard) {
       for (const btn of keyboard.flat()) {
-        if (btn.url === undefined)
-          continue
+        if (btn.url === undefined) continue
         const host = /^https?:\/\/([^/:]+)/.exec(btn.url)?.[1]
         if (!host || !host.includes('.'))
-          throw new MockApiError(400, `Bad Request: inline keyboard button URL '${btn.url}' is invalid: Wrong HTTP URL`)
+          throw new MockApiError(
+            400,
+            `Bad Request: inline keyboard button URL '${btn.url}' is invalid: Wrong HTTP URL`,
+          )
       }
     }
 
@@ -114,19 +126,22 @@ export function setupMockApi(bot: TelegramBot<Context>) {
 
     if (EDIT_METHODS.has(method)) {
       // Inline-mode edits are untrackable here; the real API validates them itself
-      if (p.inline_message_id !== undefined)
-        return { ok: true, result: true as ResultType }
+      if (p.inline_message_id !== undefined) return { ok: true, result: true as ResultType }
 
-      const known = p.chat_id !== undefined && p.message_id !== undefined
-        && sentMessages.has(`${p.chat_id}:${p.message_id}`)
-      if (!known)
-        throw new MockApiError(400, 'Bad Request: message to edit not found')
+      const known =
+        p.chat_id !== undefined &&
+        p.message_id !== undefined &&
+        sentMessages.has(`${p.chat_id}:${p.message_id}`)
+      if (!known) throw new MockApiError(400, 'Bad Request: message to edit not found')
     }
 
     return { ok: true, result: true as ResultType }
   })
 
-  return { bot, getOutgoingRequests: () => outgoingRequests }
+  return {
+    bot,
+    getOutgoingRequests: () => outgoingRequests,
+  }
 }
 
 // Initialize bot with required botInfo
@@ -190,7 +205,10 @@ export function generateMessageUpdate(text: string, options: { isCommand?: boole
 }
 
 // Generate a test callback query update for the default test user/chat
-export function generateCallbackQueryUpdate(data: string, options: { messageId?: number } = {}): Update {
+export function generateCallbackQueryUpdate(
+  data: string,
+  options: { messageId?: number } = {},
+): Update {
   const { messageId = 1365 } = options
 
   return {
@@ -230,48 +248,50 @@ export function generateCallbackQueryUpdate(data: string, options: { messageId?:
 }
 
 // Helper to check if payload has text property
-export function isTextPayload(payload: PayloadType): payload is { text: string, parse_mode?: string } {
+export function isTextPayload(
+  payload: PayloadType,
+): payload is { text: string; parse_mode?: string } {
   return typeof payload === 'object' && payload !== null && 'text' in payload
 }
 
 // Helper to get last message from outgoing requests
 export function getLastMessage(outgoingRequests: OutgoingRequest[]): { text: string } | null {
   const lastRequest = outgoingRequests[outgoingRequests.length - 1]
-  if (!lastRequest || !isTextPayload(lastRequest.payload))
-    return null
+  if (!lastRequest || !isTextPayload(lastRequest.payload)) return null
   return lastRequest.payload
 }
 
 /** Markdown of the most recent rich send/edit, if any. */
 export function getLastRichMarkdown(requests: OutgoingRequest[]): string | undefined {
   for (const request of [...requests].reverse()) {
-    const markdown = (request.payload as { rich_message?: { markdown?: string } })?.rich_message?.markdown
-    if (markdown !== undefined)
-      return markdown
+    const markdown = (request.payload as { rich_message?: { markdown?: string } })?.rich_message
+      ?.markdown
+    if (markdown !== undefined) return markdown
   }
   return undefined
 }
 
 /** Find the newest keyboard button whose label matches; returns its callback data and the message it lives on. (Ported from donor e2e/helpers.ts.) */
 export function findButton(
-  requests: { method: string, payload: unknown, resultMessageId?: number }[],
+  requests: { method: string; payload: unknown; resultMessageId?: number }[],
   label: string,
   match: 'exact' | 'prefix' = 'exact',
-): { data: string, messageId: number } | undefined {
+): { data: string; messageId: number } | undefined {
   for (const request of [...requests].reverse()) {
-    const keyboard = (request.payload as { reply_markup?: { inline_keyboard?: { text: string, callback_data?: string }[][] } })
-      ?.reply_markup
-      ?.inline_keyboard
-    if (!keyboard)
-      continue
+    const keyboard = (
+      request.payload as {
+        reply_markup?: { inline_keyboard?: { text: string; callback_data?: string }[][] }
+      }
+    )?.reply_markup?.inline_keyboard
+    if (!keyboard) continue
     for (const row of keyboard) {
       for (const button of row) {
         const hit = match === 'exact' ? button.text === label : button.text.startsWith(label)
         if (hit && button.callback_data !== undefined) {
           return {
             data: button.callback_data,
-            messageId: request.resultMessageId
-              ?? (request.payload as { message_id?: number }).message_id!,
+            messageId:
+              request.resultMessageId ?? (request.payload as { message_id?: number }).message_id!,
           }
         }
       }
@@ -290,49 +310,102 @@ export function createTestLogger() {
   return pino({ level: 'silent' })
 }
 
-export function testAccount(id: string, name: string, options: {
-  type?: string
-  active?: boolean
-  balance?: string
-  currencyId?: string
-  currencySymbol?: string
-  decimalPlaces?: number
-} = {}): AccountRead {
-  const { type = 'asset', active = true, balance = '100.00', currencyId = '1', currencySymbol = 'USD', decimalPlaces = 2 } = options
+export function testAccount(
+  id: string,
+  name: string,
+  options: {
+    type?: string
+    active?: boolean
+    balance?: string
+    currencyId?: string
+    currencySymbol?: string
+    decimalPlaces?: number
+  } = {},
+): AccountRead {
+  const {
+    type = 'asset',
+    active = true,
+    balance = '100.00',
+    currencyId = '1',
+    currencySymbol = 'USD',
+    decimalPlaces = 2,
+  } = options
   return {
     id,
     type: 'account',
-    attributes: { name, type, active, current_balance: balance, currency_id: currencyId, currency_symbol: currencySymbol, currency_decimal_places: decimalPlaces },
+    attributes: {
+      name,
+      type,
+      active,
+      current_balance: balance,
+      currency_id: currencyId,
+      currency_symbol: currencySymbol,
+      currency_decimal_places: decimalPlaces,
+    },
   } as unknown as AccountRead
 }
 
 export function testCategory(id: string, name: string): CategoryRead {
-  return { id, type: 'category', attributes: { name } } as unknown as CategoryRead
+  return {
+    id,
+    type: 'category',
+    attributes: { name },
+  } as unknown as CategoryRead
 }
 
-export function testCategoryTransaction(description: string, options: {
-  amount?: string
-  currencySymbol?: string
-  date?: string
-} = {}): TransactionRead {
+export function testCategoryTransaction(
+  description: string,
+  options: {
+    amount?: string
+    currencySymbol?: string
+    date?: string
+  } = {},
+): TransactionRead {
   const { amount = '12.34', currencySymbol = '$', date = '2026-10-01T12:00:00+00:00' } = options
   return {
     type: 'transaction',
-    attributes: { transactions: [{ description, amount, currency_symbol: currencySymbol, date }] },
+    attributes: {
+      transactions: [
+        {
+          description,
+          amount,
+          currency_symbol: currencySymbol,
+          date,
+        },
+      ],
+    },
   } as unknown as TransactionRead
 }
 
-export function testTransaction(description: string, options: {
-  type?: string
-  amount?: string
-  currencySymbol?: string
-  date?: string
-} = {}): TransactionRead {
-  const { type = 'withdrawal', amount = '12.34', currencySymbol = '$', date = '2026-10-01T12:00:00+00:00' } = options
+export function testTransaction(
+  description: string,
+  options: {
+    type?: string
+    amount?: string
+    currencySymbol?: string
+    date?: string
+  } = {},
+): TransactionRead {
+  const {
+    type = 'withdrawal',
+    amount = '12.34',
+    currencySymbol = '$',
+    date = '2026-10-01T12:00:00+00:00',
+  } = options
   return {
     id: String(Math.random()).slice(2, 10),
     type: 'transaction',
-    attributes: { transactions: [{ description, type, amount, currency_symbol: currencySymbol, date }] },
+    attributes: {
+      transactions: [
+        {
+          description,
+          type,
+          amount,
+          currency_symbol: currencySymbol,
+          date,
+        },
+      ],
+    },
   } as unknown as TransactionRead
 }
 
@@ -359,36 +432,32 @@ export function createTestFireflyService(
     },
     async listAccounts(type) {
       return (fixtures.accounts ?? [])
-        .filter(a => a.attributes.active !== false) // service parity: filterActiveAccounts
-        .filter(a => !type || String(a.attributes.type) === String(type))
+        .filter((a) => a.attributes.active !== false) // service parity: filterActiveAccounts
+        .filter((a) => !type || String(a.attributes.type) === String(type))
     },
     async getAccount(id) {
-      const acc = (fixtures.accounts ?? []).find(a => a.id === id)
-      if (!acc)
-        throw new ResourceNotFoundError('404')
+      const acc = (fixtures.accounts ?? []).find((a) => a.id === id)
+      if (!acc) throw new ResourceNotFoundError('404')
       return acc
     },
     async listCategories() {
       return [...categories]
     },
     async getCategory(id) {
-      const found = categories.find(c => c.id === id)
-      if (!found)
-        throw new ResourceNotFoundError('404')
+      const found = categories.find((c) => c.id === id)
+      if (!found) throw new ResourceNotFoundError('404')
       return found
     },
     async storeCategory(name) {
       categories.push(testCategory(String(nextCategoryId++), name))
     },
     async updateCategory(id, name) {
-      const found = categories.find(c => c.id === id)
-      if (found)
-        (found.attributes as { name: string }).name = name
+      const found = categories.find((c) => c.id === id)
+      if (found) (found.attributes as { name: string }).name = name
     },
     async deleteCategory(id) {
-      const idx = categories.findIndex(c => c.id === id)
-      if (idx !== -1)
-        categories.splice(idx, 1)
+      const idx = categories.findIndex((c) => c.id === id)
+      if (idx !== -1) categories.splice(idx, 1)
     },
     async listTransactionsByCategory(id) {
       return fixtures.categoryTransactions?.[id] ?? []
@@ -396,60 +465,64 @@ export function createTestFireflyService(
     async listTransactions(type, start, end) {
       return transactions.filter((t) => {
         const split = t.attributes.transactions?.[0]
-        if (!split)
-          return false
-        if (String(split.type) !== String(type))
-          return false
+        if (!split) return false
+        if (String(split.type) !== String(type)) return false
         const day = dayjs(split.date).format('YYYY-MM-DD')
         return day >= start && day <= end
       })
     },
     async storeTransaction(split) {
       const accounts = fixtures.accounts ?? []
-      const nameOf = (id?: string | null) => accounts.find(a => a.id === id)?.attributes.name ?? ''
+      const nameOf = (id?: string | null) =>
+        accounts.find((a) => a.id === id)?.attributes.name ?? ''
       // the real API resolves names on the stored transaction — model it
-      const categoryName = (id?: string | null) => fixtures.categories?.find(c => c.id === id)?.attributes.name
+      const categoryName = (id?: string | null) =>
+        fixtures.categories?.find((c) => c.id === id)?.attributes.name
       const read = {
         id: String(nextTransactionId++),
         type: 'transaction',
         attributes: {
-          transactions: [{
-            ...split,
-            source_name: nameOf(split.source_id),
-            destination_name: nameOf(split.destination_id),
-            category_name: categoryName(split.category_id),
-            currency_symbol: '$',
-          }],
+          transactions: [
+            {
+              ...split,
+              source_name: nameOf(split.source_id),
+              destination_name: nameOf(split.destination_id),
+              category_name: categoryName(split.category_id),
+              currency_symbol: '$',
+            },
+          ],
         },
       } as unknown as TransactionRead
       transactions.push(read)
       return read
     },
     async getTransaction(id) {
-      const found = transactions.find(t => t.id === id)
-      if (!found)
-        throw new ResourceNotFoundError('404')
+      const found = transactions.find((t) => t.id === id)
+      if (!found) throw new ResourceNotFoundError('404')
       return found
     },
     async updateTransaction(id, split) {
-      const found = transactions.find(t => t.id === id)
-      if (!found)
-        throw new ResourceNotFoundError('404')
+      const found = transactions.find((t) => t.id === id)
+      if (!found) throw new ResourceNotFoundError('404')
       const cur = found.attributes.transactions![0]!
       Object.assign(cur, split)
       const accounts = fixtures.accounts ?? []
       if (split.source_id)
-        cur.source_name = accounts.find(a => a.id === split.source_id)?.attributes.name ?? cur.source_name
+        cur.source_name =
+          accounts.find((a) => a.id === split.source_id)?.attributes.name ?? cur.source_name
       if (split.destination_id)
-        cur.destination_name = accounts.find(a => a.id === split.destination_id)?.attributes.name ?? cur.destination_name
+        cur.destination_name =
+          accounts.find((a) => a.id === split.destination_id)?.attributes.name ??
+          cur.destination_name
       if (split.category_id !== undefined && split.category_id !== null)
-        cur.category_name = fixtures.categories?.find(c => c.id === split.category_id)?.attributes.name
+        cur.category_name = fixtures.categories?.find(
+          (c) => c.id === split.category_id,
+        )?.attributes.name
       return found
     },
     async deleteTransaction(id) {
-      const idx = transactions.findIndex(t => t.id === id)
-      if (idx !== -1)
-        transactions.splice(idx, 1)
+      const idx = transactions.findIndex((t) => t.id === id)
+      if (idx !== -1) transactions.splice(idx, 1)
     },
     async insightExpenseForCategory(_start, _end, categoryId) {
       return fixtures.categoryInsights?.[String(categoryId)] ?? []
@@ -467,16 +540,22 @@ export function createTestFireflyService(
   }
 }
 
-export function createTestBot(options: {
-  config?: Partial<Config>
-  logger?: Logger
-  settingsStore?: SettingsStore
-  settings?: UserSettings // convenience: seeds the default test user 1111111
-  firefly?: FireflyService
-} = {}) {
-  const config = { ...createTestConfig(), ...options.config }
-  const settingsStore = options.settingsStore
-    ?? createMemorySettingsStore(options.settings ? { 1111111: options.settings } : {})
+export function createTestBot(
+  options: {
+    config?: Partial<Config>
+    logger?: Logger
+    settingsStore?: SettingsStore
+    settings?: UserSettings // convenience: seeds the default test user 1111111
+    firefly?: FireflyService
+  } = {},
+) {
+  const config = {
+    ...createTestConfig(),
+    ...options.config,
+  }
+  const settingsStore =
+    options.settingsStore ??
+    createMemorySettingsStore(options.settings ? { 1111111: options.settings } : {})
   const bot = createBot(config.botToken, {
     config,
     logger: options.logger ?? createTestLogger(),

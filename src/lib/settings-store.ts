@@ -40,8 +40,7 @@ export function createFileSettingsStore(filePath: string): SettingsStore {
   async function readAll(): Promise<Record<string, Partial<UserSettings>>> {
     try {
       return JSON.parse(await readFile(filePath, 'utf8'))
-    }
-    catch {
+    } catch {
       return {}
     }
   }
@@ -59,7 +58,9 @@ export function createFileSettingsStore(filePath: string): SettingsStore {
 }
 
 export function createMemorySettingsStore(seed: Record<number, UserSettings> = {}): SettingsStore {
-  const db = new Map<number, Partial<UserSettings>>(Object.entries(seed).map(([k, v]) => [Number(k), v]))
+  const db = new Map<number, Partial<UserSettings>>(
+    Object.entries(seed).map(([k, v]) => [Number(k), v]),
+  )
   return {
     async get(userId) {
       return db.get(userId)

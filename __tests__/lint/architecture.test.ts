@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = path.join(dir, name)
-    return statSync(full).isDirectory() ? walk(full) : (full.endsWith('.ts') ? [full] : [])
+    return statSync(full).isDirectory() ? walk(full) : full.endsWith('.ts') ? [full] : []
   })
 }
 
@@ -23,8 +23,7 @@ describe('architecture rules', () => {
 
   it('generated firefly client is only imported inside lib/firefly', () => {
     for (const file of src) {
-      if (file.includes(path.join('lib', 'firefly')))
-        continue
+      if (file.includes(path.join('lib', 'firefly'))) continue
       const content = readFileSync(file, 'utf8')
       expect(content, file).not.toMatch(/#root\/lib\/firefly\/(api|generated)/)
       expect(content, file).not.toMatch(/from '\..*\/(api|generated)\//)
