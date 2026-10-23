@@ -50,6 +50,21 @@ describe('requireSettings gate', () => {
     expect(gateTexts(api).at(-1)).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10))
   })
 
+  it('lets env-provided credentials through when nothing is stored', async () => {
+    const { bot } = createTestBot({
+      config: {
+        fireflyUrl: 'https://ff.example.com',
+        fireflyApiUrl: 'https://ff.example.com/api',
+        fireflyAccessToken: 'x'.repeat(500),
+      },
+    })
+    const api = setupMockApi(bot)
+    await initializeBot(bot)
+    await bot.handleUpdate(generateMessageUpdate('blah'))
+    expect(gateTexts(api).at(-1)).not.toContain('To work with the bot')
+    expect(gateTexts(api).at(-1)).toContain(i18n.t('en', 'transactions.add.dontUnderstand').slice(0, 10))
+  })
+
   it('never gates /start, /settings, or callback queries', async () => {
     const { bot } = createTestBot()
     const api = setupMockApi(bot)

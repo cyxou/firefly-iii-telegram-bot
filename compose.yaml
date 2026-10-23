@@ -1,0 +1,33 @@
+# Firefly III Telegram bot — user stack. Requires Redis for sessions (provided
+# below). Quickstart:
+#   1. cp .example.env .env  and fill in BOT_TOKEN (+ optionally FIREFLY_URL /
+#      FIREFLY_ACCESS_TOKEN to pre-configure credentials for all users)
+#   2. docker compose up -d
+services:
+  bot:
+    image: ghcr.io/cyxou/firefly-iii-telegram-bot:v3
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Interpolated from .env when the user sets it there; the bundled redis
+      # otherwise. A literal value here would silently override the user's
+      # REDIS_URL — `environment` beats `env_file` in compose precedence.
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - bot_data:/app/data # per-user settings (skip if you only use env credentials)
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # no volume on purpose: sessions are ephemeral (24h TTL) — a wipe is harmless
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  bot_data:

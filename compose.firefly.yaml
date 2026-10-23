@@ -1,5 +1,5 @@
-version: '3.3'
-
+# DEV-ONLY: local Firefly III + MariaDB for bot development (reads .firefly.env
+# and .db.env). The user-facing bot stack is compose.yaml.
 volumes:
   firefly_iii_upload:
   firefly_iii_db:

@@ -4,6 +4,8 @@ ARG --global GHCR_REPO=ghcr.io/cyxou/firefly-iii-telegram-bot
 ARG --global GHCR_USERNAME
 ARG --global GHCR_TOKEN
 ARG --global RELEASE_VERSION=latest
+# Major tag derived from the release ref (v3.0.0 -> v3); empty on non-tag builds.
+ARG --global MAJOR_VERSION
 
 FROM oven/bun:1
 
@@ -40,7 +42,7 @@ deps:
 runTests:
     COPY +deps/node_modules ./node_modules
     COPY package.json bun.lock tsconfig.json vitest.config.ts vitest.config.e2e.ts eslint.config.js .npmrc ./
-    COPY --dir src __tests__ locales scripts ./
+    COPY --dir src __tests__ locales ./
 
     # e2e expects Redis on :6380 (docker-compose.tests.yaml locally). The daemon
     # must share the RUN with the tests — Earthly tears down daemons between layers.
@@ -59,6 +61,9 @@ buildImage:
     CMD ["bun", "run", "./src/main.ts"]
 
     SAVE IMAGE --push $GHCR_REPO:$RELEASE_VERSION
+    IF [ "$MAJOR_VERSION" != "" ]
+        SAVE IMAGE --push $GHCR_REPO:$MAJOR_VERSION
+    END
     IF [ "$TAG_LATEST" = "true" ]
         SAVE IMAGE --push $GHCR_REPO:latest
     END
@@ -72,6 +77,20 @@ checkIfTagExist:
         RUN echo "👷 Docker image with tag ${RELEASE_VERSION} already exists! You should not override it. Please increment the app version number accordingly. Exiting..." \
             && exit 1
     END
+
+# Manual release (tag.yml dispatches this in CI; runnable locally):
+# bumps package.json, commits "chore(release): vX.Y.Z", tags master, pushes,
+# then dispatches the Release workflow on the tag — a GITHUB_TOKEN push does
+# not trigger on:push workflows (recursion guard), so the explicit dispatch.
+# LOCALLY: runs on the host checkout (mutating .git from a build container is
+# the wrong shape). Full local test with zero pushes:
+#   earthly +cut-release --BUMP=minor --DRY_RUN=true
+cut-release:
+    LOCALLY
+    ARG --required BUMP
+    ARG DRY_RUN=false
+    ARG GH_TOKEN=
+    RUN BUMP="$BUMP" DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/cut-release.sh
 
 # Release = generated notes only; the GHCR image is the artifact (spec amendment 2).
 release:

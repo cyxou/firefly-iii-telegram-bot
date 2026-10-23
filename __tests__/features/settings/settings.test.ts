@@ -104,7 +104,7 @@ describe('settings feature', () => {
     await send('/settings')
     await click('💳 Default asset account')
     await click('Checking')
-    expect((await settingsStore.get(1111111))?.defaultSourceAccount.name).toBe('Checking')
+    expect((await settingsStore.get(1111111))?.defaultSourceAccount?.name).toBe('Checking')
   })
 
   // Regression: back handlers passed reply_markup explicitly, so @grammyjs/menu's
@@ -131,5 +131,48 @@ describe('settings feature', () => {
     await click('🌐 Language')
     await click('🇪🇸 Spanish')
     expect((await settingsStore.get(1111111))?.language).toBe('es')
+  })
+
+  // v3 deployment story: env credentials must stay a live layer, never get
+  // baked into the per-user store by a non-credential save.
+  describe('env-seeded credentials', () => {
+    const envConfig = {
+      fireflyUrl: 'https://env-firefly.example.com',
+      fireflyApiUrl: 'https://env-firefly.example.com/api',
+      fireflyAccessToken: 'e'.repeat(500),
+    }
+
+    it('a language switch does not persist env credentials to the store', async () => {
+      const { api, send, click, settingsStore } = await setup({ config: envConfig })
+      await send('/settings')
+      await click('🌐 Language')
+      await click('🇪🇸 Spanish')
+      const saved = await settingsStore.get(1111111)
+      expect(saved?.language).toBe('es')
+      expect(saved?.fireflyUrl).toBeUndefined()
+      expect(saved?.fireflyApiUrl).toBeUndefined()
+      expect(saved?.fireflyAccessToken).toBeUndefined()
+
+      // env credentials still backfill the user after the partial save, so
+      // rotating the env token keeps reaching them
+      await send('/settings')
+      const text = (api.getOutgoingRequests().filter(r => r.method === 'sendMessage').at(-1)!.payload as any).text
+      expect(text).toContain('env-firefly.example.com')
+    })
+
+    it('user-saved credentials win over env credentials', async () => {
+      const { api, send } = await setup({
+        settings: defaultSettings({
+          fireflyUrl: 'https://my-firefly.example.com',
+          fireflyApiUrl: 'https://my-firefly.example.com/api',
+          fireflyAccessToken: 'm'.repeat(500),
+        }),
+        config: envConfig,
+      })
+      await send('/settings')
+      const text = (api.getOutgoingRequests().find(r => r.method === 'sendMessage')?.payload as any).text
+      expect(text).toContain('my-firefly.example.com')
+      expect(text).not.toContain('env-firefly.example.com')
+    })
   })
 })

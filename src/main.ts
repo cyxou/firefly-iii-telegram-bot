@@ -4,6 +4,7 @@ import { run } from '@grammyjs/runner'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { createFireflyService } from '#root/lib/firefly/service.js'
+import { redis } from '#root/lib/redis.js'
 import { createSessionStorage } from '#root/lib/session.js'
 import { createFileSettingsStore } from '#root/lib/settings-store.js'
 import { logger } from '#root/logger.js'
@@ -11,6 +12,10 @@ import { logger } from '#root/logger.js'
 const SHUTDOWN_TIMEOUT_MS = 5000
 
 async function main() {
+  // Fail fast: a misconfigured REDIS_URL must crash at boot (loud), not fail
+  // on every update after a deceptively healthy start.
+  await redis.ping()
+
   const bot = createBot(config.botToken, {
     config,
     logger,

@@ -1,0 +1,41 @@
+name: Tag release
+
+# Manual release trigger: pick the bump level (major releases stay manual —
+# local checkout + git tag — by design). All the logic lives in the Earthfile's
+# +cut-release target (bump, commit, tag, push, dispatch the Release workflow
+# on the tag — a GITHUB_TOKEN push does not trigger on:push workflows).
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump level'
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+
+# Serialize double-taps: a queued second run re-computes the next version from
+# fresh master instead of racing the first to the same tag.
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # push the bump commit + tag (via the checkout's credentials)
+  actions: write # dispatch release.yml
+
+jobs:
+  tag:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download Earthly
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.8.16/earthly-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth'"
+
+      - name: Cut release
+        # no --ci: it implies --strict, which forbids LOCALLY targets
+        run: earth +cut-release --BUMP='${{ inputs.bump }}' --GH_TOKEN=${{ github.token }}

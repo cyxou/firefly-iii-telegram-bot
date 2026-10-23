@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU for multiplatform builds
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
         with:
           image: tonistiigi/binfmt:latest
           platforms: all
@@ -38,10 +38,10 @@ jobs:
           git checkout -b "$branch" || true
 
       - name: Download Earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.8/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.8.16/earthly-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth'"
 
       - name: Earthly version
-        run: earthly --version
+        run: earth --version
 
       - name: Docker Login to GHCR
         uses: docker/login-action@v4
@@ -53,7 +53,7 @@ jobs:
       - name: Build and push latest image
         if: github.ref == 'refs/heads/master'
         run: |
-          earthly --ci --push +build-latest \
+          earth --ci --push +build-latest \
             --GHCR_REPO=$GHCR_REPO \
             --GHCR_USERNAME=${{ github.actor }} \
             --GHCR_TOKEN=${{ secrets.GITHUB_TOKEN }}
@@ -61,11 +61,12 @@ jobs:
       - name: Build and push release image
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          earthly --ci --push +build-and-release \
+          earth --ci --push +build-and-release \
             --GHCR_REPO=$GHCR_REPO \
             --GHCR_USERNAME=${{ github.actor }} \
             --GHCR_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            --RELEASE_VERSION=${{ github.ref_name }}
+            --RELEASE_VERSION=${{ github.ref_name }} \
+            --MAJOR_VERSION=${GITHUB_REF_NAME%%.*}
 
       - name: Send telegram message on release
         if: startsWith(github.ref, 'refs/tags/v')
