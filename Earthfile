@@ -100,7 +100,9 @@ release:
   ENV REPO="cyxou/firefly-iii-telegram-bot"
 
   # Install gh-cli
-  RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+  # bun fetch, not curl: oven/bun:1 (trixie) ships no curl — v3.0.0 first tag
+  # run wrote a 0-byte keyring and sqv rejected the repo as unsigned.
+  RUN bun -e 'const fs=require("fs");fs.writeFileSync("/usr/share/keyrings/githubcli-archive-keyring.gpg",Buffer.from(await (await fetch("https://cli.github.com/packages/githubcli-archive-keyring.gpg")).arrayBuffer()))' \
       && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
       && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
       && apt-get update && apt-get install gh -y \
