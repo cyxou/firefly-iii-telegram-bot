@@ -29,3 +29,6 @@ data/
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+
+# Superpowers session artifacts (plans/specs stay local, not shipped)
+docs/superpowers/

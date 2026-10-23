@@ -29,7 +29,7 @@ export const accountsMenu = new Menu<Context>('accounts')
       }
       else {
         range.text({ text: label, payload: String(type) }, async (c) => {
-          c.session.lists = { ...c.session.lists, accounts: { page: 1, view: String(type) } }
+          c.session.lists = { ...c.session.lists, accounts: { view: String(type) } }
           await showAccounts(c, true)
         }).row()
       }
@@ -45,7 +45,7 @@ export async function showAccounts(ctx: Context, edit: boolean) {
   const view = (ctx.session.lists?.accounts?.view ?? AccountTypeFilter.Asset) as AccountTypeFilter
   // ponytail: single 100-account fetch per view (v1 ceiling); prev/next paging arrives with Phase 3.
   const accounts = await ctx.firefly.listAccounts(view, dayjs().format('YYYY-MM-DD'))
-  ctx.session.lists = { ...ctx.session.lists, accounts: { page: 1, view: String(view) } }
+  ctx.session.lists = { ...ctx.session.lists, accounts: { view: String(view) } }
   const markdown = accountsMarkdown(ctx, view, accounts)
   if (edit) {
     await ctx.editMessageText({ markdown }, { reply_markup: accountsMenu })

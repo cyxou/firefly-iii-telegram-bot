@@ -24,7 +24,7 @@ is the DI seam: deps = `{ config, logger, settingsStore, firefly, sessionStorage
 Tests inject fakes here — never module-mock.
 
 Middleware order (load-bearing): deps → errorBoundary → accessControl →
-sequentialize → session(Redis) → i18n → setLocaleFromSettings → core menus →
+sequentialize → session(Redis) → i18n → setLocaleFromSettings →
 features → unhandled (last).
 
 - **Features** live in `src/bot/features/<name>/` (composer index.ts + *.menu.ts + *.router.ts).

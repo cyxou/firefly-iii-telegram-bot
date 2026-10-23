@@ -4,17 +4,13 @@ import { Menu, MenuRange } from '@grammyjs/menu'
 import { twoColumnRange } from '#root/bot/helpers/menu.js'
 import { AccountTypeFilter, TransactionTypeProperty } from '#root/lib/firefly/service.js'
 import { buildSplit, toRef } from './create.js'
-import { showRecord } from './record.js'
+import { showRecord, staleFlowExit } from './record.js'
 
 // v1 getAccounts: fetch the types in parallel, filter active (service does),
 // drop the skip id, and REVERSE (top accounts land near the thumb — v1 quirk).
 export async function pickAccounts(ctx: Context, types: AccountTypeFilter[], skipId?: string): Promise<AccountRead[]> {
   const lists = await Promise.all(types.map(t => ctx.firefly.listAccounts(t)))
   return lists.flat().filter(acc => !skipId || acc.id !== skipId).reverse()
-}
-
-function staleFlowExit(ctx: Context) {
-  return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), { reply_markup: { inline_keyboard: [] } })
 }
 
 // ---- deposit: revenue source → asset/liability destination ----

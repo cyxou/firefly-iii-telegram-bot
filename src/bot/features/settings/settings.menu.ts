@@ -20,6 +20,13 @@ export function settingsText(ctx: Context) {
   })
 }
 
+// no reply_markup: the menu lib injects the nav target (settingsMenu) into
+// markup-less edits; passing it explicitly makes the lib re-render on top
+// -> Telegram 400 "message is not modified" (v1 never passed it either)
+async function backToSettings(ctx: Context) {
+  await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
+}
+
 export const settingsMenu = new Menu<Context>('settings')
   .submenu(ctx => ctx.i18n.t('labels.SWITCH_LANG'), 'switch-lang', async (ctx) => {
     await ctx.editMessageText(ctx.i18n.t('settings.selectBotLang'), { parse_mode: 'Markdown' })
@@ -55,10 +62,7 @@ export const settingsMenu = new Menu<Context>('settings')
 export const cancelMenu = new Menu<Context>('setting-cancel')
   .back('🔙', async (ctx) => {
     ctx.session.settingsFlow = undefined
-    // no reply_markup: the menu lib injects the nav target (settingsMenu) into
-    // markup-less edits; passing it explicitly makes the lib re-render on top
-    // -> Telegram 400 "message is not modified" (v1 never passed it either)
-    await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
+    await backToSettings(ctx)
   })
 
 async function inputStep(ctx: Context, step: 'url' | 'api_url' | 'token', promptKey: string) {
@@ -86,10 +90,7 @@ export const langMenu = new Menu<Context>('switch-lang')
         },
       ).row()
     }
-    range.back('🔙', async (ctx) => {
-      // reply_markup omitted on purpose — injected by the menu lib (see cancelMenu)
-      await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
-    })
+    range.back('🔙', backToSettings)
     return range
   })
 
@@ -102,10 +103,7 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
       return range
         .url(ctx.i18n.t('labels.OPEN_ASSET_ACCOUNTS_IN_BROWSER'), `${s.fireflyUrl}/accounts/asset`)
         .row()
-        .back('🔙', async (ctx) => {
-          // reply_markup omitted on purpose — injected by the menu lib (see cancelMenu)
-          await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
-        })
+        .back('🔙', backToSettings)
     }
     for (const acc of accounts) {
       range.text(
@@ -127,10 +125,7 @@ export const defaultAccountMenu = new Menu<Context>('set-default-account')
         },
       ).row()
     }
-    range.back('🔙', async (ctx) => {
-      // reply_markup omitted on purpose — injected by the menu lib (see cancelMenu)
-      await ctx.editMessageText(settingsText(ctx), { parse_mode: 'Markdown' })
-    })
+    range.back('🔙', backToSettings)
     return range
   })
 

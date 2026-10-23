@@ -1,13 +1,13 @@
 import type { Context } from '#root/bot/context.js'
 import type { DatePickerView } from '#root/lib/date-picker/index.js'
-import type { AccountRead, CategoryRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
+import type { AccountRead, TransactionRead, TransactionSplitUpdate } from '#root/lib/firefly/service.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
 import dayjs from 'dayjs'
 import { twoColumnRange } from '#root/bot/helpers/menu.js'
 import { appendDatePicker, appendYearPicker, decodeViewPayload } from '#root/lib/date-picker/index.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
-import { CATEGORIES_PER_PAGE } from './add.menu.js'
-import { showRecord } from './record.js'
+import { appendCategoryPicker } from './add.menu.js'
+import { showRecord, staleFlowExit } from './record.js'
 import { pickAccounts } from './transfer.menu.js'
 
 // v1 updateFireflyTransaction port: fetch fresh, re-send the FULL split
@@ -33,11 +33,6 @@ export async function applyTransactionUpdate(
 export async function showRecordFromId(ctx: Context, trId: string) {
   const tr = await ctx.firefly.getTransaction(trId)
   return showRecord(ctx, tr, true)
-}
-
-/** Stale keyboard after the flow ended — explicit empty keyboard: a markup-less edit would re-inject this menu. */
-export function staleExit(ctx: Context) {
-  return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), { reply_markup: { inline_keyboard: [] } })
 }
 
 /** Cancel a picker/prompt and return to the record (v1 🔙 on every edit submenu). */
@@ -112,40 +107,18 @@ export const editTransactionMenu = new Menu<Context>('edit-transaction')
     return range
   })
 
-// Edit category picker: same shape as the add-flow picker, but the page
-// counter and trId live in editFlow (render reads session, handlers mutate).
+// Edit category picker: the add-flow picker, but the page counter and trId
+// live in editFlow (render reads session, handlers mutate).
 export const editCategoryMenu = new Menu<Context>('edit-category')
   .dynamic(async (ctx) => {
     const range = new MenuRange<Context>()
     const flow = ctx.session.editFlow
     if (!flow)
       return range // rendered outside a live flow (stale attach): empty grid
-    let categories: CategoryRead[] = []
-    try {
-      categories = await ctx.firefly.listCategories()
-    }
-    catch (err) {
-      ctx.logger.warn({ err }, 'edit category picker render failed') // dead range, live nav row
-    }
-    const page = flow.categoryPage ?? 1
-    const totalPages = Math.max(1, Math.ceil(categories.length / CATEGORIES_PER_PAGE))
-    const slice = categories.slice((page - 1) * CATEGORIES_PER_PAGE, page * CATEGORIES_PER_PAGE)
-    twoColumnRange(range, slice, (r, cat) => {
-      r.text({ text: () => cat.attributes.name, payload: cat.id }, onEditCategorySelected)
+    await appendCategoryPicker(ctx, range, flow.categoryPage, onEditCategorySelected, (c, page) => {
+      c.session.editFlow!.categoryPage = page
     })
-    if (page > 1) {
-      range.text('<<', async (c) => {
-        c.session.editFlow!.categoryPage = page - 1
-        c.menu.update() // menu@1.5: lazy void — no await needed
-      })
-    }
-    if (page < totalPages) {
-      range.text('>>', async (c) => {
-        c.session.editFlow!.categoryPage = page + 1
-        c.menu.update()
-      })
-    }
-    return range.row()
+    return range
   })
   .text('🔙', cancelTextPrompt) // v1: every edit submenu's 🔙 = back to record
 
@@ -153,7 +126,7 @@ async function onEditCategorySelected(ctx: Context) {
   const flow = ctx.session.editFlow
   const categoryId = String(ctx.match ?? '')
   if (!flow || !categoryId)
-    return staleExit(ctx)
+    return staleFlowExit(ctx)
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, { category_id: categoryId })
   ctx.session.editFlow = undefined
   return showRecord(ctx, updated, true)
@@ -180,7 +153,7 @@ async function onEditSourceSelected(ctx: Context) {
   const flow = ctx.session.editFlow
   const accId = String(ctx.match ?? '')
   if (!flow || !accId)
-    return staleExit(ctx)
+    return staleFlowExit(ctx)
   // v1: the transaction follows the new source account's currency
   const account = await ctx.firefly.getAccount(accId)
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, {
@@ -210,7 +183,7 @@ async function onEditDestSelected(ctx: Context) {
   const flow = ctx.session.editFlow
   const accId = String(ctx.match ?? '')
   if (!flow || !accId)
-    return staleExit(ctx)
+    return staleFlowExit(ctx)
   const updated = await applyTransactionUpdate(ctx, flow.transactionId, { destination_id: accId })
   ctx.session.editFlow = undefined
   return showRecord(ctx, updated, true)

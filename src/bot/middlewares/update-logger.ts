@@ -4,7 +4,6 @@ import type { Middleware, Transformer } from 'grammy'
 // Api instance, so the transformer is naturally scoped to this update.
 import type { Context } from '#root/bot/context.js'
 import { performance } from 'node:perf_hooks'
-import { getUpdateInfo } from '#root/bot/helpers/logging.js'
 
 export function updateLogger(): Middleware<Context> {
   return async (ctx, next) => {
@@ -14,7 +13,8 @@ export function updateLogger(): Middleware<Context> {
     }
     ctx.api.config.use(transformer)
 
-    ctx.logger.debug({ msg: 'Update received', update: getUpdateInfo(ctx) })
+    const { update_id, ...update } = ctx.update
+    ctx.logger.debug({ msg: 'Update received', update })
 
     const startTime = performance.now()
     try {

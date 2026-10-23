@@ -27,7 +27,7 @@ function listState(ctx: Context): { type: ViewType, date: string } {
 }
 
 function setListState(ctx: Context, type: ViewType, date: string) {
-  ctx.session.lists = { ...ctx.session.lists, transactions: { page: 1, view: String(type), date } }
+  ctx.session.lists = { ...ctx.session.lists, transactions: { view: String(type), date } }
 }
 
 export const transactionsMenu = new Menu<Context>('transactions-list')

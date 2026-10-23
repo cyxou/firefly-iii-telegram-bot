@@ -45,8 +45,8 @@ export interface SessionData {
   /** record message Edit-button payload source — v1 currentTransaction.id reduced to an id */
   recordTrId?: string
   editFlow?: EditFlowState
-  // Per-list view state — the list/pagination standard shape (Phase 3 fills the page counter in)
-  lists?: Record<string, { page: number, view?: string, date?: string }>
+  // Per-list view state (active tab, anchored date)
+  lists?: Record<string, { view?: string, date?: string }>
 }
 
 interface ExtendedContextFlavor {

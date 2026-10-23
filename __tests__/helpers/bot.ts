@@ -39,47 +39,25 @@ export class MockApiError extends Error {
   }
 }
 
-type SentMessageKind = 'text' | 'media'
-
-interface SentMessage {
-  id: number
-  chatId: number
-  kind: SentMessageKind
-}
-
-// Send methods that create a message the real API would later allow editing.
-// Reply-keyboard-only methods (sendChatAction etc.) are not messages.
+// Send methods that create a message the real API would later allow editing
+// (this bot only ever sends text/rich — no media methods to model).
 // Rich sends count as text: Bot API editMessageText edits "text, rich and game
 // messages" — same edit semantics.
-const SEND_TEXT_METHODS = new Set(['sendMessage', 'sendRichMessage'])
-const SEND_MEDIA_METHODS = new Set([
-  'sendPhoto',
-  'sendVideo',
-  'sendAnimation',
-  'sendDocument',
-  'sendAudio',
-])
-
-// Which content an edit method requires the target message to have
-const EDIT_METHODS: Record<string, SentMessageKind | 'any'> = {
-  editMessageText: 'text',
-  editMessageCaption: 'media',
-  editMessageMedia: 'media',
-  editMessageReplyMarkup: 'any',
-}
+const SEND_METHODS = new Set(['sendMessage', 'sendRichMessage'])
+const EDIT_METHODS = new Set(['editMessageText', 'editMessageReplyMarkup'])
 
 // Setup mock API for a bot instance - captures all outgoing API calls.
-// Mirrors Telegram's edit semantics: messages the bot never sent (or of the
-// wrong kind) cannot be edited, so flows that only work against a permissive
-// mock fail here instead of in production.
+// Mirrors Telegram's edit semantics: messages the bot never sent cannot be
+// edited, so flows that only work against a permissive mock fail here instead
+// of in production.
 export function setupMockApi(bot: TelegramBot<Context>) {
   const outgoingRequests: OutgoingRequest[] = []
-  const sentMessages = new Map<string, SentMessage>()
+  const sentMessages = new Set<string>()
   let nextMessageId = 5000
 
-  const trackSent = (chatId: number, kind: SentMessageKind) => {
+  const trackSent = (chatId: number) => {
     const id = nextMessageId++
-    sentMessages.set(`${chatId}:${id}`, { id, chatId, kind })
+    sentMessages.add(`${chatId}:${id}`)
     return id
   }
 
@@ -119,8 +97,8 @@ export function setupMockApi(bot: TelegramBot<Context>) {
       }
     }
 
-    if (SEND_TEXT_METHODS.has(method) && p.chat_id !== undefined) {
-      const id = trackSent(p.chat_id, 'text')
+    if (SEND_METHODS.has(method) && p.chat_id !== undefined) {
+      const id = trackSent(p.chat_id)
       outgoingRequests[outgoingRequests.length - 1].resultMessageId = id
       return {
         ok: true,
@@ -134,52 +112,21 @@ export function setupMockApi(bot: TelegramBot<Context>) {
       }
     }
 
-    if (SEND_MEDIA_METHODS.has(method) && p.chat_id !== undefined) {
-      const id = trackSent(p.chat_id, 'media')
-      outgoingRequests[outgoingRequests.length - 1].resultMessageId = id
-      return {
-        ok: true,
-        result: {
-          message_id: id,
-          date: Math.floor(Date.now() / 1000),
-          chat: { id: p.chat_id, type: 'private', first_name: 'Mock' },
-        } as ResultType,
-      }
-    }
-
-    const requiredKind = EDIT_METHODS[method]
-    if (requiredKind !== undefined) {
+    if (EDIT_METHODS.has(method)) {
       // Inline-mode edits are untrackable here; the real API validates them itself
       if (p.inline_message_id !== undefined)
         return { ok: true, result: true as ResultType }
 
-      const target = p.chat_id !== undefined && p.message_id !== undefined
-        ? sentMessages.get(`${p.chat_id}:${p.message_id}`)
-        : undefined
-      if (!target)
+      const known = p.chat_id !== undefined && p.message_id !== undefined
+        && sentMessages.has(`${p.chat_id}:${p.message_id}`)
+      if (!known)
         throw new MockApiError(400, 'Bad Request: message to edit not found')
-      if (requiredKind !== 'any' && target.kind !== requiredKind) {
-        throw new MockApiError(
-          400,
-          requiredKind === 'text'
-            ? 'Bad Request: there is no text in the message to edit'
-            : 'Bad Request: there is no media in the message to edit',
-        )
-      }
     }
 
     return { ok: true, result: true as ResultType }
   })
 
-  return {
-    bot,
-    getOutgoingRequests: () => outgoingRequests,
-    getSentMessages: () => [...sentMessages.values()],
-    clearOutgoingRequests: () => {
-      outgoingRequests.length = 0
-      sentMessages.clear()
-    },
-  }
+  return { bot, getOutgoingRequests: () => outgoingRequests }
 }
 
 // Initialize bot with required botInfo
@@ -202,28 +149,9 @@ export async function initializeBot(bot: TelegramBot<Context>) {
   await bot.init()
 }
 
-// Generate a test message update
-export function generateMessageUpdate(
-  text: string,
-  options: {
-    userId?: number
-    chatId?: number
-    chatType?: 'private' | 'group' | 'supergroup' | 'channel'
-    username?: string
-    firstName?: string
-    lastName?: string
-    isCommand?: boolean
-  } = {},
-): Update {
-  const {
-    userId = 1111111,
-    chatId = 1111111,
-    chatType = 'private',
-    username = 'test_user',
-    firstName = 'Test',
-    lastName = 'User',
-    isCommand = false,
-  } = options
+// Generate a test message update for the default test user/chat (1111111)
+export function generateMessageUpdate(text: string, options: { isCommand?: boolean } = {}): Update {
+  const { isCommand = false } = options
 
   // For commands, we need to add proper entities
   const entities = isCommand
@@ -241,23 +169,18 @@ export function generateMessageUpdate(
     message: {
       date: Math.floor(Date.now() / 1000),
       chat: {
-        id: chatId,
-        type: chatType as 'private' | 'group' | 'supergroup',
-        ...(chatType === 'private' && {
-          first_name: firstName,
-          last_name: lastName,
-          username,
-        }),
-        ...(chatType !== 'private' && {
-          title: `${chatType === 'supergroup' ? 'Super' : chatType === 'group' ? 'Test' : ''} Group`,
-        }),
-      } as NonNullable<Update['message']>['chat'],
+        id: 1111111,
+        type: 'private',
+        first_name: 'Test',
+        last_name: 'User',
+        username: 'test_user',
+      },
       message_id: 1365,
       from: {
-        id: userId,
-        first_name: firstName,
-        last_name: lastName,
-        username,
+        id: 1111111,
+        first_name: 'Test',
+        last_name: 'User',
+        username: 'test_user',
         is_bot: false,
       },
       text,
@@ -266,53 +189,36 @@ export function generateMessageUpdate(
   }
 }
 
-// Generate a test callback query update
-export function generateCallbackQueryUpdate(
-  data: string,
-  options: {
-    userId?: number
-    chatId?: number
-    messageId?: number
-    username?: string
-    firstName?: string
-    lastName?: string
-  } = {},
-): Update {
-  const {
-    userId = 1111111,
-    chatId = 1111111,
-    messageId = 1365,
-    username = 'test_user',
-    firstName = 'Test',
-    lastName = 'User',
-  } = options
+// Generate a test callback query update for the default test user/chat
+export function generateCallbackQueryUpdate(data: string, options: { messageId?: number } = {}): Update {
+  const { messageId = 1365 } = options
 
   return {
     update_id: 10000,
     callback_query: {
       id: '123456789',
       from: {
-        id: userId,
-        first_name: firstName,
-        last_name: lastName,
-        username,
+        id: 1111111,
+        first_name: 'Test',
+        last_name: 'User',
+        username: 'test_user',
         is_bot: false,
       },
       message: {
         date: Math.floor(Date.now() / 1000),
         chat: {
-          id: chatId,
+          id: 1111111,
           type: 'private',
-          first_name: firstName,
-          last_name: lastName,
-          username,
+          first_name: 'Test',
+          last_name: 'User',
+          username: 'test_user',
         },
         message_id: messageId,
         from: {
-          id: userId,
-          first_name: firstName,
-          last_name: lastName,
-          username,
+          id: 1111111,
+          first_name: 'Test',
+          last_name: 'User',
+          username: 'test_user',
           is_bot: false,
         },
         text: 'Previous message',
@@ -344,17 +250,6 @@ export function getLastRichMarkdown(requests: OutgoingRequest[]): string | undef
       return markdown
   }
   return undefined
-}
-
-// Helper to check if payload is a sendPhoto call
-// Photos can have caption, reply_markup, or both
-export function isPhotoPayload(payload: unknown): payload is { caption?: string, reply_markup?: unknown } {
-  return typeof payload === 'object' && payload !== null && 'photo' in payload
-}
-
-// Helper to find sendPhoto request
-export function findPhotoRequest(outgoingRequests: OutgoingRequest[]): OutgoingRequest | undefined {
-  return outgoingRequests.find(req => req.method === 'sendPhoto')
 }
 
 /** Find the newest keyboard button whose label matches; returns its callback data and the message it lives on. (Ported from donor e2e/helpers.ts.) */

@@ -31,6 +31,11 @@ export function formatTransaction(tr: TransactionRead, t: Translate): string {
   })
 }
 
+/** Stale keyboard after the flow ended — explicit empty keyboard: a markup-less edit would re-inject this menu. */
+export function staleFlowExit(ctx: Context) {
+  return ctx.editMessageText(ctx.i18n.t('common.errorOccurred'), { reply_markup: { inline_keyboard: [] } })
+}
+
 /**
  * Show a created/updated transaction with the record menu (Phase 4: ✏️ Edit).
  * `edit` swaps the flow's menu message into the record. recordTrId feeds the
