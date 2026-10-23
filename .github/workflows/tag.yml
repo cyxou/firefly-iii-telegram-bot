@@ -34,8 +34,8 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Download Earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.8/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.8.16/earthly-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth'"
 
       - name: Cut release
         # no --ci: it implies --strict, which forbids LOCALLY targets
-        run: earthly +cut-release --BUMP='${{ inputs.bump }}' --GH_TOKEN=${{ github.token }}
+        run: earth +cut-release --BUMP='${{ inputs.bump }}' --GH_TOKEN=${{ github.token }}
