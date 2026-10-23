@@ -39,10 +39,14 @@ deps:
 
 runTests:
     COPY +deps/node_modules ./node_modules
-    COPY package.json bun.lock tsconfig.json vitest.config.ts eslint.config.js .npmrc ./
+    COPY package.json bun.lock tsconfig.json vitest.config.ts vitest.config.e2e.ts eslint.config.js .npmrc ./
     COPY --dir src __tests__ locales scripts ./
 
-    RUN bunx tsc --noEmit && bun run lint && bunx vitest run
+    # e2e expects Redis on :6380 (docker-compose.tests.yaml locally). The daemon
+    # must share the RUN with the tests — Earthly tears down daemons between layers.
+    RUN apt-get update && apt-get install -y --no-install-recommends redis-server \
+        && redis-server --port 6380 --daemonize yes \
+        && bunx tsc --noEmit && bun run lint && bunx vitest run && bun run test:e2e
 
 # v2 runs TypeScript from source — no build/dist step exists (spec amendment 2).
 # locales/ ships in the image: i18n resolves it relative to src/bot (src/bot/i18n.ts).
