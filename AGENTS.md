@@ -16,6 +16,9 @@ bun run codegen            # Regenerate Firefly client into src/lib/firefly/gene
 docker compose -f compose.firefly.yaml up -d        # DEV local Firefly III + MariaDB
 ```
 
+Dependency refreshes: use the `/update-deps` skill (`.claude/skills/update-deps/`)
+— it encodes the pin exceptions, overrides mechanics, and CI-gate landmines.
+
 ## Architecture
 
 Telegram bot (grammY, Bun, pure ESM, `#root/*` → `src/*`) for the Firefly III API.
