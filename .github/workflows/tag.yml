@@ -1,10 +1,9 @@
 name: Tag release
 
 # Manual release trigger: pick the bump level (major releases stay manual —
-# local checkout + git tag — by design), and this workflow bumps package.json,
-# commits, tags master and dispatches the Release workflow on the new tag.
-# A push made with GITHUB_TOKEN does NOT trigger on:push workflows (recursion
-# prevention), hence the explicit dispatch in the last step.
+# local checkout + git tag — by design). All the logic lives in the Earthfile's
+# +cut-release target (bump, commit, tag, push, dispatch the Release workflow
+# on the tag — a GITHUB_TOKEN push does not trigger on:push workflows).
 on:
   workflow_dispatch:
     inputs:
@@ -24,8 +23,8 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write # push the bump commit + tag
-  actions: write # dispatch release.yml on the tag
+  contents: write # push the bump commit + tag (via the checkout's credentials)
+  actions: write # dispatch release.yml
 
 jobs:
   tag:
@@ -34,42 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Compute next version
-        id: version
-        env:
-          BUMP: ${{ inputs.bump }}
-        run: |
-          current=$(jq -r .version package.json)
-          if [[ ! "$current" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::package.json version '$current' is not plain X.Y.Z" && exit 1
-          fi
-          IFS=. read -r major minor patch <<< "$current"
-          case "$BUMP" in
-            patch) next="$major.$minor.$((patch + 1))" ;;
-            minor) next="$major.$((minor + 1)).0" ;;
-            *) echo "::error::unknown bump level '$BUMP'" && exit 1 ;;
-          esac
-          tag="v$next"
-          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-            echo "::error::tag $tag already exists — not overwriting" && exit 1
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "next=$next" >> "$GITHUB_OUTPUT"
+      - name: Download Earthly
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.8/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
 
-      - name: Bump package.json, commit, tag, push
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-          NEXT: ${{ steps.version.outputs.next }}
-        run: |
-          npm version "$NEXT" --no-git-tag-version
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -am "chore(release): $TAG"
-          git tag "$TAG"
-          git push origin HEAD:master "refs/tags/$TAG"
-
-      - name: Dispatch the Release workflow on the new tag
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run release.yml --ref "$TAG"
+      - name: Cut release
+        # no --ci: it implies --strict, which forbids LOCALLY targets
+        run: earthly +cut-release --BUMP='${{ inputs.bump }}' --GH_TOKEN=${{ github.token }}

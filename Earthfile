@@ -78,6 +78,20 @@ checkIfTagExist:
             && exit 1
     END
 
+# Manual release (tag.yml dispatches this in CI; runnable locally):
+# bumps package.json, commits "chore(release): vX.Y.Z", tags master, pushes,
+# then dispatches the Release workflow on the tag — a GITHUB_TOKEN push does
+# not trigger on:push workflows (recursion guard), so the explicit dispatch.
+# LOCALLY: runs on the host checkout (mutating .git from a build container is
+# the wrong shape). Full local test with zero pushes:
+#   earthly +cut-release --BUMP=minor --DRY_RUN=true
+cut-release:
+    LOCALLY
+    ARG --required BUMP
+    ARG DRY_RUN=false
+    ARG GH_TOKEN=
+    RUN BUMP="$BUMP" DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/cut-release.sh
+
 # Release = generated notes only; the GHCR image is the artifact (spec amendment 2).
 release:
   ARG --required GHCR_TOKEN
