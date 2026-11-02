@@ -39,6 +39,16 @@ describe('architecture rules', () => {
     expect(sessionData).not.toMatch(/^\s{2}step\??:/m)
   })
 
+  it('issue-form Affected Area options cover every bot feature', () => {
+    // 'unhandled' is middleware, not a user-facing feature area.
+    const features = readdirSync('src/bot/features').filter((f) => f !== 'unhandled')
+    for (const form of ['bug_report.yml', 'feature_request.yml']) {
+      const content = readFileSync(path.join('.github', 'ISSUE_TEMPLATE', form), 'utf8').toLowerCase()
+      for (const feature of features)
+        expect(content, `${form}: missing area option for "${feature}"`).toContain(feature)
+    }
+  })
+
   it('no cleanupSessionData and no @grammyjs/conversations', () => {
     for (const file of src) {
       expect(readFileSync(file, 'utf8'), file).not.toContain('cleanupSessionData')

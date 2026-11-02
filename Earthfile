@@ -42,7 +42,7 @@ deps:
 runTests:
     COPY +deps/node_modules ./node_modules
     COPY package.json bun.lock tsconfig.json vitest.config.ts vitest.config.e2e.ts .oxlintrc.json .oxfmtrc.json .npmrc ./
-    COPY --dir src __tests__ locales ./
+    COPY --dir src __tests__ locales .github ./
 
     # e2e expects Redis on :6380 (compose.tests.yaml locally). The daemon
     # must share the RUN with the tests — Earthly tears down daemons between layers.

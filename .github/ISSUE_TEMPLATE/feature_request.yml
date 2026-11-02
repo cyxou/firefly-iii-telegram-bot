@@ -1,0 +1,78 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+title: '[FEATURE] '
+labels: ['enhancement']
+assignees:
+  - cyxou
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Issues in this repo are often implemented directly by AI coding agents — the clearer the problem and the acceptance criteria, the easier it is to turn this into a correct implementation without back-and-forth.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: What are you trying to do, and what's missing or annoying today? Prefer describing the underlying problem over the specific UI you imagine.
+      placeholder: |
+        I track shared expenses in Firefly III with a specific tag, and currently there's no way to filter the /reports output by tag — only by category.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work, concretely? Describe the conversation flow (what the user types/taps, what the bot replies), not just a one-line idea.
+      placeholder: |
+        Add a "Filter by tag" button to the /reports menu. Tapping it lists the user's existing Firefly tags (via GET /tags), lets them pick one, and re-runs the report scoped to transactions with that tag.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of the bot does this touch? (see src/bot/features/ in the repo)
+      options:
+        - Accounts
+        - Categories
+        - Reports
+        - Settings
+        - Transactions
+        - Start / Main menu
+        - i18n / Translations
+        - New feature area
+        - Not sure / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Bullet list of what must be true for this to be considered done. This is what an AI agent (or reviewer) will check the implementation against.
+      placeholder: |
+        - [ ] /reports menu shows a "Filter by tag" option
+        - [ ] Selecting a tag re-runs the report scoped to that tag
+        - [ ] Works with 0 tags (shows a friendly message instead of an empty menu)
+        - [ ] Covered by a test in __tests__/
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other approaches you thought of, and why you didn't pick them.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Mockups, links to relevant Firefly III API docs, related issues, etc.
+    validations:
+      required: false
