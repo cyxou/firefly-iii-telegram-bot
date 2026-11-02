@@ -1,0 +1,40 @@
+name: Tag on merge
+
+# Watches master: when package.json's version has no tag yet, tags master HEAD
+# and dispatches Publish on the tag. Normally that's the merge of a Release
+# PR, but any push landing an untagged version qualifies — idempotent, so
+# ordinary merges (version unchanged) do nothing. The dispatch is explicit
+# because a GITHUB_TOKEN tag push does not fire on:push workflows (recursion
+# guard).
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write # push the tag
+  actions: write # dispatch publish.yml
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Tag untagged version
+        run: |
+          v=$(jq -r .version package.json)
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "ERROR: package.json version '$v' is not plain X.Y.Z" >&2; exit 1; }
+          tag="v$v"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag already tagged — nothing to do."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag "$tag"
+          git push origin "refs/tags/$tag"
+          gh workflow run publish.yml --ref "$tag"
+          echo "Tagged $tag and dispatched Publish."
+        env:
+          GH_TOKEN: ${{ github.token }}
