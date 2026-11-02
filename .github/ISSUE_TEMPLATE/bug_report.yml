@@ -1,0 +1,131 @@
+name: Bug Report
+description: Report a problem with the bot
+title: '[BUG] '
+labels: ['bug']
+assignees:
+  - cyxou
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Issues in this repo are often triaged and implemented directly by AI coding agents — the more precise and complete the info below, the faster (and more correctly) it gets fixed. Please avoid vague descriptions like "it doesn't work".
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear, concise description of the bug. What were you trying to do, and what went wrong?
+      placeholder: |
+        When I try to create a transaction with a custom category, the bot replies with an error instead of confirming the transaction.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact, numbered steps another person (or an AI agent) could follow to reproduce this from a clean state. Include exact commands typed, button labels tapped, and values entered.
+      placeholder: |
+        1. Run /start
+        2. Open "Transactions" > "New transaction"
+        3. Select account "Checking"
+        4. Type amount "100.50"
+        5. Select category "Groceries"
+        6. Tap "Confirm"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What happened instead? Include the exact error text/message shown in Telegram, if any.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of the bot is involved? (see src/bot/features/ in the repo)
+      options:
+        - Accounts
+        - Categories
+        - Reports
+        - Settings
+        - Transactions
+        - Start / Main menu
+        - i18n / Translations
+        - Not sure / Other
+    validations:
+      required: true
+
+  - type: input
+    id: bot-version
+    attributes:
+      label: Bot Version / Commit
+      description: Version reachable via package.json, the docker image tag you run, or the git commit SHA.
+      placeholder: 'v3.1.0, or ghcr.io/cyxou/firefly-iii-telegram-bot:latest@sha256:..., or commit abc1234'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Method
+      options:
+        - Docker Compose (compose.yaml from this repo)
+        - Docker (custom/self-built image)
+        - Bare metal / Bun directly (bun run start)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: firefly-version
+    attributes:
+      label: Firefly III Version
+      description: Found in Firefly III under Options > About.
+      placeholder: 'v6.1.x'
+    validations:
+      required: false
+
+  - type: dropdown
+    id: locale
+    attributes:
+      label: Bot Language / Locale
+      options:
+        - English (en)
+        - Español (es)
+        - Italiano (it)
+        - Русский (ru)
+        - Other / Not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        If possible, reproduce with debug logging enabled and paste the relevant lines here (redact tokens/personal data first):
+        LOG_FILE=logs/bot.log LOG_LEVEL=debug bun run start
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Screenshots, related issues, anything else that helps diagnose this.
+    validations:
+      required: false
