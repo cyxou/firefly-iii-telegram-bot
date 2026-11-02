@@ -94,7 +94,7 @@ body:
     attributes:
       label: Firefly III Version
       description: Found in Firefly III under Options > About.
-      placeholder: 'v6.1.x'
+      placeholder: 'v6.x.x'
     validations:
       required: false
 
@@ -117,7 +117,8 @@ body:
       label: Logs
       description: |
         If possible, reproduce with debug logging enabled and paste the relevant lines here (redact tokens/personal data first):
-        LOG_FILE=logs/bot.log LOG_LEVEL=debug bun run start
+        Docker Compose: set LOG_LEVEL=debug in .env, run "docker compose up -d", then "docker compose logs -f bot"
+        Bare metal: LOG_FILE=logs/bot.log LOG_LEVEL=debug bun run start
       render: shell
     validations:
       required: false
