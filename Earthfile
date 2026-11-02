@@ -78,12 +78,9 @@ checkIfTagExist:
             && exit 1
     END
 
-# Manual bump (release-pr.yml dispatches this in CI; runnable locally):
-# bumps package.json on branch release/vX.Y.Z and opens a PR — merging it is
-# what cuts the release (tag-on-merge.yml tags, Publish ships). A PR satisfies
-# master's required validate_pr check, which a direct GITHUB_TOKEN push can't.
-# LOCALLY: runs on the host checkout (mutating .git from a build container is
-# the wrong shape). Full local test with zero pushes:
+# Manual bump: branch release/vX.Y.Z + PR (scripts/open-release-pr.sh; a PR
+# passes master's required validate_pr check, a GITHUB_TOKEN push can't).
+# LOCALLY: mutates the host checkout's .git — a build container can't.
 #   earthly +open-release-pr --BUMP=minor --DRY_RUN=true
 open-release-pr:
     LOCALLY
@@ -92,14 +89,8 @@ open-release-pr:
     ARG GH_TOKEN=
     RUN BUMP="$BUMP" DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/open-release-pr.sh
 
-# Auto-tag (tag-on-merge.yml calls this in CI; runnable locally): if
-# package.json's version has no tag on origin, tag master HEAD, push the tag
-# and dispatch Publish on it (explicit dispatch — a GITHUB_TOKEN push does
-# not fire on:push workflows). Idempotent: tagged versions are skipped, so
-# ordinary merges do nothing. LOCALLY like +open-release-pr — it mutates the
-# checkout's .git, which a build container can't (earthly keeps .git out of
-# the build context). Local check with zero side effects:
-#   earthly +tag-on-merge --DRY_RUN=true
+# Auto-tag after a Release PR merges (scripts/tag-on-merge.sh).
+# LOCALLY like +open-release-pr. Local check: earthly +tag-on-merge --DRY_RUN=true
 tag-on-merge:
     LOCALLY
     ARG DRY_RUN=false

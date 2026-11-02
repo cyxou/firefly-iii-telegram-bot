@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Manual bump: bump package.json (patch|minor), push branch release/vX.Y.Z,
-# open a PR. Merging the PR is what cuts the release — tag-on-merge.yml tags
-# master and dispatches Publish on the tag. Invoked by the Earthfile's
-# +open-release-pr target (locally or from .github/workflows/release-pr.yml
-# in CI). Major releases stay manual by design.
+# open a PR; merging it cuts the release (tag-on-merge.sh tags, publish.yml
+# ships). Invoked by the Earthfile's +open-release-pr target (locally or from
+# .github/workflows/release-pr.yml in CI). Major releases stay manual.
 #
 # DRY_RUN=true performs branch+bump+commit and rolls everything back — nothing
 # is pushed, so it is a full local test of the release path.

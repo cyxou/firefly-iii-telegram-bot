@@ -1,12 +1,11 @@
 name: Tag on merge
 
-# Watches master: when package.json's version has no tag yet, tags master HEAD
-# and dispatches Publish on the tag. Normally the merge of a Release PR, but
-# any push landing an untagged version qualifies — idempotent, so ordinary
-# merges (version unchanged) do nothing. All logic lives in the Earthfile's
-# +tag-on-merge target, like every other workflow here.
+# A Release PR merged: tag master, dispatch Publish. All logic lives in the
+# Earthfile's +tag-on-merge target, like every other workflow here.
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - master
 
@@ -16,13 +15,16 @@ permissions:
 
 jobs:
   tag:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: master # tag the merge commit, not the refs/pull/N/merge ref
 
       - name: Download Earthly
         run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.8.16/earthly-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth'"
 
-      - name: Tag untagged version
+      - name: Tag merged release
         # no --ci: it implies --strict, which forbids LOCALLY targets
         run: earth +tag-on-merge --GH_TOKEN=${{ github.token }}

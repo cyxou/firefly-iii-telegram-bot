@@ -1,10 +1,7 @@
 name: Release PR
 
-# Manual bump: pick the level, get a release PR. Merging that PR is what cuts
-# the release — tag-on-merge.yml tags master and dispatches Publish on the tag.
-# (Replaces the old direct-push flow: master's required validate_pr check can
-# never be satisfied by a GITHUB_TOKEN push, but a PR satisfies it by running
-# it.) Major releases stay manual — local checkout + git tag + push.
+# Manual bump: pick the level, get a release PR; merging it cuts the release
+# (see scripts/open-release-pr.sh). Major releases stay manual.
 on:
   workflow_dispatch:
     inputs:
