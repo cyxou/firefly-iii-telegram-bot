@@ -4,7 +4,7 @@ import type {
   FireflyService,
   TransactionSplitStore,
 } from '#root/lib/firefly/service.js'
-import type { UserSettings } from '#root/lib/settings-store.js'
+import type { AccountRef, UserSettings } from '#root/lib/settings-store.js'
 import { AccountTypeFilter, TransactionTypeProperty } from '#root/lib/firefly/service.js'
 
 /** Map a Firefly account onto the session-draft shape (v1 AccountAttributes). */
@@ -29,12 +29,19 @@ export async function resolveDefaultAccounts(
     const acc = (await firefly.listAccounts(type))[0]
     return acc ? toRef(acc) : null
   }
-  const source = settings?.defaultSourceAccount.name
-    ? { ...settings.defaultSourceAccount }
-    : await firstOf(AccountTypeFilter.Asset)
-  const destination = settings?.defaultDestinationAccount.name
-    ? { ...settings.defaultDestinationAccount }
-    : await firstOf(AccountTypeFilter.CashAccount)
+  // Env-seeded defaults (DEFAULT_ASSET_ACCOUNT_ID, bot/index.ts envDefaults)
+  // carry an id with no name — hydrate at flow start. A missing account
+  // throws: a misconfigured env id must be loud, not silently fall through
+  // to the first asset account (withdrawals from the wrong account).
+  const storedOr = async (ref: AccountRef | undefined, fallback: AccountTypeFilter) => {
+    if (!ref?.id) return firstOf(fallback)
+    return ref.name ? { ...ref } : toRef(await firefly.getAccount(ref.id))
+  }
+  const source = await storedOr(settings?.defaultSourceAccount, AccountTypeFilter.Asset)
+  const destination = await storedOr(
+    settings?.defaultDestinationAccount,
+    AccountTypeFilter.CashAccount,
+  )
   return { source, destination }
 }
 
