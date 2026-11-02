@@ -92,6 +92,20 @@ open-release-pr:
     ARG GH_TOKEN=
     RUN BUMP="$BUMP" DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/open-release-pr.sh
 
+# Auto-tag (tag-on-merge.yml calls this in CI; runnable locally): if
+# package.json's version has no tag on origin, tag master HEAD, push the tag
+# and dispatch Publish on it (explicit dispatch — a GITHUB_TOKEN push does
+# not fire on:push workflows). Idempotent: tagged versions are skipped, so
+# ordinary merges do nothing. LOCALLY like +open-release-pr — it mutates the
+# checkout's .git, which a build container can't (earthly keeps .git out of
+# the build context). Local check with zero side effects:
+#   earthly +tag-on-merge --DRY_RUN=true
+tag-on-merge:
+    LOCALLY
+    ARG DRY_RUN=false
+    ARG GH_TOKEN=
+    RUN DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/tag-on-merge.sh
+
 # Release = generated notes only; the GHCR image is the artifact (spec amendment 2).
 release:
   ARG --required GHCR_TOKEN
