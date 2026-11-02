@@ -25,6 +25,7 @@ const configSchema = v.object({
   FIREFLY_URL: v.optional(v.string(), ''),
   FIREFLY_API_URL: v.optional(v.string(), ''),
   FIREFLY_ACCESS_TOKEN: v.optional(v.string(), ''),
+  DEFAULT_ASSET_ACCOUNT_ID: v.optional(v.string(), ''),
 })
 
 export function createConfig(input: Record<string, string | undefined>) {
@@ -37,6 +38,7 @@ export function createConfig(input: Record<string, string | undefined>) {
     logLevel: p.LOG_LEVEL,
     fireflyUrl: p.FIREFLY_URL,
     fireflyAccessToken: p.FIREFLY_ACCESS_TOKEN,
+    defaultAssetAccountId: p.DEFAULT_ASSET_ACCOUNT_ID,
     fireflyApiUrl:
       p.FIREFLY_API_URL || (p.FIREFLY_URL ? `${p.FIREFLY_URL.replace(/\/+$/, '')}/api` : ''),
   }

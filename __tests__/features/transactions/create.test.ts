@@ -122,6 +122,26 @@ describe('resolveDefaultAccounts', () => {
     expect(destination).toMatchObject({ id: '2' })
   })
 
+  // issue #61: DEFAULT_ASSET_ACCOUNT_ID seeds an id-only ref (name empty) —
+  // it must win over the firstOf fallback and hydrate name/type via getAccount
+  it('id-only default (env-seeded) wins over firstOf and hydrates via getAccount', async () => {
+    const accounts = [testAccount('1', 'Checking'), testAccount('7', 'Savings')]
+    const { source } = await resolveDefaultAccounts(
+      defaultSettings({ defaultSourceAccount: { id: '7', type: 'asset', name: '' } }),
+      createTestFireflyService({ accounts }),
+    )
+    expect(source).toMatchObject({ id: '7', name: 'Savings', type: 'asset' })
+  })
+
+  it('id-only default pointing at a missing account rejects (misconfig must be loud)', async () => {
+    await expect(
+      resolveDefaultAccounts(
+        defaultSettings({ defaultSourceAccount: { id: '404', type: 'asset', name: '' } }),
+        createTestFireflyService({ accounts: ACCOUNTS }),
+      ),
+    ).rejects.toThrow()
+  })
+
   it('no asset accounts → source null (error path)', async () => {
     const { source } = await resolveDefaultAccounts(
       defaultSettings(),

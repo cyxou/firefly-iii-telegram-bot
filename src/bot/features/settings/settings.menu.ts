@@ -18,7 +18,12 @@ export function settingsText(ctx: Context) {
     accessToken: s.fireflyAccessToken ? escapeMarkdown(accessToken) : '',
     defaultSourceAccount: {
       ...s.defaultSourceAccount,
-      name: escapeMarkdown(s.defaultSourceAccount.name),
+      // env-seeded ref carries only an id (DEFAULT_ASSET_ACCOUNT_ID) — show it
+      // rather than a false <NOT SPECIFIED>; menu-picked accounts always name
+      name: escapeMarkdown(
+        s.defaultSourceAccount.name ||
+          (s.defaultSourceAccount.id ? `ID ${s.defaultSourceAccount.id}` : ''),
+      ),
     },
   })
 }

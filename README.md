@@ -70,7 +70,8 @@ First you'll have to [generate a Telegram Bot token through BotFather](https://c
 ### Docker Compose (Recommended)
 
 Copy _.example.env_ to _.env_, fill in `BOT_TOKEN` (and optionally
-`FIREFLY_URL` + `FIREFLY_ACCESS_TOKEN` to skip in-bot configuration), then:
+`FIREFLY_URL` + `FIREFLY_ACCESS_TOKEN` — plus `DEFAULT_ASSET_ACCOUNT_ID` for a
+default asset account — to skip in-bot configuration), then:
 
 ```shell
 docker compose up -d

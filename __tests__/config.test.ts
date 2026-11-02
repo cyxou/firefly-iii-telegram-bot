@@ -9,6 +9,7 @@ describe('createConfig', () => {
       DISABLE_UNAUTHORIZED_USER_LOG: 'true',
       REDIS_URL: 'redis://localhost:6380',
       FIREFLY_URL: 'https://ff.example.com',
+      DEFAULT_ASSET_ACCOUNT_ID: '42',
     })
     expect(c.botToken).toBe('123456:ABCdef')
     expect(c.allowedUserIds).toEqual([1, 22, 333])
@@ -16,6 +17,7 @@ describe('createConfig', () => {
     expect(c.redisUrl).toBe('redis://localhost:6380')
     expect(c.fireflyUrl).toBe('https://ff.example.com')
     expect(c.fireflyApiUrl).toBe('https://ff.example.com/api') // derived default
+    expect(c.defaultAssetAccountId).toBe('42')
   })
 
   it('defaults: empty allowlist, no redis url override, env firefly blank', () => {
@@ -24,6 +26,7 @@ describe('createConfig', () => {
     expect(c.disableUnauthorizedUserLog).toBe(false)
     expect(c.redisUrl).toBe('redis://localhost:6379')
     expect(c.fireflyUrl).toBe('')
+    expect(c.defaultAssetAccountId).toBe('')
   })
 
   it('rejects a malformed bot token', () => {

@@ -200,4 +200,65 @@ describe('settings feature', () => {
       expect(text).not.toContain('env-firefly.example.com')
     })
   })
+
+  // issue #61: DEFAULT_ASSET_ACCOUNT_ID pre-configures the default asset
+  // account with the same live-layer semantics as env credentials.
+  describe('env-seeded default asset account', () => {
+    const envConfig = {
+      fireflyUrl: 'https://env-firefly.example.com',
+      fireflyApiUrl: 'https://env-firefly.example.com/api',
+      fireflyAccessToken: 'e'.repeat(500),
+      defaultAssetAccountId: '42',
+    }
+    const accounts = [testAccount('1', 'Checking'), testAccount('42', 'Savings')]
+
+    it('settings shows the env account id instead of NOT SPECIFIED, and the picker marks it', async () => {
+      const { api, send, click } = await setup({
+        config: envConfig,
+        firefly: createTestFireflyService({ accounts }),
+      })
+      await send('/settings')
+      const text = (
+        api.getOutgoingRequests().find((r) => r.method === 'sendMessage')?.payload as any
+      ).text
+      expect(text).toContain('ID 42')
+      expect(text).not.toContain(i18n.t('en', 'settings.notSpecified'))
+
+      // seeding reaches the picker: the env account carries the ✅ marker
+      await click('💳 Default asset account')
+      expect(findButton(api.getOutgoingRequests(), 'Savings ✅')).toBeDefined()
+    })
+
+    it('a language switch does not persist the env default account (env stays live)', async () => {
+      const { api, send, click, settingsStore } = await setup({
+        config: envConfig,
+        firefly: createTestFireflyService({ accounts }),
+      })
+      await send('/settings')
+      await click('🌐 Language')
+      await click('🇪🇸 Spanish')
+      expect((await settingsStore.get(1111111))?.defaultSourceAccount).toBeUndefined()
+
+      // env still backfills after the partial save — rotating the id keeps reaching the user
+      await send('/settings')
+      const text = (
+        api
+          .getOutgoingRequests()
+          .filter((r) => r.method === 'sendMessage')
+          .at(-1)!.payload as any
+      ).text
+      expect(text).toContain('ID 42')
+    })
+
+    it('a user-picked account overrides env and persists', async () => {
+      const { send, click, settingsStore } = await setup({
+        config: envConfig,
+        firefly: createTestFireflyService({ accounts }),
+      })
+      await send('/settings')
+      await click('💳 Default asset account')
+      await click('Checking')
+      expect((await settingsStore.get(1111111))?.defaultSourceAccount?.name).toBe('Checking')
+    })
+  })
 })

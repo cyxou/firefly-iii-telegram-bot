@@ -38,11 +38,21 @@ function getSessionKey(ctx: Omit<Context, 'session'>) {
 // users keep hitting the /settings gate).
 function envDefaults(config: Config): UserSettings | undefined {
   if (!config.fireflyUrl && !config.fireflyAccessToken) return undefined
-  return defaultSettings({
+  const seeded = defaultSettings({
     fireflyUrl: config.fireflyUrl,
     fireflyApiUrl: config.fireflyApiUrl,
     fireflyAccessToken: config.fireflyAccessToken,
   })
+  // id-only ref (issue #61): name/type hydrate at first use in
+  // resolveDefaultAccounts — this runs per update, no API call here
+  if (config.defaultAssetAccountId) {
+    seeded.defaultSourceAccount = {
+      id: config.defaultAssetAccountId,
+      name: '',
+      type: 'asset',
+    }
+  }
+  return seeded
 }
 
 // Credential fields env may seed. A save persists them only when the user
@@ -59,6 +69,15 @@ function toStored(
   const out: Partial<UserSettings> = { ...incoming }
   for (const field of CREDENTIAL_FIELDS) {
     if (incoming[field] === env?.[field] && stored?.[field] === undefined) delete out[field]
+  }
+  // Same live-layer rule for the env-seeded default account: drop it while it
+  // still matches the env seed and the user never chose their own (compare by
+  // id — it's an object, and env-seeded refs never carry a name).
+  if (
+    !stored?.defaultSourceAccount &&
+    incoming.defaultSourceAccount.id === env?.defaultSourceAccount?.id
+  ) {
+    delete out.defaultSourceAccount
   }
   return out
 }
