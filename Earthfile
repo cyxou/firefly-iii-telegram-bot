@@ -78,19 +78,24 @@ checkIfTagExist:
             && exit 1
     END
 
-# Manual release (tag.yml dispatches this in CI; runnable locally):
-# bumps package.json, commits "chore(release): vX.Y.Z", tags master, pushes,
-# then dispatches the Release workflow on the tag — a GITHUB_TOKEN push does
-# not trigger on:push workflows (recursion guard), so the explicit dispatch.
-# LOCALLY: runs on the host checkout (mutating .git from a build container is
-# the wrong shape). Full local test with zero pushes:
-#   earthly +cut-release --BUMP=minor --DRY_RUN=true
-cut-release:
+# Manual bump: branch release/vX.Y.Z + PR (scripts/open-release-pr.sh; a PR
+# passes master's required validate_pr check, a GITHUB_TOKEN push can't).
+# LOCALLY: mutates the host checkout's .git — a build container can't.
+#   earthly +open-release-pr --BUMP=minor --DRY_RUN=true
+open-release-pr:
     LOCALLY
     ARG --required BUMP
     ARG DRY_RUN=false
     ARG GH_TOKEN=
-    RUN BUMP="$BUMP" DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/cut-release.sh
+    RUN BUMP="$BUMP" DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/open-release-pr.sh
+
+# Auto-tag after a Release PR merges (scripts/tag-on-merge.sh).
+# LOCALLY like +open-release-pr. Local check: earthly +tag-on-merge --DRY_RUN=true
+tag-on-merge:
+    LOCALLY
+    ARG DRY_RUN=false
+    ARG GH_TOKEN=
+    RUN DRY_RUN="$DRY_RUN" GH_TOKEN="$GH_TOKEN" bash scripts/tag-on-merge.sh
 
 # Release = generated notes only; the GHCR image is the artifact (spec amendment 2).
 release:
