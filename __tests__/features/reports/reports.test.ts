@@ -278,3 +278,31 @@ describe('subscriptions view', () => {
     )
   })
 })
+
+describe('piggy banks view', () => {
+  it('shows saved/target with computed percentage', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      piggyBanks: [
+        { name: 'Кубышка', currency: 'RUB', saved: 180424.93, target: 200000 },
+        { name: 'Trip', currency: 'EUR', saved: 100, target: 0 },
+      ],
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_PIGGY'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(i18n.t('en', 'reports.piggyTitle'))
+    expect(md).toContain('| Кубышка | 180424.93 RUB | 200000.00 RUB | 90% |')
+    // zero target → percentage em-dash, not division by zero
+    expect(md).toContain('| Trip | 100.00 EUR | 0.00 EUR | — |')
+  })
+
+  it('no piggy banks renders the generic empty note', async () => {
+    const { api, click, reports } = await setup({ ...MONTH_FIXTURES, piggyBanks: [] })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_PIGGY'))
+    expect(getLastRichMarkdown(api.getOutgoingRequests())!).toContain(
+      i18n.t('en', 'reports.emptyGeneric'),
+    )
+  })
+})

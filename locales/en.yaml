@@ -103,6 +103,9 @@ tables:
   left: Left
   next: Next
   frequency: Frequency
+  saved: Saved
+  target: Target
+  share: '%'
 reports:
   title: '📊 ${monthName}'
   empty: Nothing this month.
@@ -111,6 +114,7 @@ reports:
   budgetsTitle: '🎯 Budgets — ${monthName}'
   unbudgeted: Without budget
   subsTitle: 🔁 Subscriptions
+  piggyTitle: 🐷 Piggy banks
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.

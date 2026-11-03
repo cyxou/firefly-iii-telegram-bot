@@ -103,6 +103,9 @@ tables:
   left: Остаток
   next: Дата
   frequency: Период
+  saved: Накоплено
+  target: Цель
+  share: '%'
 reports:
   title: '📊 ${monthName}'
   empty: В этом месяце ничего нет.
@@ -111,6 +114,7 @@ reports:
   budgetsTitle: '🎯 Бюджеты — ${monthName}'
   unbudgeted: Без бюджета
   subsTitle: 🔁 Подписки
+  piggyTitle: 🐷 Копилки
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота

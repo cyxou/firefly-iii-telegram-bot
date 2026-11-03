@@ -186,6 +186,34 @@ async function subsMarkdown(ctx: Context): Promise<string> {
   return lines.join('\n')
 }
 
+async function piggyMarkdown(ctx: Context): Promise<string> {
+  const piggies = await ctx.firefly.listPiggyBanks()
+  const lines = [ctx.i18n.t('reports.piggyTitle')]
+  if (!piggies.length) {
+    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
+    return lines.join('\n')
+  }
+  const rows = piggies.map((p) => [
+    escapeRichMarkdown(p.name),
+    `${p.saved.toFixed(2)} ${p.currency}`,
+    `${p.target.toFixed(2)} ${p.currency}`,
+    p.target > 0 ? `${Math.round((p.saved / p.target) * 100)}%` : '—',
+  ])
+  lines.push(
+    `\n${markdownTable(
+      [
+        ctx.i18n.t('tables.name'),
+        ctx.i18n.t('tables.saved'),
+        ctx.i18n.t('tables.target'),
+        ctx.i18n.t('tables.share'),
+      ],
+      rows,
+      ['left', 'right', 'right', 'right'],
+    )}`,
+  )
+  return lines.join('\n')
+}
+
 export async function renderReport(
   ctx: Context,
   type: ReportType,
@@ -198,7 +226,9 @@ export async function renderReport(
       return budgetsMarkdown(ctx, anchor)
     case 'subs':
       return subsMarkdown(ctx)
-    // per-view cases land in Tasks 6–8
+    case 'piggy':
+      return piggyMarkdown(ctx)
+    // per-view cases land in Tasks 7–8
     default:
       return reportMarkdown(ctx, anchor)
   }

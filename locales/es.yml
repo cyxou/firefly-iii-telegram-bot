@@ -103,6 +103,9 @@ tables:
   left: Restante
   next: Próxima
   frequency: Frecuencia
+  saved: Ahorrado
+  target: Meta
+  share: '%'
 reports:
   title: '📊 ${monthName}'
   empty: Nada este mes.
@@ -111,6 +114,7 @@ reports:
   budgetsTitle: '🎯 Presupuestos — ${monthName}'
   unbudgeted: Sin presupuesto
   subsTitle: 🔁 Suscripciones
+  piggyTitle: 🐷 Alcancías
 mdlwr:
   noFireflyURLFound: Para usar el bot, necesitas indicar una *🔗 URL de Firefly* válida en la *🔧 Configuración* del Bot.
   noFireflyAccessTokenFound: Para usar el bot, necesitas indicar un *🔑 Token de Acceso* válido en la *🔧 Configuración* del Bot.
