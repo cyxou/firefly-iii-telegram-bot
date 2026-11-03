@@ -78,8 +78,8 @@ describe('transactions list', () => {
     await sendTransactionsLabel(bot)
     const markdown = getLastRichMarkdown(api.getOutgoingRequests())!
     // single \n collapses to a space in prose and cannot appear in a cell —
-    // sums must not rely on it
-    expect(markdown).toContain(`|  | SUM | 4.50 $, 10.00 € |`)
+    // sums must not rely on it; currency order follows the table (newest first)
+    expect(markdown).toContain(`|  | SUM | 10.00 €, 4.50 $ |`)
   })
 
   it('three type tabs, active disabled — the SHOW_TRANSFERS bug is fixed by construction', async () => {

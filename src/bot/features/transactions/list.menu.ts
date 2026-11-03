@@ -105,37 +105,31 @@ function listMarkdown(
   transactions: TransactionRead[],
 ): string {
   // v1: per-currency running sum, |x| on display; transfer view shows none
-  const sums = Object.entries(
-    transactions.reduce(
-      (acc, item) => {
-        const split = item.attributes.transactions?.[0]
-        if (!split) return acc
-        const currency = split.currency_symbol || '💲'
-        acc[currency] = (acc[currency] ?? 0) + Number.parseFloat(split.amount)
-        return acc
-      },
-      {} as Record<string, number>,
-    ),
-  )
-    // toFixed(2) to match the Amount column it sums; multi-currency shares the
-    // cell (one row): joined with ', '
-    .map(([currency, sum]) => `${Math.abs(sum).toFixed(2)} ${currency}`)
-    .join(', ')
+  const sums: Record<string, number> = {}
   const rows = [...transactions].reverse().flatMap((item) => {
     const split = item.attributes.transactions?.[0]
-    return split
-      ? [
-          [
-            dayjs(split.date).format('LT'),
-            split.description ?? '',
-            `${Number.parseFloat(split.amount).toFixed(2)} ${split.currency_symbol ?? ''}`,
-          ],
-        ]
-      : []
+    if (!split) return []
+    const currency = split.currency_symbol || '💲'
+    sums[currency] = (sums[currency] ?? 0) + Number.parseFloat(split.amount)
+    return [
+      [
+        dayjs(split.date).format('LT'),
+        split.description ?? '',
+        `${Number.parseFloat(split.amount).toFixed(2)} ${split.currency_symbol ?? ''}`,
+      ],
+    ]
   })
-  // Excel-style total: SUM rides the table's last row (empty Time cell)
+  // Excel-style total: SUM rides the table's last row (empty Time cell);
+  // toFixed(2) to match the Amount column it sums, multi-currency shares the
+  // cell (one row): joined with ', '
   if (rows.length && type !== TransactionTypeFilter.Transfer)
-    rows.push(['', ctx.i18n.t('tables.sum'), sums])
+    rows.push([
+      '',
+      ctx.i18n.t('tables.sum'),
+      Object.entries(sums)
+        .map(([currency, sum]) => `${Math.abs(sum).toFixed(2)} ${currency}`)
+        .join(', '),
+    ])
   // GFM tables cannot interrupt a paragraph — the blank line comes from this
   // \n...\n wrap, not the folded-YAML template
   const table = rows.length
