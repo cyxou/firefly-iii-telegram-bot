@@ -12,8 +12,12 @@ import { Configuration } from '#root/lib/firefly/generated/configuration.js'
 export interface FireflyClients {
   About: ReturnType<typeof api.AboutApiFactory>
   Accounts: ReturnType<typeof api.AccountsApiFactory>
+  Bills: ReturnType<typeof api.BillsApiFactory>
+  Budgets: ReturnType<typeof api.BudgetsApiFactory>
   Categories: ReturnType<typeof api.CategoriesApiFactory>
   Insight: ReturnType<typeof api.InsightApiFactory>
+  PiggyBanks: ReturnType<typeof api.PiggyBanksApiFactory>
+  Summary: ReturnType<typeof api.SummaryApiFactory>
   Transactions: ReturnType<typeof api.TransactionsApiFactory>
 }
 
@@ -71,8 +75,12 @@ export function createFireflyClients(settings: {
   const clients: FireflyClients = {
     About: api.AboutApiFactory(configuration),
     Accounts: api.AccountsApiFactory(configuration),
+    Bills: api.BillsApiFactory(configuration),
+    Budgets: api.BudgetsApiFactory(configuration),
     Categories: api.CategoriesApiFactory(configuration),
     Insight: api.InsightApiFactory(configuration),
+    PiggyBanks: api.PiggyBanksApiFactory(configuration),
+    Summary: api.SummaryApiFactory(configuration),
     Transactions: api.TransactionsApiFactory(configuration),
   }
   cache.set(key, clients)
