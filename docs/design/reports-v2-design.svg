@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 896" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="reports-v2-design-title reports-v2-design-desc" id="reports-v2-design-root">
+        <title id="reports-v2-design-title">Reports v2 feature design</title>
+        <desc id="reports-v2-design-desc">How a Telegram report message flows through the reports menu and its seven view renderers into new FireflyService wrappers and the Firefly III API.</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #reports-v2-design-root { --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #bf4520;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace; }
+      #reports-v2-design-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #reports-v2-design-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#reports-v2-design-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="reports-v2-design-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+          <marker id="reports-v2-design-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+          <marker id="reports-v2-design-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <!-- ══ Zones (painted first) ══ -->
+        <rect x="404" y="40" width="472" height="244" rx="8" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+        <rect x="588" y="44" width="104" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="640" y="53" fill="#5a6580" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.14em">TELEGRAM CHAT</text>
+
+        <rect x="404" y="312" width="472" height="398" rx="8" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+        <rect x="564" y="316" width="152" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="640" y="325" fill="#5a6580" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.14em">BOT PROCESS · BUN</text>
+
+        <rect x="384" y="714" width="512" height="114" rx="8" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+        <rect x="548" y="718" width="184" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="640" y="727" fill="#5a6580" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.14em">FIREFLY III · EXTERNAL</text>
+
+        <!-- ══ Arrows (before nodes) — one vertical spine at x=640 ══ -->
+        <line x1="640" y1="268" x2="640" y2="340" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow)"/>
+        <line x1="640" y1="404" x2="640" y2="426" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow)"/>
+        <line x1="640" y1="498" x2="640" y2="520" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow)"/>
+        <line x1="640" y1="608" x2="640" y2="630" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow)"/>
+        <line x1="640" y1="694" x2="640" y2="740" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow-link)"/>
+
+        <!-- Arrow labels — beside vertical segments, 8px gap from stroke -->
+        <rect x="648" y="298" width="60" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="678" y="307" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">CALLBACK</text>
+
+        <rect x="648" y="406" width="88" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="692" y="415" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">EDIT MESSAGE</text>
+
+        <rect x="648" y="500" width="72" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="684" y="509" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">7 WRAPPERS</text>
+
+        <rect x="648" y="610" width="80" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="688" y="619" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">TYPED CALLS</text>
+
+        <rect x="648" y="706" width="88" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="692" y="715" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">HTTPS BEARER</text>
+
+        <!-- ══ Node 1 · report message wireframe (input treatment) ══ -->
+        <rect x="436" y="72" width="408" height="196" rx="6" fill="#f5f5f5"/>
+        <rect x="436" y="72" width="408" height="196" rx="6" fill="#4f5d75" stroke="#5a6580" stroke-width="1" fill-opacity="0.10"/>
+        <rect x="444" y="78" width="52" height="12" rx="2" fill="none" stroke="#5a6580" stroke-width="0.8" stroke-opacity="0.50"/>
+        <text x="470" y="87" fill="#5a6580" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">MESSAGE</text>
+        <text x="640" y="106" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Reports — November, 2026</text>
+
+        <!-- button rows · accent = new in v2 -->
+        <rect x="558" y="120" width="56" height="20" rx="4" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.20"/>
+        <text x="586" y="133" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Monthly</text>
+        <rect x="622" y="120" width="46" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="645" y="133" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Trend</text>
+        <rect x="676" y="120" width="46" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="699" y="133" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Audit</text>
+
+        <rect x="523" y="148" width="66" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="556" y="161" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Net worth</text>
+        <rect x="597" y="148" width="56" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="625" y="161" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Budgets</text>
+        <rect x="661" y="148" width="41" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="681" y="161" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Subs</text>
+        <rect x="710" y="148" width="46" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="733" y="161" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Piggy</text>
+
+        <rect x="541" y="176" width="92" height="20" rx="4" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.20"/>
+        <text x="587" y="189" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">&#8249;&#8249; October</text>
+        <rect x="641" y="176" width="97" height="20" rx="4" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.20"/>
+        <text x="689" y="189" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">December &#8250;&#8250;</text>
+
+        <rect x="618" y="204" width="44" height="20" rx="4" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="640" y="217" fill="#2d3142" font-size="8.5" font-weight="500" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Done &#10003;</text>
+
+        <text x="640" y="252" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">callback payload: monthly/2026-11-01</text>
+
+        <!-- ══ Node 2 · reportsMenu (backend) ══ -->
+        <rect x="480" y="344" width="320" height="60" rx="6" fill="#f5f5f5"/>
+        <rect x="480" y="344" width="320" height="60" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="488" y="350" width="36" height="12" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="506" y="359" fill="#2d3142" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.80">MENU</text>
+        <text x="640" y="380" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">reportsMenu · dynamic</text>
+        <text x="640" y="394" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">report.menu.ts · payload &lt;type&gt;/&lt;anchor&gt;</text>
+
+        <!-- ══ Node 3 · view renderers (backend) ══ -->
+        <rect x="440" y="430" width="400" height="68" rx="6" fill="#f5f5f5"/>
+        <rect x="440" y="430" width="400" height="68" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="448" y="436" width="40" height="12" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="468" y="445" fill="#2d3142" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.80">VIEWS</text>
+        <text x="640" y="462" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Report views &#215; 7 · GFM tables</text>
+        <text x="640" y="477" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">monthly (today) · trend · audit · net worth · budgets</text>
+        <text x="640" y="490" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">subscriptions · piggy · locales en es it ru</text>
+
+        <!-- ══ Node 4 · FireflyService (focal — all new code lands here) ══ -->
+        <rect x="420" y="524" width="440" height="84" rx="6" fill="#f5f5f5"/>
+        <rect x="420" y="524" width="440" height="84" rx="6" fill="#bf4520" stroke="#bf4520" stroke-width="1" fill-opacity="0.08"/>
+        <rect x="428" y="530" width="76" height="12" rx="2" fill="none" stroke="#bf4520" stroke-width="0.8" stroke-opacity="0.50"/>
+        <text x="466" y="539" fill="#bf4520" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">+7 WRAPPERS</text>
+        <text x="640" y="558" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">FireflyService · service.ts</text>
+        <text x="640" y="574" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">getBasicSummary · listBudgets · listBudgetLimits</text>
+        <text x="640" y="587" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">listSubscriptions · listPiggyBanks</text>
+        <text x="640" y="600" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">insightExpenseNoCategory · NoBudget</text>
+
+        <!-- ══ Node 5 · generated client (backend, codegen) ══ -->
+        <rect x="440" y="634" width="400" height="60" rx="6" fill="#f5f5f5"/>
+        <rect x="440" y="634" width="400" height="60" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="448" y="640" width="52" height="12" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="474" y="649" fill="#2d3142" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.80">CODEGEN</text>
+        <text x="640" y="670" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Generated client — untouched</text>
+        <text x="640" y="684" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">src/lib/firefly/generated · 27 modules</text>
+
+        <!-- ══ Node 6 · Firefly III API (external) ══ -->
+        <rect x="400" y="744" width="480" height="68" rx="6" fill="#f5f5f5"/>
+        <rect x="400" y="744" width="480" height="68" rx="6" fill="#2d3142" stroke="#2d3142" stroke-width="1" fill-opacity="0.03" stroke-opacity="0.30"/>
+        <rect x="408" y="750" width="44" height="12" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.30"/>
+        <text x="430" y="759" fill="#2d3142" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.60">V6.7.8</text>
+        <text x="640" y="776" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Firefly III API</text>
+        <text x="640" y="791" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">/v1/summary/basic · /v1/budgets · /v1/budget-limits</text>
+        <text x="640" y="804" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">/v1/subscriptions · /v1/piggy-banks · /v1/insight/expense/no-*</text>
+
+        <!-- ══ Legend — bottom strip ══ -->
+        <line x1="64" y1="848" x2="1216" y2="848" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.10"/>
+        <text x="64" y="870" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+        <rect x="140" y="860" width="20" height="12" rx="2" fill="#bf4520" stroke="#bf4520" stroke-width="0.8" fill-opacity="0.08"/>
+        <text x="168" y="870" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace">NEW IN V2</text>
+        <rect x="288" y="860" width="20" height="12" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.20"/>
+        <text x="316" y="870" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace">EXISTING</text>
+        <line x1="436" y1="866" x2="476" y2="866" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow)"/>
+        <text x="484" y="870" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace">IN-PROCESS</text>
+        <line x1="620" y1="866" x2="660" y2="866" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#reports-v2-design-arrow-link)"/>
+        <text x="668" y="870" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace">HTTPS API CALL</text>
+      </svg>
