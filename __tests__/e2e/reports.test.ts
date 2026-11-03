@@ -49,6 +49,8 @@ async function makeBot() {
       { name: 'Groceries', currency: 'EUR', amount: 612.4 },
       { name: 'Rent', currency: 'EUR', amount: 550 },
     ],
+    netWorth: [{ currency: 'EUR', amount: 1328.65 }],
+    accounts: [],
   })
   const bot = createBot(config.botToken, {
     config,
@@ -80,5 +82,16 @@ describe.skipIf(!available)('reports (e2e, real redis)', () => {
       .at(-1)!
     expect((edit.payload as any).rich_message?.markdown).toContain(monthLabel(prev))
     expect((edit.payload as any).rich_message?.markdown).not.toContain(monthLabel(dayjs()))
+  })
+
+  it('type switch navigates to net worth without session state', async () => {
+    const { bot, api, click } = await makeBot()
+    await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.REPORTS')))
+    await click(i18n.t('en', 'labels.VIEW_NET_WORTH'))
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
+    expect((edit.payload as any).rich_message?.markdown).toContain('| EUR | +1328.65 |')
   })
 })
