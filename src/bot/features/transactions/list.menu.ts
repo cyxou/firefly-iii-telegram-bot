@@ -139,7 +139,8 @@ function listMarkdown(
     ),
   )
     .map(([currency, sum]) => `${Math.abs(sum)} ${currency}`)
-    .join('\n')
+    // one line: rich markdown collapses \n inside a paragraph
+    .join(', ')
   // TransactionTypeFilter values ('withdrawal'|'deposit'|'transfer') double as
   // the locale-key suffix — same strings, no mapping table
   return ctx.i18n.t(`transactions.list.${String(type)}`, {

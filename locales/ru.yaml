@@ -87,11 +87,11 @@ tables:
   description: Описание
   amount: Сумма
   category: Категория
+  income: Доход
+  expense: Расход
+  net: Итог
 reports:
   title: '📊 ${monthName}'
-  income: 'Доход: ${amount}'
-  expense: 'Расход: ${amount}'
-  net: 'Итог: ${amount}'
   empty: В этом месяце ничего нет.
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота

@@ -54,10 +54,12 @@ describe('reports feature', () => {
     await reports()
     const md = getLastRichMarkdown(api.getOutgoingRequests())!
     expect(md).toContain(monthLabel(dayjs()))
-    expect(md).toContain('+4200.00 EUR')
-    expect(md).toContain('−2871.35 EUR') // U+2212 minus
-    expect(md).toContain('+1328.65 EUR') // net = 4200 − 2871.35
-    // table headers from shared keys
+    // one summary row per currency, bare amounts (currency is its own column);
+    // net = 4200 − 2871.35, minus is U+2212
+    expect(md).toContain(`| EUR | +4200.00 | −2871.35 | +1328.65 |`)
+    // summary table headers from shared keys
+    expect(md).toContain(`| ${i18n.t('en', 'tables.currency')} | ${i18n.t('en', 'tables.income')} | ${i18n.t('en', 'tables.expense')} | ${i18n.t('en', 'tables.net')} |`)
+    // category table headers from shared keys
     expect(md).toContain(i18n.t('en', 'tables.category'))
     expect(md).toContain(i18n.t('en', 'tables.amount'))
     // descending by amount: Groceries (612.40) before Rent (550.00)
@@ -79,7 +81,7 @@ describe('reports feature', () => {
     expect(md).not.toContain(monthLabel(dayjs()))
   })
 
-  it('renders one Income/Expense/Net block per currency', async () => {
+  it('renders one summary table row per currency', async () => {
     const { api, reports } = await setup({
       incomeTotals: [
         { currency: 'EUR', amount: 100 },
@@ -90,10 +92,10 @@ describe('reports feature', () => {
     })
     await reports()
     const md = getLastRichMarkdown(api.getOutgoingRequests())!
-    expect(md).toContain('+100.00 EUR')
-    expect(md).toContain('+70.00 EUR') // EUR net
-    expect(md).toContain('+50.00 USD') // USD income and net are both +50 (no USD expenses)
-    // no category rows → no table
+    expect(md).toContain(`| EUR | +100.00 | −30.00 | +70.00 |`)
+    // USD has no expenses → zero expense keeps the − sign; income and net are both +50
+    expect(md).toContain(`| USD | +50.00 | −0.00 | +50.00 |`)
+    // no category rows → no category table
     expect(md).not.toContain(`| ${i18n.t('en', 'tables.category')}`)
   })
 

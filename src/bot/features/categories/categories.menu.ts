@@ -168,7 +168,8 @@ export async function showCategoryDetails(ctx: Context) {
     ctx.firefly.listTransactionsByCategory(id, start, end),
     ctx.firefly.insightExpenseForCategory(start, end, Number(id)),
   ])
-  const sums = insights.map((s) => `${Math.abs(s.difference)} ${s.currency}`).join('\n')
+  // one line: rich markdown collapses \n inside a paragraph
+  const sums = insights.map((s) => `${Math.abs(s.difference)} ${s.currency}`).join(', ')
   const markdown = ctx.i18n.t('categories.transactionsList', {
     categoryName: escapeRichMarkdown(category.attributes.name),
     monthName: escapeRichMarkdown(monthLabel(dayjs(date))),

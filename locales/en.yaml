@@ -87,11 +87,11 @@ tables:
   description: Description
   amount: Amount
   category: Category
+  income: Income
+  expense: Expense
+  net: Net
 reports:
   title: '📊 ${monthName}'
-  income: 'Income: ${amount}'
-  expense: 'Expense: ${amount}'
-  net: 'Net: ${amount}'
   empty: Nothing this month.
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.

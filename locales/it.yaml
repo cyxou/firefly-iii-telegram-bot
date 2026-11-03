@@ -82,11 +82,11 @@ tables:
   description: Descrizione
   amount: Importo
   category: Categoria
+  income: Entrate
+  expense: Uscite
+  net: Netto
 reports:
   title: '📊 ${monthName}'
-  income: 'Entrate: ${amount}'
-  expense: 'Uscite: ${amount}'
-  net: 'Netto: ${amount}'
   empty: Niente questo mese.
 mdlwr:
   noFireflyURLFound: Per utilizzare il bot, devi specificare *🔗 Firefly URL* nelle *🔧 Impostazioni* del bot.
