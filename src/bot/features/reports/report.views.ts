@@ -2,15 +2,28 @@ import type { Context } from '#root/bot/context.js'
 import type { ReportType } from './report.menu.js'
 import dayjs from 'dayjs'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
+import { monthLabel } from '#root/bot/helpers/date.js'
 import { escapeRichMarkdown, markdownTable } from '#root/bot/helpers/rich.js'
 
-// moved verbatim from report.menu.ts (monthly view, v1)
-export function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
+function bare(amount: number): string {
+  return Math.abs(amount).toFixed(2)
 }
 
-export function bare(amount: number): string {
-  return Math.abs(amount).toFixed(2)
+/**
+ * Title + body sections. A section is `\n` + a table or note, so joining with
+ * '\n' yields the blank line GFM tables need before/after them. No non-empty
+ * sections → the empty note (tables, not prose lines: in the markdown flavor
+ * Telegram renders, consecutive lines form one paragraph and their breaks
+ * collapse to spaces).
+ */
+function layout(
+  ctx: Context,
+  title: string,
+  sections: string[],
+  emptyNote = ctx.i18n.t('reports.emptyGeneric'),
+): string {
+  const body = sections.filter(Boolean).join('\n')
+  return body ? `${title}\n${body}` : `${title}\n\n${emptyNote}`
 }
 
 async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
@@ -21,60 +34,45 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
     ctx.firefly.insightIncomeTotal(start, end),
     ctx.firefly.insightExpenseByCategory(start, end),
   ])
-
-  const lines = [
-    ctx.i18n.t('reports.title', {
-      monthName: escapeRichMarkdown(monthLabel(anchor)),
-    }),
-  ]
   const currencies = [...new Set([...incomeTotals, ...expenseTotals].map((t) => t.currency))]
-
-  if (!currencies.length) {
-    lines.push('', ctx.i18n.t('reports.empty'))
-    return lines.join('\n')
-  }
-
   // One row per currency; expense amounts arrive signed-negative from the API.
-  // Table, not prose lines: in the markdown flavor Telegram renders, consecutive
-  // lines form one paragraph and their breaks collapse to spaces.
-  const rows = currencies.map((currency) => {
-    const income = incomeTotals.find((t) => t.currency === currency)?.amount ?? 0
-    const expense = expenseTotals.find((t) => t.currency === currency)?.amount ?? 0
-    const net = income + expense
-    return [
-      currency,
-      `+${bare(income)}`,
-      `−${bare(expense)}`,
-      `${net >= 0 ? '+' : '−'}${bare(net)}`,
-    ]
-  })
-  // leading \n = blank line after the title (GFM tables can't interrupt a paragraph)
-  lines.push(
-    `\n${markdownTable(
-      [
-        ctx.i18n.t('tables.currency'),
-        ctx.i18n.t('tables.income'),
-        ctx.i18n.t('tables.expense'),
-        ctx.i18n.t('tables.net'),
-      ],
-      rows,
-      ['left', 'right', 'right', 'right'],
-    )}`,
+  const summary = currencies.length
+    ? `\n${markdownTable(
+        [
+          ctx.i18n.t('tables.currency'),
+          ctx.i18n.t('tables.income'),
+          ctx.i18n.t('tables.expense'),
+          ctx.i18n.t('tables.net'),
+        ],
+        currencies.map((currency) => {
+          const income = incomeTotals.find((t) => t.currency === currency)?.amount ?? 0
+          const expense = expenseTotals.find((t) => t.currency === currency)?.amount ?? 0
+          const net = income + expense
+          return [
+            currency,
+            `+${bare(income)}`,
+            `−${bare(expense)}`,
+            `${net >= 0 ? '+' : '−'}${bare(net)}`,
+          ]
+        }),
+        ['left', 'right', 'right', 'right'],
+      )}`
+    : ''
+  const category = byCategory.length
+    ? `\n${markdownTable(
+        [ctx.i18n.t('tables.category'), ctx.i18n.t('tables.amount')],
+        [...byCategory]
+          .sort((a, b) => b.amount - a.amount)
+          .map((c) => [escapeRichMarkdown(c.name), `${bare(c.amount)} ${c.currency}`]),
+        ['left', 'right'],
+      )}`
+    : ''
+  return layout(
+    ctx,
+    ctx.i18n.t('reports.title', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
+    [summary, category],
+    ctx.i18n.t('reports.empty'),
   )
-
-  if (byCategory.length) {
-    const rows = [...byCategory]
-      .sort((a, b) => b.amount - a.amount)
-      .map((c) => [escapeRichMarkdown(c.name), `${bare(c.amount)} ${c.currency}`])
-    // leading \n = blank line before the table (GFM tables can't interrupt a paragraph)
-    lines.push(
-      `\n${markdownTable([ctx.i18n.t('tables.category'), ctx.i18n.t('tables.amount')], rows, [
-        'left',
-        'right',
-      ])}`,
-    )
-  }
-  return lines.join('\n')
 }
 
 async function netWorthMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
@@ -84,35 +82,28 @@ async function netWorthMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<stri
     ctx.firefly.getNetWorth(start, end),
     ctx.firefly.listAccounts(AccountTypeFilter.Asset, end),
   ])
-  const lines = [
+  const totals = netWorth.length
+    ? `\n${markdownTable(
+        [ctx.i18n.t('tables.currency'), ctx.i18n.t('tables.net')],
+        netWorth.map((n) => [n.currency, `${n.amount >= 0 ? '+' : '−'}${bare(n.amount)}`]),
+        ['left', 'right'],
+      )}`
+    : ''
+  const balances = accounts.length
+    ? `\n${markdownTable(
+        [ctx.i18n.t('tables.name'), ctx.i18n.t('tables.balance')],
+        accounts.map((a) => [
+          escapeRichMarkdown(a.attributes.name ?? ''),
+          `${Number(a.attributes.current_balance ?? 0).toFixed(2)} ${a.attributes.currency_code ?? ''}`,
+        ]),
+        ['left', 'right'],
+      )}`
+    : ''
+  return layout(
+    ctx,
     ctx.i18n.t('reports.netWorthTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
-  ]
-  if (!netWorth.length && !accounts.length) {
-    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
-    return lines.join('\n')
-  }
-  if (netWorth.length) {
-    const rows = netWorth.map((n) => [n.currency, `${n.amount >= 0 ? '+' : '−'}${bare(n.amount)}`])
-    // leading \n = blank line after the title (GFM tables can't interrupt a paragraph)
-    lines.push(
-      `\n${markdownTable([ctx.i18n.t('tables.currency'), ctx.i18n.t('tables.net')], rows, [
-        'left',
-        'right',
-      ])}`,
-    )
-  }
-  const accountRows = accounts.map((a) => [
-    escapeRichMarkdown(a.attributes.name ?? ''),
-    `${Number(a.attributes.current_balance ?? 0).toFixed(2)} ${a.attributes.currency_code ?? ''}`,
-  ])
-  if (accountRows.length)
-    lines.push(
-      `\n${markdownTable([ctx.i18n.t('tables.name'), ctx.i18n.t('tables.balance')], accountRows, [
-        'left',
-        'right',
-      ])}`,
-    )
-  return lines.join('\n')
+    [totals, balances],
+  )
 }
 
 async function budgetsMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
@@ -122,98 +113,82 @@ async function budgetsMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<strin
     ctx.firefly.listBudgetsWithLimits(start, end),
     ctx.firefly.insightExpenseNoBudget(start, end),
   ])
-  const lines = [
+  const table = rows.length
+    ? `\n${markdownTable(
+        [
+          ctx.i18n.t('tables.budget'),
+          ctx.i18n.t('tables.currency'),
+          ctx.i18n.t('tables.limit'),
+          ctx.i18n.t('tables.spent'),
+          ctx.i18n.t('tables.left'),
+        ],
+        [...rows]
+          .sort((a, b) => b.spent - a.spent)
+          .map((r) => {
+            const left = r.limit === null ? null : r.limit - r.spent
+            return [
+              escapeRichMarkdown(r.name),
+              r.currency,
+              r.limit === null ? '—' : r.limit.toFixed(2),
+              bare(r.spent),
+              left === null ? '—' : `${left >= 0 ? '+' : '−'}${bare(left)}`,
+            ]
+          }),
+        ['left', 'left', 'right', 'right', 'right'],
+      )}`
+    : ''
+  const footers = unbudgeted
+    .filter((u) => u.amount !== 0)
+    .map((u) => `\n${ctx.i18n.t('reports.unbudgeted')}: ${bare(u.amount)} ${u.currency}`)
+  return layout(
+    ctx,
     ctx.i18n.t('reports.budgetsTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
-  ]
-  if (!rows.length) {
-    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
-    return lines.join('\n')
-  }
-  const table = [...rows]
-    .sort((a, b) => b.spent - a.spent)
-    .map((r) => {
-      const left = r.limit === null ? null : r.limit - r.spent
-      return [
-        escapeRichMarkdown(r.name),
-        r.currency,
-        r.limit === null ? '—' : r.limit.toFixed(2),
-        bare(r.spent),
-        left === null ? '—' : `${left >= 0 ? '+' : '−'}${bare(left)}`,
-      ]
-    })
-  lines.push(
-    `\n${markdownTable(
-      [
-        ctx.i18n.t('tables.budget'),
-        ctx.i18n.t('tables.currency'),
-        ctx.i18n.t('tables.limit'),
-        ctx.i18n.t('tables.spent'),
-        ctx.i18n.t('tables.left'),
-      ],
-      table,
-      ['left', 'left', 'right', 'right', 'right'],
-    )}`,
+    [table, ...footers],
   )
-  for (const u of unbudgeted)
-    if (u.amount !== 0)
-      lines.push('', `${ctx.i18n.t('reports.unbudgeted')}: ${bare(u.amount)} ${u.currency}`)
-  return lines.join('\n')
 }
 
 async function subsMarkdown(ctx: Context): Promise<string> {
   const subs = await ctx.firefly.listSubscriptions()
-  const lines = [ctx.i18n.t('reports.subsTitle')]
-  if (!subs.length) {
-    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
-    return lines.join('\n')
-  }
-  const rows = subs.map((s) => [
-    escapeRichMarkdown(s.name),
-    `${bare(s.amount)} ${s.currency}`,
-    s.nextExpected ?? '—',
-    s.repeatFreq,
-  ])
-  lines.push(
-    `\n${markdownTable(
-      [
-        ctx.i18n.t('tables.name'),
-        ctx.i18n.t('tables.amount'),
-        ctx.i18n.t('tables.next'),
-        ctx.i18n.t('tables.frequency'),
-      ],
-      rows,
-      ['left', 'right', 'left', 'left'],
-    )}`,
-  )
-  return lines.join('\n')
+  const table = subs.length
+    ? `\n${markdownTable(
+        [
+          ctx.i18n.t('tables.name'),
+          ctx.i18n.t('tables.amount'),
+          ctx.i18n.t('tables.next'),
+          ctx.i18n.t('tables.frequency'),
+        ],
+        subs.map((s) => [
+          escapeRichMarkdown(s.name),
+          `${bare(s.amount)} ${s.currency}`,
+          s.nextExpected ?? '—',
+          s.repeatFreq,
+        ]),
+        ['left', 'right', 'left', 'left'],
+      )}`
+    : ''
+  return layout(ctx, ctx.i18n.t('reports.subsTitle'), [table])
 }
 
 async function piggyMarkdown(ctx: Context): Promise<string> {
   const piggies = await ctx.firefly.listPiggyBanks()
-  const lines = [ctx.i18n.t('reports.piggyTitle')]
-  if (!piggies.length) {
-    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
-    return lines.join('\n')
-  }
-  const rows = piggies.map((p) => [
-    escapeRichMarkdown(p.name),
-    `${p.saved.toFixed(2)} ${p.currency}`,
-    `${p.target.toFixed(2)} ${p.currency}`,
-    p.target > 0 ? `${Math.round((p.saved / p.target) * 100)}%` : '—',
-  ])
-  lines.push(
-    `\n${markdownTable(
-      [
-        ctx.i18n.t('tables.name'),
-        ctx.i18n.t('tables.saved'),
-        ctx.i18n.t('tables.target'),
-        ctx.i18n.t('tables.share'),
-      ],
-      rows,
-      ['left', 'right', 'right', 'right'],
-    )}`,
-  )
-  return lines.join('\n')
+  const table = piggies.length
+    ? `\n${markdownTable(
+        [
+          ctx.i18n.t('tables.name'),
+          ctx.i18n.t('tables.saved'),
+          ctx.i18n.t('tables.target'),
+          ctx.i18n.t('tables.share'),
+        ],
+        piggies.map((p) => [
+          escapeRichMarkdown(p.name),
+          `${p.saved.toFixed(2)} ${p.currency}`,
+          `${p.target.toFixed(2)} ${p.currency}`,
+          p.target > 0 ? `${Math.round((p.saved / p.target) * 100)}%` : '—',
+        ]),
+        ['left', 'right', 'right', 'right'],
+      )}`
+    : ''
+  return layout(ctx, ctx.i18n.t('reports.piggyTitle'), [table])
 }
 
 async function auditMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
@@ -224,9 +199,6 @@ async function auditMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string>
     ctx.firefly.insightExpenseNoBudget(start, end),
     ctx.firefly.insightExpenseTotal(start, end),
   ])
-  const lines = [
-    ctx.i18n.t('reports.auditTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
-  ]
   const leaks = [
     { label: ctx.i18n.t('reports.leak.budget'), list: noBudget },
     { label: ctx.i18n.t('reports.leak.category'), list: noCategory },
@@ -243,21 +215,20 @@ async function auditMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string>
         }
       }),
   )
-  if (!leaks.length) {
-    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
-    return lines.join('\n')
-  }
-  const rows = leaks
-    .sort((a, b) => b.amount - a.amount)
-    .map((l) => [l.label, `${l.amount.toFixed(2)} ${l.currency}`, l.share])
-  lines.push(
-    `\n${markdownTable(
-      [ctx.i18n.t('tables.untracked'), ctx.i18n.t('tables.amount'), ctx.i18n.t('tables.share')],
-      rows,
-      ['left', 'right', 'right'],
-    )}`,
+  const table = leaks.length
+    ? `\n${markdownTable(
+        [ctx.i18n.t('tables.untracked'), ctx.i18n.t('tables.amount'), ctx.i18n.t('tables.share')],
+        leaks
+          .sort((a, b) => b.amount - a.amount)
+          .map((l) => [l.label, `${l.amount.toFixed(2)} ${l.currency}`, l.share]),
+        ['left', 'right', 'right'],
+      )}`
+    : ''
+  return layout(
+    ctx,
+    ctx.i18n.t('reports.auditTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
+    [table],
   )
-  return lines.join('\n')
 }
 
 async function trendMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
@@ -275,14 +246,7 @@ async function trendMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string>
   const currencies = [
     ...new Set([...allExpense.flat(), ...allIncome.flat()].map((t) => t.currency)),
   ]
-  const lines = [
-    ctx.i18n.t('reports.trendTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
-  ]
-  if (!currencies.length) {
-    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
-    return lines.join('\n')
-  }
-  for (const currency of currencies) {
+  const sections = currencies.map((currency) => {
     const rows = months.map((m, i) => {
       const income = allIncome[i]!.find((t) => t.currency === currency)?.amount ?? 0
       const expense = allExpense[i]!.find((t) => t.currency === currency)?.amount ?? 0
@@ -294,20 +258,22 @@ async function trendMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string>
         `${net >= 0 ? '+' : '−'}${bare(net)}`,
       ]
     })
-    lines.push(
-      `\n**${escapeRichMarkdown(currency)}**\n\n${markdownTable(
-        [
-          ctx.i18n.t('tables.month'),
-          ctx.i18n.t('tables.income'),
-          ctx.i18n.t('tables.expense'),
-          ctx.i18n.t('tables.net'),
-        ],
-        rows,
-        ['left', 'right', 'right', 'right'],
-      )}`,
-    )
-  }
-  return lines.join('\n')
+    return `\n**${escapeRichMarkdown(currency)}**\n\n${markdownTable(
+      [
+        ctx.i18n.t('tables.month'),
+        ctx.i18n.t('tables.income'),
+        ctx.i18n.t('tables.expense'),
+        ctx.i18n.t('tables.net'),
+      ],
+      rows,
+      ['left', 'right', 'right', 'right'],
+    )}`
+  })
+  return layout(
+    ctx,
+    ctx.i18n.t('reports.trendTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
+    sections,
+  )
 }
 
 export async function renderReport(

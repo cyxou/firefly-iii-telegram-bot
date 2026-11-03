@@ -1,26 +1,25 @@
 import type { Context } from '#root/bot/context.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
 import dayjs from 'dayjs'
-import { monthLabel, renderReport } from './report.views.js'
+import { monthLabel } from '#root/bot/helpers/date.js'
+import { renderReport } from './report.views.js'
 
 export type ReportType = 'monthly' | 'trend' | 'audit' | 'networth' | 'budgets' | 'subs' | 'piggy'
 
-const PERIOD_TYPES: { type: ReportType; label: string }[] = [
-  { type: 'monthly', label: 'labels.VIEW_MONTHLY' },
-  { type: 'trend', label: 'labels.VIEW_TREND' },
-  { type: 'audit', label: 'labels.VIEW_AUDIT' },
-]
-const STATE_TYPES: { type: ReportType; label: string }[] = [
-  { type: 'networth', label: 'labels.VIEW_NET_WORTH' },
-  { type: 'budgets', label: 'labels.VIEW_BUDGETS' },
+// Row 1 (first three): month-anchored analytics; row 2 (last four): lists.
+// `nav` = month-anchored view that gets the ‹ › nav row; subs/piggy are undated.
+const TYPES: { type: ReportType; label: string; nav?: boolean }[] = [
+  { type: 'monthly', label: 'labels.VIEW_MONTHLY', nav: true },
+  { type: 'trend', label: 'labels.VIEW_TREND', nav: true },
+  { type: 'audit', label: 'labels.VIEW_AUDIT', nav: true },
+  { type: 'networth', label: 'labels.VIEW_NET_WORTH', nav: true },
+  { type: 'budgets', label: 'labels.VIEW_BUDGETS', nav: true },
   { type: 'subs', label: 'labels.VIEW_SUBSCRIPTIONS' },
   { type: 'piggy', label: 'labels.VIEW_PIGGY' },
 ]
-/** Month-anchored views get the ‹ › nav row; subs/piggy are current-state. */
-const NAV_TYPES = new Set<ReportType>(['monthly', 'trend', 'audit', 'networth', 'budgets'])
-const ALL_TYPES = new Set([...PERIOD_TYPES, ...STATE_TYPES].map((t) => t.type))
+const ALL_TYPES = new Set(TYPES.map((t) => t.type))
 
-export function parseReportState(match: unknown): { type: ReportType; anchor: dayjs.Dayjs } {
+function parseReportState(match: unknown): { type: ReportType; anchor: dayjs.Dayjs } {
   const raw = typeof match === 'string' ? match : ''
   // '@' not '/': grammY menu callback data is `menuId/row/col/payload/` — the
   // payload segment must not contain the structural '/' separator.
@@ -38,19 +37,15 @@ export const reportsMenu = new Menu<Context>('reports', { onMenuOutdated: false 
   (ctx) => {
     const { type, anchor } = parseReportState(ctx.match)
     const range = new MenuRange<Context>()
-    range.row()
-    for (const t of PERIOD_TYPES)
-      range.text(
-        { text: () => ctx.i18n.t(t.label), payload: `${t.type}@${anchor.format('YYYY-MM-DD')}` },
-        showReport,
-      )
-    range.row()
-    for (const t of STATE_TYPES)
-      range.text(
-        { text: () => ctx.i18n.t(t.label), payload: `${t.type}@${anchor.format('YYYY-MM-DD')}` },
-        showReport,
-      )
-    if (NAV_TYPES.has(type)) {
+    for (const row of [TYPES.slice(0, 3), TYPES.slice(3)]) {
+      range.row()
+      for (const t of row)
+        range.text(
+          { text: () => ctx.i18n.t(t.label), payload: `${t.type}@${anchor.format('YYYY-MM-DD')}` },
+          showReport,
+        )
+    }
+    if (TYPES.find((t) => t.type === type)?.nav) {
       const prev = anchor.subtract(1, 'month')
       const next = anchor.add(1, 'month')
       range

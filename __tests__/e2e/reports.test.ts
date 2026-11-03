@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
+import { monthLabel } from '#root/bot/helpers/date.js'
 import { createBot } from '#root/bot/index.js'
 import { redis } from '#root/lib/redis.js'
 import { createSessionStorage } from '#root/lib/session.js'
@@ -33,10 +34,6 @@ const CONFIGURED = defaultSettings({
   fireflyApiUrl: 'https://ff.example.com/api',
   fireflyAccessToken: 'x'.repeat(500),
 })
-
-function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
-}
 
 async function makeBot() {
   const config = createTestConfig()

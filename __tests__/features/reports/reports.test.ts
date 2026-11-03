@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
+import { monthLabel } from '#root/bot/helpers/date.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 import {
   createTestBot,
@@ -42,10 +43,6 @@ async function setup(fixtures: Parameters<typeof createTestFireflyService>[0] = 
   }
   const reports = () => bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.REPORTS')))
   return { bot, api, click, reports }
-}
-
-function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
 describe('reports feature', () => {

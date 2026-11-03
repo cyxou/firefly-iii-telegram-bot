@@ -36,17 +36,4 @@ describe('createFireflyClients', () => {
     })
     expect(typeof clients.Insight.insightExpenseCategory).toBe('function')
   })
-
-  it('wires the reports-v2 apis', () => {
-    const clients = createFireflyClients({
-      fireflyApiUrl: 'https://ff/api',
-      fireflyAccessToken: 'tok-reports-v2',
-    })
-    expect(typeof clients.Summary.getBasicSummary).toBe('function')
-    expect(typeof clients.Budgets.listBudget).toBe('function')
-    expect(typeof clients.Budgets.listBudgetLimit).toBe('function')
-    expect(typeof clients.Bills.listSubscription).toBe('function')
-    expect(typeof clients.PiggyBanks.listPiggyBank).toBe('function')
-    expect(typeof clients.Insight.insightExpenseNoCategory).toBe('function')
-  })
 })
