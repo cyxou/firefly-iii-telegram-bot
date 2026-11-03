@@ -90,6 +90,7 @@ tables:
   income: Income
   expense: Expense
   net: Net
+  sum: SUM
 reports:
   title: '📊 ${monthName}'
   empty: Nothing this month.
@@ -158,26 +159,18 @@ accounts:
       Balance of your asset accounts:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
     expense: >
       Balance of your expense accounts:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
     revenue: >
       Balance of your revenue accounts:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
     liability: >
       Balance of your liabilities:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
 
 transactions:
   list:
@@ -185,18 +178,10 @@ transactions:
       Your withdrawals for **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}
     deposit: >
       Your deposits for **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}
     transfer: >
       Your transactions for **${day}**:
 
@@ -311,8 +296,6 @@ categories:
     *${categoryName}* withdrawals for the month of *${monthName}*:
 
     ${transactions}
-
-    SUM: ${sums ? sums : '0'}
 
 datePicker:
   selectDate: 'Select a date:'

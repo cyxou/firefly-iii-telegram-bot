@@ -168,18 +168,18 @@ export async function showCategoryDetails(ctx: Context) {
     ctx.firefly.listTransactionsByCategory(id, start, end),
     ctx.firefly.insightExpenseForCategory(start, end, Number(id)),
   ])
-  // one line: rich markdown collapses \n inside a paragraph
-  const sums = insights.map((s) => `${Math.abs(s.difference)} ${s.currency}`).join(', ')
+  // toFixed(2) matches the Amount column it sums; multi-currency shares the
+  // cell (one row): joined with ', '
+  const sums = insights.map((s) => `${Math.abs(s.difference).toFixed(2)} ${s.currency}`).join(', ')
   const markdown = ctx.i18n.t('categories.transactionsList', {
     categoryName: escapeRichMarkdown(category.attributes.name),
     monthName: escapeRichMarkdown(monthLabel(dayjs(date))),
-    transactions: transactionsMarkdown(ctx, transactions),
-    sums,
+    transactions: transactionsMarkdown(ctx, transactions, sums),
   })
   await ctx.editMessageText({ markdown }, { reply_markup: categoryDetailsMenu })
 }
 
-function transactionsMarkdown(ctx: Context, transactions: TransactionRead[]): string {
+function transactionsMarkdown(ctx: Context, transactions: TransactionRead[], sums: string): string {
   if (!transactions.length) return ctx.i18n.t('categories.noTransactions')
   const rows = [...transactions].reverse().flatMap((item) => {
     const tr = item.attributes.transactions?.[0]
@@ -192,6 +192,9 @@ function transactionsMarkdown(ctx: Context, transactions: TransactionRead[]): st
       ],
     ]
   })
+  // Excel-style total: SUM rides the table's last row (empty Date cell) —
+  // skipped when insights came back empty
+  if (sums) rows.push(['', ctx.i18n.t('tables.sum'), sums])
   // leading/trailing \n = blank line around the table (GFM tables can't
   // interrupt a paragraph — see accounts.menu.ts, bug 8wh)
   return `\n${markdownTable(

@@ -104,28 +104,7 @@ function listMarkdown(
   date: string,
   transactions: TransactionRead[],
 ): string {
-  const rows = [...transactions].reverse().flatMap((item) => {
-    const split = item.attributes.transactions?.[0]
-    return split
-      ? [
-          [
-            dayjs(split.date).format('LT'),
-            split.description ?? '',
-            `${Number.parseFloat(split.amount).toFixed(2)} ${split.currency_symbol ?? ''}`,
-          ],
-        ]
-      : []
-  })
-  // GFM tables cannot interrupt a paragraph — the blank line comes from this
-  // \n...\n wrap, not the folded-YAML template
-  const table = rows.length
-    ? `\n${markdownTable(
-        [ctx.i18n.t('tables.time'), ctx.i18n.t('tables.description'), ctx.i18n.t('tables.amount')],
-        rows,
-        ['left', 'left', 'right'],
-      )}\n`
-    : ctx.i18n.t('transactions.list.noTransactions')
-  // v1: per-currency plain running sum, |x| on display; transfer view shows none
+  // v1: per-currency running sum, |x| on display; transfer view shows none
   const sums = Object.entries(
     transactions.reduce(
       (acc, item) => {
@@ -138,14 +117,38 @@ function listMarkdown(
       {} as Record<string, number>,
     ),
   )
-    .map(([currency, sum]) => `${Math.abs(sum)} ${currency}`)
-    // one line: rich markdown collapses \n inside a paragraph
+    // toFixed(2) to match the Amount column it sums; multi-currency shares the
+    // cell (one row): joined with ', '
+    .map(([currency, sum]) => `${Math.abs(sum).toFixed(2)} ${currency}`)
     .join(', ')
+  const rows = [...transactions].reverse().flatMap((item) => {
+    const split = item.attributes.transactions?.[0]
+    return split
+      ? [
+          [
+            dayjs(split.date).format('LT'),
+            split.description ?? '',
+            `${Number.parseFloat(split.amount).toFixed(2)} ${split.currency_symbol ?? ''}`,
+          ],
+        ]
+      : []
+  })
+  // Excel-style total: SUM rides the table's last row (empty Time cell)
+  if (rows.length && type !== TransactionTypeFilter.Transfer)
+    rows.push(['', ctx.i18n.t('tables.sum'), sums])
+  // GFM tables cannot interrupt a paragraph — the blank line comes from this
+  // \n...\n wrap, not the folded-YAML template
+  const table = rows.length
+    ? `\n${markdownTable(
+        [ctx.i18n.t('tables.time'), ctx.i18n.t('tables.description'), ctx.i18n.t('tables.amount')],
+        rows,
+        ['left', 'left', 'right'],
+      )}\n`
+    : ctx.i18n.t('transactions.list.noTransactions')
   // TransactionTypeFilter values ('withdrawal'|'deposit'|'transfer') double as
   // the locale-key suffix — same strings, no mapping table
   return ctx.i18n.t(`transactions.list.${String(type)}`, {
     day: dayjs(date).format('LL'),
     transactions: table,
-    sums,
   })
 }
