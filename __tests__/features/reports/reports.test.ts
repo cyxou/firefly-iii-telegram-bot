@@ -163,3 +163,49 @@ describe('reports menu v2', () => {
     expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
   })
 })
+
+describe('net worth view', () => {
+  it('shows per-currency totals and asset account balances as of month end', async () => {
+    const accounts = [
+      {
+        id: '1',
+        type: 'account',
+        attributes: {
+          name: 'Сбер кубышка',
+          type: 'asset',
+          active: true,
+          current_balance: '180424.93',
+          currency_code: 'RUB',
+        },
+      },
+    ] as unknown as NonNullable<Parameters<typeof createTestFireflyService>[0]>['accounts']
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      netWorth: [
+        { currency: 'RUB', amount: 880424.93 },
+        { currency: 'BYN', amount: -70.87 },
+      ],
+      accounts,
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_NET_WORTH'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(i18n.t('en', 'reports.netWorthTitle', { monthName: monthLabel(dayjs()) }))
+    expect(md).toContain('| RUB | +880424.93 |')
+    expect(md).toContain('| BYN | −70.87 |')
+    expect(md).toContain('Сбер кубышка')
+    expect(md).toContain('180424.93 RUB')
+  })
+
+  it('empty instance renders the generic empty note', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      netWorth: [],
+      accounts: [],
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_NET_WORTH'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(i18n.t('en', 'reports.emptyGeneric'))
+  })
+})

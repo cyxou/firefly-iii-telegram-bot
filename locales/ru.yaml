@@ -100,6 +100,8 @@ tables:
 reports:
   title: '📊 ${monthName}'
   empty: В этом месяце ничего нет.
+  netWorthTitle: '💰 Состояние — ${monthName}'
+  emptyGeneric: Пока ничего нет.
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
