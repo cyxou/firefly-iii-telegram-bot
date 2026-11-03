@@ -306,3 +306,37 @@ describe('piggy banks view', () => {
     )
   })
 })
+
+describe('audit view', () => {
+  it('ranks untracked leaks with share of total spend', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      expenseNoCategory: [{ currency: 'EUR', amount: -52 }],
+      expenseNoBudget: [{ currency: 'EUR', amount: -82 }],
+      // MONTH_FIXTURES expense total: EUR -2871.35 → 82/2871.35 ≈ 3%
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_AUDIT'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(i18n.t('en', 'reports.auditTitle', { monthName: monthLabel(dayjs()) }))
+    expect(md).toContain(`| ${i18n.t('en', 'reports.leak.budget')} | 82.00 EUR | 3% |`)
+    expect(md).toContain(`| ${i18n.t('en', 'reports.leak.category')} | 52.00 EUR | 2% |`)
+    // bigger leak first
+    expect(md.indexOf(i18n.t('en', 'reports.leak.budget'))).toBeLessThan(
+      md.indexOf(i18n.t('en', 'reports.leak.category')),
+    )
+  })
+
+  it('fully tracked month renders the generic empty note', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      expenseNoCategory: [],
+      expenseNoBudget: [],
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_AUDIT'))
+    expect(getLastRichMarkdown(api.getOutgoingRequests())!).toContain(
+      i18n.t('en', 'reports.emptyGeneric'),
+    )
+  })
+})

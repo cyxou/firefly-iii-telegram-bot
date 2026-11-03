@@ -214,6 +214,50 @@ async function piggyMarkdown(ctx: Context): Promise<string> {
   return lines.join('\n')
 }
 
+async function auditMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
+  const start = anchor.startOf('month').format('YYYY-MM-DD')
+  const end = anchor.endOf('month').format('YYYY-MM-DD')
+  const [noCategory, noBudget, totals] = await Promise.all([
+    ctx.firefly.insightExpenseNoCategory(start, end),
+    ctx.firefly.insightExpenseNoBudget(start, end),
+    ctx.firefly.insightExpenseTotal(start, end),
+  ])
+  const lines = [
+    ctx.i18n.t('reports.auditTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
+  ]
+  const leaks = [
+    { label: ctx.i18n.t('reports.leak.budget'), list: noBudget },
+    { label: ctx.i18n.t('reports.leak.category'), list: noCategory },
+  ].flatMap((leak) =>
+    leak.list
+      .filter((l) => l.amount !== 0)
+      .map((l) => {
+        const total = Math.abs(totals.find((t) => t.currency === l.currency)?.amount ?? 0)
+        return {
+          label: leak.label,
+          currency: l.currency,
+          amount: Math.abs(l.amount),
+          share: total > 0 ? `${Math.round((Math.abs(l.amount) / total) * 100)}%` : '—',
+        }
+      }),
+  )
+  if (!leaks.length) {
+    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
+    return lines.join('\n')
+  }
+  const rows = leaks
+    .sort((a, b) => b.amount - a.amount)
+    .map((l) => [l.label, `${l.amount.toFixed(2)} ${l.currency}`, l.share])
+  lines.push(
+    `\n${markdownTable(
+      [ctx.i18n.t('tables.untracked'), ctx.i18n.t('tables.amount'), ctx.i18n.t('tables.share')],
+      rows,
+      ['left', 'right', 'right'],
+    )}`,
+  )
+  return lines.join('\n')
+}
+
 export async function renderReport(
   ctx: Context,
   type: ReportType,
@@ -228,7 +272,9 @@ export async function renderReport(
       return subsMarkdown(ctx)
     case 'piggy':
       return piggyMarkdown(ctx)
-    // per-view cases land in Tasks 7–8
+    case 'audit':
+      return auditMarkdown(ctx, anchor)
+    // per-view case lands in Task 8
     default:
       return reportMarkdown(ctx, anchor)
   }

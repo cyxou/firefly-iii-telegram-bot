@@ -106,6 +106,8 @@ tables:
   saved: Ahorrado
   target: Meta
   share: '%'
+  untracked: Sin clasificar
+  month: Mes
 reports:
   title: '📊 ${monthName}'
   empty: Nada este mes.
@@ -115,6 +117,11 @@ reports:
   unbudgeted: Sin presupuesto
   subsTitle: 🔁 Suscripciones
   piggyTitle: 🐷 Alcancías
+  auditTitle: '🧾 Gastos sin clasificar — ${monthName}'
+  leak:
+    category: Sin categoría
+    budget: Sin presupuesto
+  trendTitle: '📉 Últimos 6 meses — ${monthName}'
 mdlwr:
   noFireflyURLFound: Para usar el bot, necesitas indicar una *🔗 URL de Firefly* válida en la *🔧 Configuración* del Bot.
   noFireflyAccessTokenFound: Para usar el bot, necesitas indicar un *🔑 Token de Acceso* válido en la *🔧 Configuración* del Bot.

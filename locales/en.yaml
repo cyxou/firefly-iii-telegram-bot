@@ -106,6 +106,8 @@ tables:
   saved: Saved
   target: Target
   share: '%'
+  untracked: Untracked
+  month: Month
 reports:
   title: '📊 ${monthName}'
   empty: Nothing this month.
@@ -115,6 +117,11 @@ reports:
   unbudgeted: Without budget
   subsTitle: 🔁 Subscriptions
   piggyTitle: 🐷 Piggy banks
+  auditTitle: '🧾 Untracked spending — ${monthName}'
+  leak:
+    category: Without category
+    budget: Without budget
+  trendTitle: '📉 Last 6 months — ${monthName}'
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.

@@ -106,6 +106,8 @@ tables:
   saved: Накоплено
   target: Цель
   share: '%'
+  untracked: Неучтено
+  month: Месяц
 reports:
   title: '📊 ${monthName}'
   empty: В этом месяце ничего нет.
@@ -115,6 +117,11 @@ reports:
   unbudgeted: Без бюджета
   subsTitle: 🔁 Подписки
   piggyTitle: 🐷 Копилки
+  auditTitle: '🧾 Неучтённые расходы — ${monthName}'
+  leak:
+    category: Без категории
+    budget: Без бюджета
+  trendTitle: '📉 6 месяцев — ${monthName}'
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
