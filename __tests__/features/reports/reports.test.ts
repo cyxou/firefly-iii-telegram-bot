@@ -209,3 +209,36 @@ describe('net worth view', () => {
     expect(md).toContain(i18n.t('en', 'reports.emptyGeneric'))
   })
 })
+
+describe('budgets view', () => {
+  it('joins budgets with limits, marks missing limits, footers unbudgeted spend', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      budgetRows: [
+        { name: 'Food', currency: 'EUR', limit: 500, spent: 612.4 },
+        { name: 'Fun', currency: 'EUR', limit: null, spent: 50 },
+      ],
+      expenseNoBudget: [{ currency: 'EUR', amount: -30 }],
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_BUDGETS'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(
+      i18n.t('en', 'reports.budgetsTitle', { monthName: monthLabel(dayjs()) }),
+    )
+    // Food: over limit → negative left with U+2212
+    expect(md).toContain('| Food | EUR | 500.00 | 612.40 | −112.40 |')
+    // Fun: no limit → em-dashes, still shows spend
+    expect(md).toContain('| Fun | EUR | — | 50.00 | — |')
+    expect(md).toContain(`${i18n.t('en', 'reports.unbudgeted')}: 30.00 EUR`)
+  })
+
+  it('no budgets at all renders the generic empty note', async () => {
+    const { api, click, reports } = await setup({ ...MONTH_FIXTURES, budgetRows: [] })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_BUDGETS'))
+    expect(getLastRichMarkdown(api.getOutgoingRequests())!).toContain(
+      i18n.t('en', 'reports.emptyGeneric'),
+    )
+  })
+})

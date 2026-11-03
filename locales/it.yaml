@@ -92,11 +92,17 @@ tables:
   income: Entrate
   expense: Uscite
   net: Netto
+  budget: Budget
+  limit: Limite
+  spent: Speso
+  left: Rimanente
 reports:
   title: '📊 ${monthName}'
   empty: Niente questo mese.
   netWorthTitle: '💰 Patrimonio — ${monthName}'
   emptyGeneric: Ancora niente.
+  budgetsTitle: '🎯 Budget — ${monthName}'
+  unbudgeted: Senza budget
 mdlwr:
   noFireflyURLFound: Per utilizzare il bot, devi specificare *🔗 Firefly URL* nelle *🔧 Impostazioni* del bot.
   noFireflyAccessTokenFound: Per utilizzare il bot, devi specificare un *🔑 Token di accesso* valido nelle *🔧 Impostazioni* del bot.

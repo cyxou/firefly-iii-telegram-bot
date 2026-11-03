@@ -113,6 +113,51 @@ async function netWorthMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<stri
   return lines.join('\n')
 }
 
+async function budgetsMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
+  const start = anchor.startOf('month').format('YYYY-MM-DD')
+  const end = anchor.endOf('month').format('YYYY-MM-DD')
+  const [rows, unbudgeted] = await Promise.all([
+    ctx.firefly.listBudgetsWithLimits(start, end),
+    ctx.firefly.insightExpenseNoBudget(start, end),
+  ])
+  const lines = [
+    ctx.i18n.t('reports.budgetsTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
+  ]
+  if (!rows.length) {
+    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
+    return lines.join('\n')
+  }
+  const table = [...rows]
+    .sort((a, b) => b.spent - a.spent)
+    .map((r) => {
+      const left = r.limit === null ? null : r.limit - r.spent
+      return [
+        escapeRichMarkdown(r.name),
+        r.currency,
+        r.limit === null ? '—' : r.limit.toFixed(2),
+        bare(r.spent),
+        left === null ? '—' : `${left >= 0 ? '+' : '−'}${bare(left)}`,
+      ]
+    })
+  lines.push(
+    `\n${markdownTable(
+      [
+        ctx.i18n.t('tables.budget'),
+        ctx.i18n.t('tables.currency'),
+        ctx.i18n.t('tables.limit'),
+        ctx.i18n.t('tables.spent'),
+        ctx.i18n.t('tables.left'),
+      ],
+      table,
+      ['left', 'left', 'right', 'right', 'right'],
+    )}`,
+  )
+  for (const u of unbudgeted)
+    if (u.amount !== 0)
+      lines.push('', `${ctx.i18n.t('reports.unbudgeted')}: ${bare(u.amount)} ${u.currency}`)
+  return lines.join('\n')
+}
+
 export async function renderReport(
   ctx: Context,
   type: ReportType,
@@ -121,7 +166,9 @@ export async function renderReport(
   switch (type) {
     case 'networth':
       return netWorthMarkdown(ctx, anchor)
-    // per-view cases land in Tasks 4–8
+    case 'budgets':
+      return budgetsMarkdown(ctx, anchor)
+    // per-view cases land in Tasks 5–8
     default:
       return reportMarkdown(ctx, anchor)
   }
