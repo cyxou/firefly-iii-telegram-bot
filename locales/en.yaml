@@ -101,6 +101,8 @@ tables:
   limit: Limit
   spent: Spent
   left: Left
+  next: Next
+  frequency: Frequency
 reports:
   title: '📊 ${monthName}'
   empty: Nothing this month.
@@ -108,6 +110,7 @@ reports:
   emptyGeneric: Nothing here yet.
   budgetsTitle: '🎯 Budgets — ${monthName}'
   unbudgeted: Without budget
+  subsTitle: 🔁 Subscriptions
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.

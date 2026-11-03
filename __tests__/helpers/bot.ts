@@ -552,7 +552,10 @@ export function createTestFireflyService(
       return fixtures.budgetRows ?? []
     },
     async listSubscriptions() {
-      return fixtures.subscriptions ?? []
+      // service parity: listSubscriptions sorts by nextExpected asc, nulls last
+      return [...(fixtures.subscriptions ?? [])].sort((a, b) =>
+        (a.nextExpected ?? '9999-12-31').localeCompare(b.nextExpected ?? '9999-12-31'),
+      )
     },
     async listPiggyBanks() {
       return fixtures.piggyBanks ?? []

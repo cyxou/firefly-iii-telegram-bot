@@ -158,6 +158,34 @@ async function budgetsMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<strin
   return lines.join('\n')
 }
 
+async function subsMarkdown(ctx: Context): Promise<string> {
+  const subs = await ctx.firefly.listSubscriptions()
+  const lines = [ctx.i18n.t('reports.subsTitle')]
+  if (!subs.length) {
+    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
+    return lines.join('\n')
+  }
+  const rows = subs.map((s) => [
+    escapeRichMarkdown(s.name),
+    `${bare(s.amount)} ${s.currency}`,
+    s.nextExpected ?? '—',
+    s.repeatFreq,
+  ])
+  lines.push(
+    `\n${markdownTable(
+      [
+        ctx.i18n.t('tables.name'),
+        ctx.i18n.t('tables.amount'),
+        ctx.i18n.t('tables.next'),
+        ctx.i18n.t('tables.frequency'),
+      ],
+      rows,
+      ['left', 'right', 'left', 'left'],
+    )}`,
+  )
+  return lines.join('\n')
+}
+
 export async function renderReport(
   ctx: Context,
   type: ReportType,
@@ -168,7 +196,9 @@ export async function renderReport(
       return netWorthMarkdown(ctx, anchor)
     case 'budgets':
       return budgetsMarkdown(ctx, anchor)
-    // per-view cases land in Tasks 5–8
+    case 'subs':
+      return subsMarkdown(ctx)
+    // per-view cases land in Tasks 6–8
     default:
       return reportMarkdown(ctx, anchor)
   }

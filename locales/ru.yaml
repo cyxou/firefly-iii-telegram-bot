@@ -101,6 +101,8 @@ tables:
   limit: Лимит
   spent: Потрачено
   left: Остаток
+  next: Дата
+  frequency: Период
 reports:
   title: '📊 ${monthName}'
   empty: В этом месяце ничего нет.
@@ -108,6 +110,7 @@ reports:
   emptyGeneric: Пока ничего нет.
   budgetsTitle: '🎯 Бюджеты — ${monthName}'
   unbudgeted: Без бюджета
+  subsTitle: 🔁 Подписки
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота

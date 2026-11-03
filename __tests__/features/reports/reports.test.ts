@@ -242,3 +242,39 @@ describe('budgets view', () => {
     )
   })
 })
+
+describe('subscriptions view', () => {
+  it('lists active subscriptions sorted by next expected date, nulls last', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      subscriptions: [
+        { name: 'Rent', currency: 'EUR', amount: 550, nextExpected: null, repeatFreq: 'monthly' },
+        {
+          name: 'Netflix',
+          currency: 'EUR',
+          amount: 12.99,
+          nextExpected: '2026-11-15',
+          repeatFreq: 'monthly',
+        },
+        { name: 'Gym', currency: 'EUR', amount: 30, nextExpected: '2026-11-10', repeatFreq: 'weekly' },
+      ],
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_SUBSCRIPTIONS'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(i18n.t('en', 'reports.subsTitle'))
+    expect(md).toContain('| Gym | 30.00 EUR | 2026-11-10 | weekly |')
+    expect(md).toContain('| Netflix | 12.99 EUR | 2026-11-15 | monthly |')
+    expect(md).toContain('| Rent | 550.00 EUR | — | monthly |')
+    expect(md.indexOf('Gym')).toBeLessThan(md.indexOf('Rent'))
+  })
+
+  it('no subscriptions renders the generic empty note', async () => {
+    const { api, click, reports } = await setup({ ...MONTH_FIXTURES, subscriptions: [] })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_SUBSCRIPTIONS'))
+    expect(getLastRichMarkdown(api.getOutgoingRequests())!).toContain(
+      i18n.t('en', 'reports.emptyGeneric'),
+    )
+  })
+})
