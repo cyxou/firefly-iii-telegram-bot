@@ -36,9 +36,9 @@ bump without the full verification battery is not done.
 
 ## Never bump (breaks the bot)
 
-| Package | Ceiling | Why |
-|---|---|---|
-| `@grammyjs/i18n` | 0.5.1 | 1.x is Fluent-only; locales are v1 YAML keys |
+| Package                         | Ceiling                           | Why                                                     |
+| ------------------------------- | --------------------------------- | ------------------------------------------------------- |
+| `@grammyjs/i18n`                | 0.5.1                             | 1.x is Fluent-only; locales are v1 YAML keys            |
 | eslint / `@antfu/eslint-config` | not installed — don't reintroduce | typescript-eslint supports TS <6.1 only, repo runs TS 7 |
 
 ## Landmines (each caused a real failure on 2026-10-23)

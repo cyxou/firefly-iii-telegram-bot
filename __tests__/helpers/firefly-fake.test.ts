@@ -83,3 +83,15 @@ describe('createTestFireflyService insights (fake parity for Phase 5)', () => {
     ])
   })
 })
+
+describe('createTestFireflyService reports v2 (fake parity)', () => {
+  it('defaults the reports-v2 fixtures to empty arrays', async () => {
+    const firefly = createTestFireflyService({})
+    expect(await firefly.getNetWorth('s', 'e')).toEqual([])
+    expect(await firefly.listBudgetsWithLimits('s', 'e')).toEqual([])
+    expect(await firefly.listSubscriptions()).toEqual([])
+    expect(await firefly.listPiggyBanks()).toEqual([])
+    expect(await firefly.insightExpenseNoCategory('s', 'e')).toEqual([])
+    expect(await firefly.insightExpenseNoBudget('s', 'e')).toEqual([])
+  })
+})

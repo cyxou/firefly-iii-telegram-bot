@@ -7,11 +7,14 @@ import type { Context, SessionData } from '#root/bot/context.js'
 import type { Config } from '#root/config.js'
 import type {
   AccountRead,
+  BudgetRow,
   CategoryExpense,
   CategoryExpenseSummary,
   CategoryRead,
   CurrencyTotal,
   FireflyService,
+  PiggyBankSummary,
+  SubscriptionSummary,
   TransactionRead,
 } from '#root/lib/firefly/service.js'
 import type { SettingsStore, UserSettings } from '#root/lib/settings-store.js'
@@ -419,6 +422,12 @@ export function createTestFireflyService(
     incomeTotals?: CurrencyTotal[]
     expenseTotals?: CurrencyTotal[]
     expenseByCategory?: CategoryExpense[]
+    netWorth?: CurrencyTotal[]
+    budgetRows?: BudgetRow[]
+    subscriptions?: SubscriptionSummary[]
+    piggyBanks?: PiggyBankSummary[]
+    expenseNoCategory?: CurrencyTotal[]
+    expenseNoBudget?: CurrencyTotal[]
   } = {},
   overrides: Partial<FireflyService> = {},
 ): FireflyService {
@@ -535,6 +544,27 @@ export function createTestFireflyService(
     },
     async insightExpenseByCategory() {
       return fixtures.expenseByCategory ?? []
+    },
+    async getNetWorth() {
+      return fixtures.netWorth ?? []
+    },
+    async listBudgetsWithLimits() {
+      return fixtures.budgetRows ?? []
+    },
+    async listSubscriptions() {
+      // service parity: listSubscriptions sorts by nextExpected asc, nulls last
+      return [...(fixtures.subscriptions ?? [])].sort((a, b) =>
+        (a.nextExpected ?? '9999-12-31').localeCompare(b.nextExpected ?? '9999-12-31'),
+      )
+    },
+    async listPiggyBanks() {
+      return fixtures.piggyBanks ?? []
+    },
+    async insightExpenseNoCategory() {
+      return fixtures.expenseNoCategory ?? []
+    },
+    async insightExpenseNoBudget() {
+      return fixtures.expenseNoBudget ?? []
     },
     ...overrides,
   }

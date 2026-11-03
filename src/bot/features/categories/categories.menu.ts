@@ -2,16 +2,13 @@ import type { Context } from '#root/bot/context.js'
 import type { CategoryRead, TransactionRead } from '#root/lib/firefly/service.js'
 import { Menu, MenuRange } from '@grammyjs/menu'
 import dayjs from 'dayjs'
+import { monthLabel } from '#root/bot/helpers/date.js'
 import { twoColumnRange } from '#root/bot/helpers/menu.js'
 import { escapeRichMarkdown, markdownTable } from '#root/bot/helpers/rich.js'
 
 function parseDetailsMatch(match: string | undefined): { id: string; date: string } {
   const [id, dateInput] = String(match ?? '').split('|')
   return { id, date: dateInput || dayjs().format('YYYY-MM-DD') }
-}
-
-function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
 // ---- flow cancel (referenced by the Add button; the rename route lands in Task 8) ----

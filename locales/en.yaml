@@ -38,6 +38,13 @@ labels:
   SHOW_TRANSFERS: ↔️ Transfers
   SHOW_WITHDRAWALS: 📤 Withdrawals
   TRANSACTIONS: 🔀 Transactions
+  VIEW_MONTHLY: 📅 Monthly
+  VIEW_TREND: 📉 Trend
+  VIEW_AUDIT: 🧾 Audit
+  VIEW_NET_WORTH: 💰 Net worth
+  VIEW_BUDGETS: 🎯 Budgets
+  VIEW_SUBSCRIPTIONS: 🔁 Subscriptions
+  VIEW_PIGGY: 🐷 Piggy banks
   YES: ✅ Yes
   SWITCH_LANG: 🌐 Language
   SWITCH_TO_EN: 🇬🇧 English
@@ -90,10 +97,32 @@ tables:
   income: Income
   expense: Expense
   net: Net
+  budget: Budget
+  limit: Limit
+  spent: Spent
+  left: Left
+  next: Next
+  frequency: Frequency
+  saved: Saved
+  target: Target
+  share: '%'
+  untracked: Untracked
+  month: Month
   sum: SUM
 reports:
   title: '📊 ${monthName}'
   empty: Nothing this month.
+  netWorthTitle: '💰 Net worth — ${monthName}'
+  emptyGeneric: Nothing here yet.
+  budgetsTitle: '🎯 Budgets — ${monthName}'
+  unbudgeted: Without budget
+  subsTitle: 🔁 Subscriptions
+  piggyTitle: 🐷 Piggy banks
+  auditTitle: '🧾 Untracked spending — ${monthName}'
+  leak:
+    category: Without category
+    budget: Without budget
+  trendTitle: '📉 Last 6 months — ${monthName}'
 mdlwr:
   noFireflyURLFound: To work with the bot, you need to specify *🔗 Firefly URL* in bot *🔧 Settings*.
   noFireflyAccessTokenFound: To work with the bot, you need to specify a valid *🔑 Access Token* in bot *🔧 Settings*.

@@ -40,6 +40,31 @@ export interface CategoryExpense {
   amount: number
 }
 
+export interface BudgetRow {
+  name: string
+  currency: string
+  /** Monthly limit from /v1/budget-limits; null = no limit set. */
+  limit: number | null
+  /** Absolute spent in the period. */
+  spent: number
+}
+
+export interface SubscriptionSummary {
+  name: string
+  currency: string
+  /** Expected amount (amount_max of the range — Firefly fills both equally). */
+  amount: number
+  nextExpected: string | null // YYYY-MM-DD
+  repeatFreq: string
+}
+
+export interface PiggyBankSummary {
+  name: string
+  currency: string
+  saved: number
+  target: number
+}
+
 export interface FireflyService {
   getCurrentUser: () => Promise<{ email: string } | null>
   listAccounts: (type: AccountTypeFilter, date?: string) => Promise<AccountRead[]>
@@ -67,6 +92,12 @@ export interface FireflyService {
   insightExpenseTotal: (start: string, end: string) => Promise<CurrencyTotal[]>
   insightIncomeTotal: (start: string, end: string) => Promise<CurrencyTotal[]>
   insightExpenseByCategory: (start: string, end: string) => Promise<CategoryExpense[]>
+  getNetWorth: (start: string, end: string) => Promise<CurrencyTotal[]>
+  listBudgetsWithLimits: (start: string, end: string) => Promise<BudgetRow[]>
+  listSubscriptions: () => Promise<SubscriptionSummary[]>
+  listPiggyBanks: () => Promise<PiggyBankSummary[]>
+  insightExpenseNoCategory: (start: string, end: string) => Promise<CurrencyTotal[]>
+  insightExpenseNoBudget: (start: string, end: string) => Promise<CurrencyTotal[]>
 }
 
 export type FireflyServiceFactory = (settings: UserSettings) => FireflyService
@@ -183,6 +214,78 @@ export function createFireflyService(settings: UserSettings): FireflyService {
         currency: item.currency_code ?? '',
         amount: Math.abs(item.difference_float ?? 0),
       }))
+    },
+    async getNetWorth(start, end) {
+      // summary/basic keys: net-worth-in-<CUR>; monetary_value is serialized
+      // as a string by the API despite the number type — coerce.
+      const res = await clients().Summary.getBasicSummary(start, end)
+      return Object.values(res.data ?? {})
+        .filter((e) => e.key?.startsWith('net-worth-in-'))
+        .map((e) => ({ currency: e.currency_code ?? '', amount: Number(e.monetary_value ?? 0) }))
+    },
+    async listBudgetsWithLimits(start, end) {
+      const [budgetsRes, limitsRes] = await Promise.all([
+        clients().Budgets.listBudget(undefined, 500, 1, start, end),
+        clients().Budgets.listBudgetLimit(start, end),
+      ])
+      const budgets = budgetsRes.data.data ?? []
+      const rows = new Map<string, BudgetRow>()
+      for (const b of budgets)
+        for (const s of b.attributes.spent ?? [])
+          rows.set(`${b.id}/${s.currency_code}`, {
+            name: b.attributes.name,
+            currency: s.currency_code ?? '',
+            limit: null,
+            spent: Math.abs(Number(s.sum ?? 0)),
+          })
+      for (const l of limitsRes.data.data ?? []) {
+        const budget = budgets.find((b) => b.id === l.attributes.budget_id)
+        if (!budget) continue
+        const key = `${l.attributes.budget_id}/${l.attributes.currency_code}`
+        const limit = Number(l.attributes.amount ?? 0)
+        const existing = rows.get(key)
+        if (existing) existing.limit = limit
+        else
+          rows.set(key, {
+            name: budget.attributes.name,
+            currency: l.attributes.currency_code ?? '',
+            limit,
+            spent: 0,
+          })
+      }
+      return [...rows.values()]
+    },
+    async listSubscriptions() {
+      const res = await clients().Bills.listSubscription(undefined, 500)
+      return (res.data.data ?? [])
+        .filter((b) => b.attributes.active !== false)
+        .map((b) => ({
+          name: b.attributes.name ?? '',
+          currency: b.attributes.currency_code ?? '',
+          amount: Math.abs(Number(b.attributes.amount_max ?? b.attributes.amount_min ?? 0)),
+          nextExpected: b.attributes.next_expected_match?.slice(0, 10) ?? null,
+          repeatFreq: String(b.attributes.repeat_freq ?? ''),
+        }))
+        .sort((a, b) =>
+          (a.nextExpected ?? '9999-12-31').localeCompare(b.nextExpected ?? '9999-12-31'),
+        )
+    },
+    async listPiggyBanks() {
+      const res = await clients().PiggyBanks.listPiggyBank(undefined, 500)
+      return (res.data.data ?? []).map((p) => ({
+        name: p.attributes.name,
+        currency: p.attributes.currency_code ?? '',
+        saved: Number(p.attributes.current_amount ?? 0),
+        target: Number(p.attributes.target_amount ?? 0),
+      }))
+    },
+    async insightExpenseNoCategory(start, end) {
+      const res = await clients().Insight.insightExpenseNoCategory(start, end)
+      return toCurrencyTotals(res.data)
+    },
+    async insightExpenseNoBudget(start, end) {
+      const res = await clients().Insight.insightExpenseNoBudget(start, end)
+      return toCurrencyTotals(res.data)
     },
   }
 }

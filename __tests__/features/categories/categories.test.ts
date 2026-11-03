@@ -2,6 +2,7 @@ import type { TransactionRead } from '#root/lib/firefly/service.js'
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
+import { monthLabel } from '#root/bot/helpers/date.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 import {
   createTestBot,
@@ -69,10 +70,6 @@ async function setup() {
     await bot.handleUpdate(generateCallbackQueryUpdate(btn.data, { messageId: btn.messageId }))
   }
   return { bot, api, click }
-}
-
-function monthLabel(date: dayjs.Dayjs): string {
-  return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
 describe('categories feature', () => {

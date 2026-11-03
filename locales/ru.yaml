@@ -38,6 +38,13 @@ labels:
   SHOW_TRANSFERS: ↔️ Переводы
   SHOW_WITHDRAWALS: 📤 Расходы
   TRANSACTIONS: 🔀 Транзакции
+  VIEW_MONTHLY: 📅 Месяц
+  VIEW_TREND: 📉 Тренд
+  VIEW_AUDIT: 🧾 Аудит
+  VIEW_NET_WORTH: 💰 Состояние
+  VIEW_BUDGETS: 🎯 Бюджеты
+  VIEW_SUBSCRIPTIONS: 🔁 Подписки
+  VIEW_PIGGY: 🐷 Копилки
   YES: ✅ Да
   SWITCH_LANG: 🌐Язык
   SWITCH_TO_EN: 🇬🇧 Английский
@@ -90,10 +97,32 @@ tables:
   income: Доход
   expense: Расход
   net: Итог
+  budget: Бюджет
+  limit: Лимит
+  spent: Потрачено
+  left: Остаток
+  next: Дата
+  frequency: Период
+  saved: Накоплено
+  target: Цель
+  share: '%'
+  untracked: Неучтено
+  month: Месяц
   sum: ИТОГО
 reports:
   title: '📊 ${monthName}'
   empty: В этом месяце ничего нет.
+  netWorthTitle: '💰 Состояние — ${monthName}'
+  emptyGeneric: Пока ничего нет.
+  budgetsTitle: '🎯 Бюджеты — ${monthName}'
+  unbudgeted: Без бюджета
+  subsTitle: 🔁 Подписки
+  piggyTitle: 🐷 Копилки
+  auditTitle: '🧾 Неучтённые расходы — ${monthName}'
+  leak:
+    category: Без категории
+    budget: Без бюджета
+  trendTitle: '📉 6 месяцев — ${monthName}'
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота

@@ -38,6 +38,13 @@ labels:
   SHOW_TRANSFERS: ↔️ Trasferimenti
   SHOW_WITHDRAWALS: 📤 Prelievi
   TRANSACTIONS: 🔀 Transazioni
+  VIEW_MONTHLY: 📅 Mese
+  VIEW_TREND: 📉 Tendenza
+  VIEW_AUDIT: 🧾 Audit
+  VIEW_NET_WORTH: 💰 Patrimonio
+  VIEW_BUDGETS: 🎯 Budget
+  VIEW_SUBSCRIPTIONS: 🔁 Abbonamenti
+  VIEW_PIGGY: 🐷 Salvadanai
   YES: ✅ Si
   SWITCH_LANG: 🌐 Lingua
   SWITCH_TO_EN: 🇬🇧 Inglese
@@ -85,10 +92,32 @@ tables:
   income: Entrate
   expense: Uscite
   net: Netto
+  budget: Budget
+  limit: Limite
+  spent: Speso
+  left: Rimanente
+  next: Prossima
+  frequency: Frequenza
+  saved: Risparmiato
+  target: Obiettivo
+  share: '%'
+  untracked: Non tracciato
+  month: Mese
   sum: SOMMA
 reports:
   title: '📊 ${monthName}'
   empty: Niente questo mese.
+  netWorthTitle: '💰 Patrimonio — ${monthName}'
+  emptyGeneric: Ancora niente.
+  budgetsTitle: '🎯 Budget — ${monthName}'
+  unbudgeted: Senza budget
+  subsTitle: 🔁 Abbonamenti
+  piggyTitle: 🐷 Salvadanai
+  auditTitle: '🧾 Spese non classificate — ${monthName}'
+  leak:
+    category: Senza categoria
+    budget: Senza budget
+  trendTitle: '📉 Ultimi 6 mesi — ${monthName}'
 mdlwr:
   noFireflyURLFound: Per utilizzare il bot, devi specificare *🔗 Firefly URL* nelle *🔧 Impostazioni* del bot.
   noFireflyAccessTokenFound: Per utilizzare il bot, devi specificare un *🔑 Token di accesso* valido nelle *🔧 Impostazioni* del bot.

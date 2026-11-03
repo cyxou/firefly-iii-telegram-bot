@@ -32,13 +32,13 @@ Your understanding and cooperation are appreciated.
 
 ### What changed
 
-| Area | v2 | v3 |
-| --- | --- | --- |
-| 🚅 Runtime | Node.js | Bun |
-| 📦 Architectures | `amd64` · `arm/v7` · `arm64` | `amd64` + `arm64` only |
-| 🗄️ Session storage | JSON files on disk | **Redis** (required) |
-| 💾 Per-user settings | inside the session file | `/app/data` volume |
-| 📝 Debug env var | `DEBUG` | `LOG_LEVEL` |
+| Area                 | v2                           | v3                     |
+| -------------------- | ---------------------------- | ---------------------- |
+| 🚅 Runtime           | Node.js                      | Bun                    |
+| 📦 Architectures     | `amd64` · `arm/v7` · `arm64` | `amd64` + `arm64` only |
+| 🗄️ Session storage   | JSON files on disk           | **Redis** (required)   |
+| 💾 Per-user settings | inside the session file      | `/app/data` volume     |
+| 📝 Debug env var     | `DEBUG`                      | `LOG_LEVEL`            |
 
 ### The details
 
