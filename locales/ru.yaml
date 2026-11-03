@@ -108,6 +108,7 @@ tables:
   share: '%'
   untracked: Неучтено
   month: Месяц
+  sum: ИТОГО
 reports:
   title: '📊 ${monthName}'
   empty: В этом месяце ничего нет.
@@ -187,26 +188,18 @@ accounts:
       Баланс ваших основных счетов:
 
       ${accounts}
-
-      ИТОГО: ${sums ? sums : '0'}
     expense: >
       Баланс ваших счетов расходов:
 
       ${accounts}
-
-      ИТОГО: ${sums ? sums : '0'}
     revenue: >
       Баланс ваших счетов доходов:
 
       ${accounts}
-
-      ИТОГО: ${sums ? sums : '0'}
     liability: >
       Баланс ваших долговых счетов:
 
       ${accounts}
-
-      ИТОГО: ${sums ? sums : '0'}
 
 transactions:
   list:
@@ -214,18 +207,10 @@ transactions:
       Ваши расходы за **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      ИТОГО: ${sums ? sums : '0'}
     deposit: >
       Ваши доходы за **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      ИТОГО: ${sums ? sums : '0'}
     transfer: >
       Ваши переводы за **${day}**:
 
@@ -341,8 +326,6 @@ categories:
     Расходы по категории *${categoryName}* за *${monthName}*:
 
     ${transactions}
-
-    ИТОГО: ${sums ? sums : '0'}
 
 datePicker:
   selectDate: 'Выберите дату:'

@@ -108,6 +108,7 @@ tables:
   share: '%'
   untracked: Sin clasificar
   month: Mes
+  sum: SUM
 reports:
   title: '📊 ${monthName}'
   empty: Nada este mes.
@@ -187,26 +188,18 @@ accounts:
       Saldo de tus cuentas de Activos:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
     expense: >
       Saldo de tus cuentas de Gastos:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
     revenue: >
       Saldo de tus cuentas de Ingresos:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
     liability: >
       Saldo de tus cuentas de Pasivo:
 
       ${accounts}
-
-      SUM: ${sums ? sums : '0'}
 
 transactions:
   list:
@@ -214,18 +207,10 @@ transactions:
       Tus Gastos al **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}
     deposit: >
       Tus Depósitos al **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      SUM: ${sums ? sums : '0'}
     transfer: >
       Tus Transacciones al **${day}**:
 
@@ -340,8 +325,6 @@ categories:
     *${categoryName}* Gastos del mes de *${monthName}*:
 
     ${transactions}
-
-    SUM: ${sums ? sums : '0'}
 
 datePicker:
   selectDate: 'Selecciona una fecha:'
