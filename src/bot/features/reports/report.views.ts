@@ -258,6 +258,56 @@ async function auditMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string>
   return lines.join('\n')
 }
 
+async function trendMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string> {
+  // ponytail: fixed 6-month window (design constant); make it a setting if a
+  // longer horizon is ever requested.
+  const months = Array.from({ length: 6 }, (_, i) => anchor.subtract(5 - i, 'month'))
+  const ranges = months.map((m) => ({
+    start: m.startOf('month').format('YYYY-MM-DD'),
+    end: m.endOf('month').format('YYYY-MM-DD'),
+  }))
+  const [allExpense, allIncome] = await Promise.all([
+    Promise.all(ranges.map((r) => ctx.firefly.insightExpenseTotal(r.start, r.end))),
+    Promise.all(ranges.map((r) => ctx.firefly.insightIncomeTotal(r.start, r.end))),
+  ])
+  const currencies = [
+    ...new Set([...allExpense.flat(), ...allIncome.flat()].map((t) => t.currency)),
+  ]
+  const lines = [
+    ctx.i18n.t('reports.trendTitle', { monthName: escapeRichMarkdown(monthLabel(anchor)) }),
+  ]
+  if (!currencies.length) {
+    lines.push('', ctx.i18n.t('reports.emptyGeneric'))
+    return lines.join('\n')
+  }
+  for (const currency of currencies) {
+    const rows = months.map((m, i) => {
+      const income = allIncome[i]!.find((t) => t.currency === currency)?.amount ?? 0
+      const expense = allExpense[i]!.find((t) => t.currency === currency)?.amount ?? 0
+      const net = income + expense
+      return [
+        m.format('MMM YYYY'),
+        `+${bare(income)}`,
+        `−${bare(expense)}`,
+        `${net >= 0 ? '+' : '−'}${bare(net)}`,
+      ]
+    })
+    lines.push(
+      `\n**${escapeRichMarkdown(currency)}**\n\n${markdownTable(
+        [
+          ctx.i18n.t('tables.month'),
+          ctx.i18n.t('tables.income'),
+          ctx.i18n.t('tables.expense'),
+          ctx.i18n.t('tables.net'),
+        ],
+        rows,
+        ['left', 'right', 'right', 'right'],
+      )}`,
+    )
+  }
+  return lines.join('\n')
+}
+
 export async function renderReport(
   ctx: Context,
   type: ReportType,
@@ -274,7 +324,8 @@ export async function renderReport(
       return piggyMarkdown(ctx)
     case 'audit':
       return auditMarkdown(ctx, anchor)
-    // per-view case lands in Task 8
+    case 'trend':
+      return trendMarkdown(ctx, anchor)
     default:
       return reportMarkdown(ctx, anchor)
   }

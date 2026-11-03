@@ -340,3 +340,35 @@ describe('audit view', () => {
     )
   })
 })
+
+describe('trend view', () => {
+  it('renders six month rows ending at the anchor, one table per currency', async () => {
+    const { api, click, reports } = await setup({
+      ...MONTH_FIXTURES,
+      // fakes are date-blind: every month shows the same EUR totals — the
+      // month LABELS prove the window, the amounts prove the arithmetic
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_TREND'))
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(i18n.t('en', 'reports.trendTitle', { monthName: monthLabel(dayjs()) }))
+    for (let i = 0; i < 6; i++) {
+      const label = dayjs().subtract(5 - i, 'month').format('MMM YYYY')
+      expect(md).toContain(`| ${label} | +4200.00 | −2871.35 | +1328.65 |`)
+    }
+    expect(md).toContain('**EUR**')
+  })
+
+  it('empty history renders the generic empty note', async () => {
+    const { api, click, reports } = await setup({
+      incomeTotals: [],
+      expenseTotals: [],
+      expenseByCategory: [],
+    })
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_TREND'))
+    expect(getLastRichMarkdown(api.getOutgoingRequests())!).toContain(
+      i18n.t('en', 'reports.emptyGeneric'),
+    )
+  })
+})
