@@ -38,6 +38,13 @@ labels:
   SHOW_TRANSFERS: ↔️ Transfers
   SHOW_WITHDRAWALS: 📤 Withdrawals
   TRANSACTIONS: 🔀 Transactions
+  VIEW_MONTHLY: 📅 Monthly
+  VIEW_TREND: 📉 Trend
+  VIEW_AUDIT: 🧾 Audit
+  VIEW_NET_WORTH: 💰 Net worth
+  VIEW_BUDGETS: 🎯 Budgets
+  VIEW_SUBSCRIPTIONS: 🔁 Subscriptions
+  VIEW_PIGGY: 🐷 Piggy banks
   YES: ✅ Yes
   SWITCH_LANG: 🌐 Language
   SWITCH_TO_EN: 🇬🇧 English

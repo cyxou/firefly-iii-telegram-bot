@@ -122,3 +122,44 @@ describe('reports feature', () => {
     expect(api.getOutgoingRequests().some((r) => r.method === 'sendRichMessage')).toBe(false)
   })
 })
+
+describe('reports menu v2', () => {
+  it('renders the type switcher and Done button; payloads fit Telegram 64-byte limit', async () => {
+    const { api, reports } = await setup()
+    await reports()
+    for (const key of ['VIEW_MONTHLY', 'VIEW_TREND', 'VIEW_AUDIT', 'VIEW_NET_WORTH', 'VIEW_BUDGETS', 'VIEW_SUBSCRIPTIONS', 'VIEW_PIGGY'] as const) {
+      const btn = findButton(api.getOutgoingRequests(), i18n.t('en', `labels.${key}`))
+      expect(btn, key).toBeDefined()
+      expect(btn!.data.length).toBeLessThanOrEqual(64)
+    }
+    expect(findButton(api.getOutgoingRequests(), i18n.t('en', 'labels.DONE'))).toBeDefined()
+  })
+
+  it('month nav row appears for monthly but not for piggy', async () => {
+    const { api, click, reports } = await setup()
+    await reports()
+    expect(api.getOutgoingRequests().some((r) => JSON.stringify(r.payload).includes('<< '))).toBe(true)
+    await click(i18n.t('en', 'labels.VIEW_PIGGY'))
+    const edits = api.getOutgoingRequests().filter((r) => r.method === 'editMessageText')
+    expect(edits).toHaveLength(1)
+    expect(JSON.stringify(edits[0]!.payload)).not.toContain('<< ')
+  })
+
+  it('nav keeps the current type in the payload', async () => {
+    const { api, click, reports } = await setup()
+    await reports()
+    await click(i18n.t('en', 'labels.VIEW_AUDIT'))
+    const prev = dayjs().subtract(1, 'month')
+    await click(`<< ${monthLabel(prev)}`)
+    // audit is a NAV type: the prev button survived the first edit
+    const md = getLastRichMarkdown(api.getOutgoingRequests())!
+    expect(md).toContain(monthLabel(prev))
+  })
+
+  it('Done deletes the report message', async () => {
+    const { api, click, reports } = await setup()
+    await reports()
+    await click(i18n.t('en', 'labels.DONE'))
+    expect(api.getOutgoingRequests().some((r) => r.method === 'deleteMessage')).toBe(true)
+  })
+})

@@ -38,6 +38,13 @@ labels:
   SHOW_TRANSFERS: ↔️ Transferencias
   SHOW_WITHDRAWALS: 📤 Gastos
   TRANSACTIONS: 🔀 Transacciones
+  VIEW_MONTHLY: 📅 Mes
+  VIEW_TREND: 📉 Tendencia
+  VIEW_AUDIT: 🧾 Auditoría
+  VIEW_NET_WORTH: 💰 Patrimonio
+  VIEW_BUDGETS: 🎯 Presupuestos
+  VIEW_SUBSCRIPTIONS: 🔁 Suscripciones
+  VIEW_PIGGY: 🐷 Alcancías
   YES: ✅ Sí
   SWITCH_LANG: 🌐 Idioma
   SWITCH_TO_EN: 🇬🇧 Cambiar a Inglés

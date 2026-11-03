@@ -38,6 +38,13 @@ labels:
   SHOW_TRANSFERS: ↔️ Переводы
   SHOW_WITHDRAWALS: 📤 Расходы
   TRANSACTIONS: 🔀 Транзакции
+  VIEW_MONTHLY: 📅 Месяц
+  VIEW_TREND: 📉 Тренд
+  VIEW_AUDIT: 🧾 Аудит
+  VIEW_NET_WORTH: 💰 Состояние
+  VIEW_BUDGETS: 🎯 Бюджеты
+  VIEW_SUBSCRIPTIONS: 🔁 Подписки
+  VIEW_PIGGY: 🐷 Копилки
   YES: ✅ Да
   SWITCH_LANG: 🌐Язык
   SWITCH_TO_EN: 🇬🇧 Английский
