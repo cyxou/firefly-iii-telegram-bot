@@ -13,10 +13,6 @@ function bare(amount: number): string {
   return Math.abs(amount).toFixed(2)
 }
 
-function money(amount: number, currency: string): string {
-  return `${bare(amount)} ${currency}`
-}
-
 function parseAnchor(match: unknown): dayjs.Dayjs {
   const d = typeof match === 'string' ? dayjs(match) : undefined
   return d?.isValid() ? d : dayjs()
@@ -107,7 +103,7 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
   if (byCategory.length) {
     const rows = [...byCategory]
       .sort((a, b) => b.amount - a.amount)
-      .map((c) => [escapeRichMarkdown(c.name), money(c.amount, c.currency)])
+      .map((c) => [escapeRichMarkdown(c.name), `${bare(c.amount)} ${c.currency}`])
     // leading \n = blank line before the table (GFM tables can't interrupt a paragraph)
     lines.push(
       `\n${markdownTable([ctx.i18n.t('tables.category'), ctx.i18n.t('tables.amount')], rows, [
