@@ -266,7 +266,9 @@ export function createFireflyService(settings: UserSettings): FireflyService {
           nextExpected: b.attributes.next_expected_match?.slice(0, 10) ?? null,
           repeatFreq: String(b.attributes.repeat_freq ?? ''),
         }))
-        .sort((a, b) => (a.nextExpected ?? '9999-12-31').localeCompare(b.nextExpected ?? '9999-12-31'))
+        .sort((a, b) =>
+          (a.nextExpected ?? '9999-12-31').localeCompare(b.nextExpected ?? '9999-12-31'),
+        )
     },
     async listPiggyBanks() {
       const res = await clients().PiggyBanks.listPiggyBank(undefined, 500)

@@ -41,7 +41,12 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
     const income = incomeTotals.find((t) => t.currency === currency)?.amount ?? 0
     const expense = expenseTotals.find((t) => t.currency === currency)?.amount ?? 0
     const net = income + expense
-    return [currency, `+${bare(income)}`, `−${bare(expense)}`, `${net >= 0 ? '+' : '−'}${bare(net)}`]
+    return [
+      currency,
+      `+${bare(income)}`,
+      `−${bare(expense)}`,
+      `${net >= 0 ? '+' : '−'}${bare(net)}`,
+    ]
   })
   // leading \n = blank line after the title (GFM tables can't interrupt a paragraph)
   lines.push(
@@ -87,10 +92,7 @@ async function netWorthMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<stri
     return lines.join('\n')
   }
   if (netWorth.length) {
-    const rows = netWorth.map((n) => [
-      n.currency,
-      `${n.amount >= 0 ? '+' : '−'}${bare(n.amount)}`,
-    ])
+    const rows = netWorth.map((n) => [n.currency, `${n.amount >= 0 ? '+' : '−'}${bare(n.amount)}`])
     // leading \n = blank line after the title (GFM tables can't interrupt a paragraph)
     lines.push(
       `\n${markdownTable([ctx.i18n.t('tables.currency'), ctx.i18n.t('tables.net')], rows, [

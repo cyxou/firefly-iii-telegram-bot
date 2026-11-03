@@ -3,14 +3,7 @@ import { Menu, MenuRange } from '@grammyjs/menu'
 import dayjs from 'dayjs'
 import { monthLabel, renderReport } from './report.views.js'
 
-export type ReportType =
-  | 'monthly'
-  | 'trend'
-  | 'audit'
-  | 'networth'
-  | 'budgets'
-  | 'subs'
-  | 'piggy'
+export type ReportType = 'monthly' | 'trend' | 'audit' | 'networth' | 'budgets' | 'subs' | 'piggy'
 
 const PERIOD_TYPES: { type: ReportType; label: string }[] = [
   { type: 'monthly', label: 'labels.VIEW_MONTHLY' },
@@ -71,11 +64,12 @@ export const reportsMenu = new Menu<Context>('reports', { onMenuOutdated: false 
           showReport,
         )
     }
-    range
-      .row()
-      .text((c) => c.i18n.t('labels.DONE'), async (c) => {
+    range.row().text(
+      (c) => c.i18n.t('labels.DONE'),
+      async (c) => {
         await c.deleteMessage()
-      })
+      },
+    )
     return range
   },
 )

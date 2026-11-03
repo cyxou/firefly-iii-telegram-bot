@@ -107,8 +107,10 @@ function accountSums(accounts: AccountRead[]): string {
       (sums[currency] ?? 0) + Number.parseFloat(acc.attributes.current_balance || ''),
     )
   }
-  return Object.entries(sums)
-    .map(([currency, sum]) => `${sum} ${currency}`)
-    // one line: rich markdown collapses \n inside a paragraph
-    .join(', ')
+  return (
+    Object.entries(sums)
+      .map(([currency, sum]) => `${sum} ${currency}`)
+      // one line: rich markdown collapses \n inside a paragraph
+      .join(', ')
+  )
 }

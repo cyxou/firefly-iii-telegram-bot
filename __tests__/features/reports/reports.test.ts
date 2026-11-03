@@ -58,7 +58,9 @@ describe('reports feature', () => {
     // net = 4200 − 2871.35, minus is U+2212
     expect(md).toContain(`| EUR | +4200.00 | −2871.35 | +1328.65 |`)
     // summary table headers from shared keys
-    expect(md).toContain(`| ${i18n.t('en', 'tables.currency')} | ${i18n.t('en', 'tables.income')} | ${i18n.t('en', 'tables.expense')} | ${i18n.t('en', 'tables.net')} |`)
+    expect(md).toContain(
+      `| ${i18n.t('en', 'tables.currency')} | ${i18n.t('en', 'tables.income')} | ${i18n.t('en', 'tables.expense')} | ${i18n.t('en', 'tables.net')} |`,
+    )
     // category table headers from shared keys
     expect(md).toContain(i18n.t('en', 'tables.category'))
     expect(md).toContain(i18n.t('en', 'tables.amount'))
@@ -127,7 +129,15 @@ describe('reports menu v2', () => {
   it('renders the type switcher and Done button; payloads fit Telegram 64-byte limit', async () => {
     const { api, reports } = await setup()
     await reports()
-    for (const key of ['VIEW_MONTHLY', 'VIEW_TREND', 'VIEW_AUDIT', 'VIEW_NET_WORTH', 'VIEW_BUDGETS', 'VIEW_SUBSCRIPTIONS', 'VIEW_PIGGY'] as const) {
+    for (const key of [
+      'VIEW_MONTHLY',
+      'VIEW_TREND',
+      'VIEW_AUDIT',
+      'VIEW_NET_WORTH',
+      'VIEW_BUDGETS',
+      'VIEW_SUBSCRIPTIONS',
+      'VIEW_PIGGY',
+    ] as const) {
       const btn = findButton(api.getOutgoingRequests(), i18n.t('en', `labels.${key}`))
       expect(btn, key).toBeDefined()
       expect(btn!.data.length).toBeLessThanOrEqual(64)
@@ -138,7 +148,9 @@ describe('reports menu v2', () => {
   it('month nav row appears for monthly but not for piggy', async () => {
     const { api, click, reports } = await setup()
     await reports()
-    expect(api.getOutgoingRequests().some((r) => JSON.stringify(r.payload).includes('<< '))).toBe(true)
+    expect(api.getOutgoingRequests().some((r) => JSON.stringify(r.payload).includes('<< '))).toBe(
+      true,
+    )
     await click(i18n.t('en', 'labels.VIEW_PIGGY'))
     const edits = api.getOutgoingRequests().filter((r) => r.method === 'editMessageText')
     expect(edits).toHaveLength(1)
@@ -223,9 +235,7 @@ describe('budgets view', () => {
     await reports()
     await click(i18n.t('en', 'labels.VIEW_BUDGETS'))
     const md = getLastRichMarkdown(api.getOutgoingRequests())!
-    expect(md).toContain(
-      i18n.t('en', 'reports.budgetsTitle', { monthName: monthLabel(dayjs()) }),
-    )
+    expect(md).toContain(i18n.t('en', 'reports.budgetsTitle', { monthName: monthLabel(dayjs()) }))
     // Food: over limit → negative left with U+2212
     expect(md).toContain('| Food | EUR | 500.00 | 612.40 | −112.40 |')
     // Fun: no limit → em-dashes, still shows spend
@@ -256,7 +266,13 @@ describe('subscriptions view', () => {
           nextExpected: '2026-11-15',
           repeatFreq: 'monthly',
         },
-        { name: 'Gym', currency: 'EUR', amount: 30, nextExpected: '2026-11-10', repeatFreq: 'weekly' },
+        {
+          name: 'Gym',
+          currency: 'EUR',
+          amount: 30,
+          nextExpected: '2026-11-10',
+          repeatFreq: 'weekly',
+        },
       ],
     })
     await reports()
@@ -353,7 +369,9 @@ describe('trend view', () => {
     const md = getLastRichMarkdown(api.getOutgoingRequests())!
     expect(md).toContain(i18n.t('en', 'reports.trendTitle', { monthName: monthLabel(dayjs()) }))
     for (let i = 0; i < 6; i++) {
-      const label = dayjs().subtract(5 - i, 'month').format('MMM YYYY')
+      const label = dayjs()
+        .subtract(5 - i, 'month')
+        .format('MMM YYYY')
       expect(md).toContain(`| ${label} | +4200.00 | −2871.35 | +1328.65 |`)
     }
     expect(md).toContain('**EUR**')
