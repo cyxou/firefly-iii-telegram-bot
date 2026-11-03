@@ -66,6 +66,22 @@ describe('transactions list', () => {
     expect(markdown).toContain('SUM:')
   })
 
+  it('multi-currency sums stay on one line — rich markdown collapses \\n paragraphs', async () => {
+    const { bot, api } = await setup([
+      testTransaction('Coffee', { amount: '4.5', date: `${TODAY}T08:30:00+00:00` }),
+      testTransaction('Pizza', {
+        amount: '10',
+        currencySymbol: '€',
+        date: `${TODAY}T09:00:00+00:00`,
+      }),
+    ])
+    await sendTransactionsLabel(bot)
+    const markdown = getLastRichMarkdown(api.getOutgoingRequests())!
+    // single \n in a paragraph collapses to a space when rendered — sums must
+    // not rely on it
+    expect(markdown).toContain(`SUM: 4.5 $, 10 €`)
+  })
+
   it('three type tabs, active disabled — the SHOW_TRANSFERS bug is fixed by construction', async () => {
     const { bot, api, click } = await setup()
     await sendTransactionsLabel(bot)

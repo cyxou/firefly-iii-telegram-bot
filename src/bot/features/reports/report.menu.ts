@@ -9,8 +9,12 @@ function monthLabel(date: dayjs.Dayjs): string {
   return date.format('MMMM, YYYY').replace(/^./, (c) => c.toLocaleUpperCase())
 }
 
+function bare(amount: number): string {
+  return Math.abs(amount).toFixed(2)
+}
+
 function money(amount: number, currency: string): string {
-  return `${Math.abs(amount).toFixed(2)} ${currency}`
+  return `${bare(amount)} ${currency}`
 }
 
 function parseAnchor(match: unknown): dayjs.Dayjs {
@@ -77,18 +81,28 @@ async function reportMarkdown(ctx: Context, anchor: dayjs.Dayjs): Promise<string
     return lines.join('\n')
   }
 
-  // One block per currency; expense amounts arrive signed-negative from the API.
-  for (const currency of currencies) {
+  // One row per currency; expense amounts arrive signed-negative from the API.
+  // Table, not prose lines: in the markdown flavor Telegram renders, consecutive
+  // lines form one paragraph and their breaks collapse to spaces.
+  const rows = currencies.map((currency) => {
     const income = incomeTotals.find((t) => t.currency === currency)?.amount ?? 0
     const expense = expenseTotals.find((t) => t.currency === currency)?.amount ?? 0
     const net = income + expense
-    lines.push(
-      '',
-      ctx.i18n.t('reports.income', { amount: `+${money(income, currency)}` }),
-      ctx.i18n.t('reports.expense', { amount: `−${money(expense, currency)}` }),
-      ctx.i18n.t('reports.net', { amount: `${net >= 0 ? '+' : '−'}${money(net, currency)}` }),
-    )
-  }
+    return [currency, `+${bare(income)}`, `−${bare(expense)}`, `${net >= 0 ? '+' : '−'}${bare(net)}`]
+  })
+  // leading \n = blank line after the title (GFM tables can't interrupt a paragraph)
+  lines.push(
+    `\n${markdownTable(
+      [
+        ctx.i18n.t('tables.currency'),
+        ctx.i18n.t('tables.income'),
+        ctx.i18n.t('tables.expense'),
+        ctx.i18n.t('tables.net'),
+      ],
+      rows,
+      ['left', 'right', 'right', 'right'],
+    )}`,
+  )
 
   if (byCategory.length) {
     const rows = [...byCategory]

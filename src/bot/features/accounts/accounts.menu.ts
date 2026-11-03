@@ -109,5 +109,6 @@ function accountSums(accounts: AccountRead[]): string {
   }
   return Object.entries(sums)
     .map(([currency, sum]) => `${sum} ${currency}`)
-    .join('\n')
+    // one line: rich markdown collapses \n inside a paragraph
+    .join(', ')
 }
