@@ -85,6 +85,7 @@ tables:
   income: Entrate
   expense: Uscite
   net: Netto
+  sum: SOMMA
 reports:
   title: '📊 ${monthName}'
   empty: Niente questo mese.
@@ -153,26 +154,18 @@ accounts:
       Bilancio dei tuoi conti deposito:
 
       ${accounts}
-
-      SOMMA: ${sums ? sums : '0'}
     expense: >
       Bilancio dei tuoi conti spesa:
 
       ${accounts}
-
-      SOMMA: ${sums ? sums : '0'}
     revenue: >
       Bilancio dei tuoi conti entrate:
 
       ${accounts}
-
-      SOMMA: ${sums ? sums : '0'}
     liability: >
       Bilancio dei tuoi conti passività:
 
       ${accounts}
-
-      SOMMA: ${sums ? sums : '0'}
 
 transactions:
   list:
@@ -180,18 +173,10 @@ transactions:
       Prelievi del giorno **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      SOMMA: ${sums ? sums : '0'}
     deposit: >
       Entrate del giorno **${day}**:
 
       ${transactions}
-
-      ──────────────────
-
-      SOMMA: ${sums ? sums : '0'}
     transfer: >
       Transazioni del giorno **${day}**:
 
@@ -306,8 +291,6 @@ categories:
     *${categoryName}* prelievi per il mese di *${monthName}*:
 
     ${transactions}
-
-    SOMMA: ${sums ? sums : '0'}
 
 datePicker:
   selectDate: 'Seleziona una data:'

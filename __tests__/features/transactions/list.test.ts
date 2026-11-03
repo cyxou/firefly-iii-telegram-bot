@@ -63,7 +63,7 @@ describe('transactions list', () => {
     expect(markdown).toContain('Coffee')
     expect(markdown).not.toContain('Salary')
     expect(markdown).toContain('| 4.50 $ |')
-    expect(markdown).toContain('SUM:')
+    expect(markdown).toContain('|  | SUM | 4.50 $ |')
   })
 
   it('multi-currency sums stay on one line — rich markdown collapses \\n paragraphs', async () => {
@@ -77,9 +77,9 @@ describe('transactions list', () => {
     ])
     await sendTransactionsLabel(bot)
     const markdown = getLastRichMarkdown(api.getOutgoingRequests())!
-    // single \n in a paragraph collapses to a space when rendered — sums must
-    // not rely on it
-    expect(markdown).toContain(`SUM: 4.5 $, 10 €`)
+    // single \n collapses to a space in prose and cannot appear in a cell —
+    // sums must not rely on it; currency order follows the table (newest first)
+    expect(markdown).toContain(`|  | SUM | 10.00 €, 4.50 $ |`)
   })
 
   it('three type tabs, active disabled — the SHOW_TRANSFERS bug is fixed by construction', async () => {
@@ -105,6 +105,10 @@ describe('transactions list', () => {
     expect(((transferEdit.payload as any).rich_message as { markdown: string }).markdown).toContain(
       'To savings',
     )
+    // transfer view shows no total row (v1 behavior)
+    expect(
+      ((transferEdit.payload as any).rich_message as { markdown: string }).markdown,
+    ).not.toContain('|  | SUM |')
   })
 
   it('day navigation: << edits to yesterday and back', async () => {

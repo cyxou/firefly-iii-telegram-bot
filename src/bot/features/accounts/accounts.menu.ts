@@ -81,6 +81,11 @@ function accountsMarkdown(ctx: Context, view: AccountTypeFilter, accounts: Accou
     ),
     acc.attributes.currency_symbol ?? '',
   ])
+  // Excel-style total: SUM rides the table as its last row(s), one per currency
+  // (empty Name cell)
+  for (const [currency, sum] of accountSums(accounts)) {
+    rows.push(['', ctx.i18n.t('tables.sum'), sum.toFixed(2), currency])
+  }
   // GFM: a table cannot interrupt a paragraph — the leading/trailing \n plus the
   // template's single blank line give the header row the blank line it needs
   // (live bug 8wh: pipes rendered as literal text without it)
@@ -91,24 +96,17 @@ function accountsMarkdown(ctx: Context, view: AccountTypeFilter, accounts: Accou
         ['left', 'right', 'left'],
       )}\n`
     : ctx.i18n.t('accounts.list.noAccounts')
-  return ctx.i18n.t(`accounts.list.${String(view).toLowerCase()}`, {
-    accounts: table,
-    sums: accountSums(accounts),
-  })
+  return ctx.i18n.t(`accounts.list.${String(view).toLowerCase()}`, { accounts: table })
 }
 
-// Port of v1's reduce(): Math.ceil applied to the RUNNING sum after every
-// addition — a quirk, kept verbatim (behavior-preserving port).
-function accountSums(accounts: AccountRead[]): string {
+// True per-currency balance sum (toFixed(2) at the call site). v1 applied
+// Math.ceil to the RUNNING sum after every addition (2 × 10.40 → 22) — dropped
+// as a rounding bug when the total moved in-table next to toFixed(2) rows.
+function accountSums(accounts: AccountRead[]): [string, number][] {
   const sums: Record<string, number> = {}
   for (const acc of accounts) {
     const currency = acc.attributes.currency_symbol || '💲'
-    sums[currency] = Math.ceil(
-      (sums[currency] ?? 0) + Number.parseFloat(acc.attributes.current_balance || ''),
-    )
+    sums[currency] = (sums[currency] ?? 0) + Number.parseFloat(acc.attributes.current_balance || '')
   }
   return Object.entries(sums)
-    .map(([currency, sum]) => `${sum} ${currency}`)
-    // one line: rich markdown collapses \n inside a paragraph
-    .join(', ')
 }

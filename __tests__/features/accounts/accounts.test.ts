@@ -61,18 +61,19 @@ describe('accounts feature', () => {
     expect(markdown).toContain('| Cash | 55.20 | EUR |')
     expect(markdown).not.toContain('Hidden') // inactive accounts filtered (service parity)
     expect(markdown).not.toContain('Wallet') // expense account not in the asset view
-    expect(markdown).toContain('SUM:')
+    expect(markdown).toContain('|  | SUM | 2214.50 | USD |')
     // blank-line-before-table is enforced globally by the harness validator
     // (rich-validate.ts + setup afterEach) — no per-test assertion needed
   })
 
-  it('sums use the v1 running-ceil quirk (USD 1234.5 + 980.004 → 2216)', async () => {
+  it('sums are true per-currency totals in the table (USD 1234.5+980.004 → 2214.50)', async () => {
     const { bot, api } = await setup()
     await bot.handleUpdate(generateMessageUpdate(i18n.t('en', 'labels.ACCOUNTS')))
     const markdown = getLastRichMarkdown(api.getOutgoingRequests())!
-    // ceil applied to the RUNNING sum after each addition: ceil(1234.5)=1235, ceil(1235+980.004)=2216
-    expect(markdown).toContain('2216 USD')
-    expect(markdown).toContain('56 EUR') // ceil(55.2)
+    // v1 applied Math.ceil to the running sum (→ 2216 USD); dropped when the
+    // total moved in-table next to toFixed(2) rows
+    expect(markdown).toContain('|  | SUM | 2214.50 | USD |')
+    expect(markdown).toContain('|  | SUM | 55.20 | EUR |')
   })
 
   it('shows all four tabs with the active one disabled, and switching edits the message', async () => {
