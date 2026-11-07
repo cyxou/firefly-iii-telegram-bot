@@ -8,6 +8,7 @@ import { REDIS_URL, redis } from '#root/lib/redis.js'
 import { createSessionStorage } from '#root/lib/session.js'
 import { createFileSettingsStore } from '#root/lib/settings-store.js'
 import { logger } from '#root/logger.js'
+import { BOT_VERSION } from '#root/version.js'
 
 const SHUTDOWN_TIMEOUT_MS = 5000
 
@@ -48,7 +49,7 @@ async function main() {
 
   await Promise.all([bot.init(), bot.api.deleteWebhook()])
   runner = run(bot)
-  logger.info({ msg: 'Bot running', username: bot.botInfo.username })
+  logger.info({ msg: 'Bot running', username: bot.botInfo.username, version: BOT_VERSION })
 }
 
 main().catch((error) => {

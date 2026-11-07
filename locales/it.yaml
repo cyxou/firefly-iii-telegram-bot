@@ -149,6 +149,8 @@ settings:
     *🔑 Token di accesso*: ${accessToken || '🚨 <NON SPECIFICATO>'}
 
     *💳 Conto deposito predefinito*: ${defaultSourceAccount.name || '🚨 <NON SPECIFICATO>'}
+
+    *🤖 Versione del Bot*: ${botVersion}
   selectDefaultAssetAccount: >
     Scegli un conto deposito che verrà utilizzato come predefinito per i prelievi.
     Se lasciato vuoto, il primo conto deposito dalla lista sotto verrà utilizzato come predefinito:

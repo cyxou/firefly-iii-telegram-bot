@@ -5,6 +5,7 @@ import { escapeMarkdown } from '#root/bot/helpers/markdown.js'
 import { locales } from '#root/bot/i18n.js'
 import { AccountTypeFilter } from '#root/lib/firefly/service.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
+import { BOT_VERSION } from '#root/version.js'
 
 // Ported from legacy/composers/settings.ts (v1 menus, same ids).
 
@@ -12,6 +13,7 @@ export function settingsText(ctx: Context) {
   const s = ctx.settings ?? defaultSettings()
   const accessToken = s.fireflyAccessToken.replace(/(.{4})(.*?)(.{4})$/, '$1...$3')
   return ctx.i18n.t('settings.whatDoYouWantToChange', {
+    botVersion: BOT_VERSION, // semver — no Markdown metachars, no escape needed
     // values are user-controlled and this text is parsed as Markdown — escape
     fireflyUrl: escapeMarkdown(s.fireflyUrl),
     fireflyApiUrl: escapeMarkdown(s.fireflyApiUrl),
