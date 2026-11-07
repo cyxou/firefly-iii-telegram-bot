@@ -125,6 +125,8 @@ settings:
     *🔑 Access Token*: ${accessToken || '🚨 <NOT SPECIFIED>'}
 
     *💳 Default asset account*: ${defaultSourceAccount.name || '🚨 <NOT SPECIFIED>'}
+
+    *🤖 Bot Version*: ${botVersion}
   selectDefaultAssetAccount: >
     Choose an asset account which will be used as a default one for withdrawals.
     If left unset, the very first asset account from the list below will be used by default:

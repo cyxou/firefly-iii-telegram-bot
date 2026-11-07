@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import pkg from '../../../package.json'
 import { i18n } from '#root/bot/i18n.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 import {
@@ -36,6 +37,15 @@ describe('settings feature', () => {
     const text = (api.getOutgoingRequests().find((r) => r.method === 'sendMessage')?.payload as any)
       .text
     expect(text).toContain(i18n.t('en', 'settings.notSpecified'))
+  })
+
+  // issue #72: the settings screen shows the running bot version, read from package.json
+  it('shows the bot version from package.json', async () => {
+    const { api, send } = await setup()
+    await send('/settings')
+    const text = (api.getOutgoingRequests().find((r) => r.method === 'sendMessage')?.payload as any)
+      .text
+    expect(text).toContain(`Bot Version*: ${pkg.version}`)
   })
 
   it('firefly url flow: rejects bad url, accepts good one, persists to the store', async () => {

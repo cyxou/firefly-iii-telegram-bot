@@ -125,6 +125,8 @@ settings:
     *🔑 Token de Acceso*: ${accessToken || '🚨 <NO ESPECIFICADO>'}
 
     *💳 Cuenta de Activo por defecto*: ${defaultSourceAccount.name || '🚨 <NO ESPECIFICADO>'}
+
+    *🤖 Versión del Bot*: ${botVersion}
   selectDefaultAssetAccount: >
     Escoge una cuenta de Activo la cual será usada por defecto en los retiros.
     Si se deja sin configurar, se usará por defecto la primera cuenta de Activo de la siguiente lista:
