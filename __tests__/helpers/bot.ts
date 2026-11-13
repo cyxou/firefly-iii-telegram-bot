@@ -53,12 +53,16 @@ export class MockApiError extends Error {
   }
 }
 
-// Send methods that create a message the real API would later allow editing
-// (this bot only ever sends text/rich — no media methods to model).
+// Send methods that create a message the real API would later allow editing.
 // Rich sends count as text: Bot API editMessageText edits "text, rich and game
-// messages" — same edit semantics.
-const SEND_METHODS = new Set(['sendMessage', 'sendRichMessage'])
-const EDIT_METHODS = new Set(['editMessageText', 'editMessageReplyMarkup'])
+// messages" — same edit semantics. Widgets (Bot API 10.4) follow suit:
+// editMessageWidgetData edits a sent widget's state.
+const SEND_METHODS = new Set(['sendMessage', 'sendRichMessage', 'sendWidget'])
+const EDIT_METHODS = new Set([
+  'editMessageText',
+  'editMessageReplyMarkup',
+  'editMessageWidgetData',
+])
 
 // Setup mock API for a bot instance - captures all outgoing API calls.
 // Mirrors Telegram's edit semantics: messages the bot never sent cannot be
@@ -248,6 +252,40 @@ export function generateCallbackQueryUpdate(
       chat_instance: 'test_instance',
     },
   }
+}
+
+// Generate a Bot API 10.4 widget_query update (original in the private chat).
+// Cast: Update lacks widget_query until grammY ships 10.4 types — same gap the
+// src-side bridge (bot/helpers/widget-api.ts) papers over.
+export function generateWidgetQueryUpdate(
+  data: string,
+  options: { messageId?: number } = {},
+): Update {
+  const { messageId = 5000 } = options
+
+  return {
+    update_id: 10000,
+    widget_query: {
+      id: '8123456789',
+      from: {
+        id: 1111111,
+        first_name: 'Test',
+        last_name: 'User',
+        username: 'test_user',
+        is_bot: false,
+      },
+      chat: {
+        id: 1111111,
+        type: 'private',
+        first_name: 'Test',
+        last_name: 'User',
+        username: 'test_user',
+      },
+      message_id: messageId,
+      chat_instance: 'test_instance',
+      data,
+    },
+  } as unknown as Update
 }
 
 // Helper to check if payload has text property
