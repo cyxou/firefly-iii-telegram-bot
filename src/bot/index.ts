@@ -15,6 +15,7 @@ import { transactionsFeature } from '#root/bot/features/transactions/index.js'
 import { unhandledFeature } from '#root/bot/features/unhandled/index.js'
 import { errorHandler } from '#root/bot/handlers/error.js'
 import { i18n } from '#root/bot/i18n.js'
+import { widgetQueryOf } from '#root/bot/helpers/widget-api.js'
 import { accessControl } from '#root/bot/middlewares/access-control.js'
 import { setLocaleFromSettings } from '#root/bot/middlewares/locale.js'
 import { requireSettings } from '#root/bot/middlewares/require-settings.js'
@@ -84,6 +85,21 @@ function toStored(
 
 export function createBot(token: string, deps: Dependencies, botConfig?: BotConfig<Context>) {
   const bot = new TelegramBot<Context>(token, botConfig)
+
+  // grammy 1.46 doesn't derive ctx.from/ctx.chat for widget_query updates
+  // (unknown update type until Bot API 10.4 types ship). Without them:
+  // accessControl skips its check, settings resolve to env-only, and the
+  // ctx.session getter throws (no session key) — killing the update silently.
+  // Shadow both on the context instance so widget queries look normal.
+  bot.use(async (ctx, next) => {
+    const query = widgetQueryOf(ctx.update)
+    if (query && ctx.from === undefined) {
+      Object.defineProperty(ctx, 'from', { value: query.from, enumerable: true })
+      if (query.chat && ctx.chat === undefined)
+        Object.defineProperty(ctx, 'chat', { value: query.chat, enumerable: true })
+    }
+    await next()
+  })
 
   // DI seam: everything a handler touches arrives here — tests swap these, never module-mock.
   bot.use(async (ctx, next) => {

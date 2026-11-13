@@ -48,6 +48,13 @@ features → unhandled (last).
   Bot API 10.1) with menus attached as `reply_markup`. Escape user values
   (`bot/helpers/rich.ts`); column headers come from shared `tables.*` locale keys.
   Patterns: `docs/GRAMMY_MENUS.md`.
+- **Report widget** (Bot API 10.4, Nov 2026): `/widget` sends the reports
+  dashboard as an HTML widget. All 10.4 calls go through the bridge in
+  `bot/helpers/widget-api.ts` (delete it when grammy gains 10.4 types); queries
+  are stateless `v:<view>@<YYYY-MM>` payloads (menu-payload discipline). The
+  HTML is a size contract — zlib-9 ≤4096 B, state ≤1024 B — guarded by
+  `__tests__/features/reports/report-widget-html.test.ts`; keep the template
+  state-driven (locale/URL baked at send, data only in state).
 
 ## Testing Patterns
 
