@@ -2,6 +2,7 @@ commands:
   start: Iniciar (saludo)
   settings: Configuración
   help: Ayuda
+  widget: Informes como widget interactivo
 
 labels:
   ACCOUNTS: 💳 Cuentas
@@ -123,6 +124,8 @@ reports:
     category: Sin categoría
     budget: Sin presupuesto
   trendTitle: '📉 Últimos 6 meses — ${monthName}'
+  widget:
+    error: Error al cargar — toca ↻ para reintentar
 mdlwr:
   noFireflyURLFound: Para usar el bot, necesitas indicar una *🔗 URL de Firefly* válida en la *🔧 Configuración* del Bot.
   noFireflyAccessTokenFound: Para usar el bot, necesitas indicar un *🔑 Token de Acceso* válido en la *🔧 Configuración* del Bot.

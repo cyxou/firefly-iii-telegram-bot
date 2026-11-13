@@ -2,6 +2,7 @@ commands:
   start: Старт (приветственное сообщение)
   settings: Настройки
   help: Помощь
+  widget: Отчёты в виде интерактивного виджета
 
 labels:
   ACCOUNTS: 💳 Счета
@@ -123,6 +124,8 @@ reports:
     category: Без категории
     budget: Без бюджета
   trendTitle: '📉 6 месяцев — ${monthName}'
+  widget:
+    error: Не удалось загрузить — коснитесь ↻, чтобы повторить
 mdlwr:
   noFireflyURLFound: Для работы с ботом необходимо указать *🔗 Firefly URL* в разделе *🔧 Настройки* бота
   noFireflyAccessTokenFound: Для работы с ботом необходимо указать *🔑 Access Token* в разделе *🔧 Настройки* бота
