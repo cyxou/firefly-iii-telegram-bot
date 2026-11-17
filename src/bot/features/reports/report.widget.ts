@@ -16,7 +16,11 @@ import {
   sendWidget,
   widgetQueryOf,
 } from '#root/bot/helpers/widget-api.js'
-import { buildReportsWidgetHtml } from './report.widget.html.js'
+import {
+  assertWidgetHtmlFits,
+  buildReportsWidgetHtml,
+  stripViewEmoji,
+} from './report.widget.html.js'
 
 // The four chart-friendly views the widget renders. subs/piggy/audit stay
 // menu-only (plain tables — the classic rich-message reports cover them).
@@ -24,9 +28,9 @@ export type WidgetView = 'monthly' | 'trend' | 'budgets' | 'networth'
 const WIDGET_VIEWS = new Set<WidgetView>(['monthly', 'trend', 'budgets', 'networth'])
 
 // Byte budget carve-up of the ≤1024 B state: caps keep JSON.stringify inside
-// the limit for real Firefly data; jsonFit trims defensively on top.
+// the limit for real Firefly data; widgetStateJson trims defensively on top.
 const MAX_STATE_BYTES = 1024
-const CAP = { categories: 8, budgets: 10, accounts: 8 }
+const CAP = { categories: 8, budgets: 10, accounts: 8, name: 24 }
 
 /** Client contract — the widget's JS reads exactly these fields. */
 export interface WidgetState {
@@ -99,7 +103,7 @@ async function monthlyState(ctx: Context, anchor: dayjs.Dayjs): Promise<WidgetSt
     .filter((c) => c.currency === cur && c.amount > 0)
     .sort((a, b) => b.amount - a.amount)
     .slice(0, CAP.categories)
-    .map((c) => [c.name, n2(c.amount)])
+    .map((c) => [c.name.slice(0, CAP.name), n2(c.amount)])
   return state
 }
 
@@ -140,7 +144,7 @@ async function budgetsState(ctx: Context, anchor: dayjs.Dayjs): Promise<WidgetSt
       .filter((r) => r.spent > 0 || r.limit !== null)
       .sort((a, b) => b.spent - a.spent)
       .slice(0, CAP.budgets)
-      .map((r) => [r.name, n2(r.spent), r.limit === null ? null : n2(r.limit)]),
+      .map((r) => [r.name.slice(0, CAP.name), n2(r.spent), r.limit === null ? null : n2(r.limit)]),
   }
 }
 
@@ -163,7 +167,10 @@ async function networthState(ctx: Context, anchor: dayjs.Dayjs): Promise<WidgetS
           Math.abs(Number(a.attributes.current_balance ?? 0)),
       )
       .slice(0, CAP.accounts)
-      .map((a) => [a.attributes.name ?? '', n2(Number(a.attributes.current_balance ?? 0))]),
+      .map((a) => [
+        (a.attributes.name ?? '').slice(0, CAP.name),
+        n2(Number(a.attributes.current_balance ?? 0)),
+      ]),
   }
 }
 
@@ -176,6 +183,9 @@ export async function buildWidgetState(
   view: WidgetView,
   anchor: dayjs.Dayjs,
 ): Promise<WidgetState> {
+  // dayjs snapshots the global locale at instance creation; pin this update's
+  // locale so a concurrent update can never leak its language into labels
+  anchor.locale(String(ctx.i18n.locale()))
   switch (view) {
     case 'trend':
       return trendState(ctx, anchor)
@@ -191,7 +201,9 @@ export async function buildWidgetState(
 /** Serialize within the 1024 B state budget: trim list tails if ever over. */
 export function widgetStateJson(state: WidgetState): string {
   let json = JSON.stringify(state)
-  for (const key of ['c', 'b', 'a'] as const) {
+  // every array field, not just c/b/a — s (currencies), m (months) and n
+  // (net-worth rows) are equally able to bust the budget on real data
+  for (const key of ['s', 'c', 'm', 'b', 'n', 'a'] as const) {
     const list = state[key]
     while (Buffer.byteLength(json, 'utf8') > MAX_STATE_BYTES && list && list.length > 3) {
       list.pop()
@@ -210,7 +222,7 @@ function uiLabels(ctx: Context): WidgetUiLabels {
         ['budgets', ctx.i18n.t('labels.VIEW_BUDGETS')],
         ['networth', ctx.i18n.t('labels.VIEW_NET_WORTH')],
       ] as [WidgetView, string][]
-    ).map(([v, label]) => [v, label.replace(/^\S+\s/, '')]) as WidgetUiLabels['tb'],
+    ).map(([v, label]) => [v, stripViewEmoji(label)]) as WidgetUiLabels['tb'],
     i: ctx.i18n.t('tables.income'),
     e: ctx.i18n.t('tables.expense'),
     n: ctx.i18n.t('tables.net'),
@@ -222,9 +234,13 @@ function uiLabels(ctx: Context): WidgetUiLabels {
 /** /widget — send the monthly report as an interactive widget. */
 export async function sendReportsWidget(ctx: Context) {
   const state = await buildWidgetState(ctx, 'monthly', dayjs())
+  // fail fast here instead of an INPUT_MEDIA_WIDGET_TOO_LARGE from Telegram —
+  // the fixture-based test can't see the user's real (unbounded) fireflyUrl
+  const html = buildReportsWidgetHtml(uiLabels(ctx), ctx.settings!.fireflyUrl!)
+  assertWidgetHtmlFits(html)
   await sendWidget(ctx.api, {
     chat_id: ctx.chat!.id,
-    html: buildReportsWidgetHtml(uiLabels(ctx), ctx.settings!.fireflyUrl!),
+    html,
     caption: state.T,
     allow_queries: true,
     chat_data: widgetStateJson(state),
@@ -281,7 +297,9 @@ async function handleWidgetQuery(ctx: Context, query: WidgetQuery) {
       }
     }
   } catch (error) {
-    ctx.logger.debug(error, 'widget query failed')
+    // warn, not debug: a TypeError here must be visible in prod logs, not
+    // disguised as a Firefly outage
+    ctx.logger.warn(error, 'widget query failed')
     return fail('firefly')
   }
 }

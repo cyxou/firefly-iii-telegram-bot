@@ -1,8 +1,12 @@
 // /widget end to end through the real middleware chain: the send, the
 // stateless widget_query flow (answer → persist), and the never-leave-a-
 // query-unanswered rule (Telegram times the widget out after 15 s).
+import type { BotError } from 'grammy'
+import type { Context } from '#root/bot/context.js'
+import { randomBytes } from 'node:crypto'
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
+import { errorHandler } from '#root/bot/handlers/error.js'
 import { defaultSettings } from '#root/lib/settings-store.js'
 import type { OutgoingRequest } from '../../helpers/bot.js'
 import {
@@ -71,7 +75,7 @@ async function setup(
 
 describe('reports widget', () => {
   it('/widget sends a querying widget with a valid ≤1024 B state and a caption', async () => {
-    const { requests, widget } = await setup()
+    const { widget } = await setup()
     const sent = await widget()
     expect(sent.payload.allow_queries).toBe(true)
     expect(sent.payload.caption).toBeTypeOf('string')
@@ -138,5 +142,76 @@ describe('reports widget', () => {
     await tap('not-a-widget-payload', sent.resultMessageId!)
     expect(answers()).toHaveLength(1)
     expect((answers()[0]!.payload as { data?: string }).data).toContain('"e"')
+  })
+
+  it('trims per-currency rows when many currencies push the state over budget', async () => {
+    const incomeTotals = Array.from({ length: 60 }, (_, i) => ({
+      currency: `CUR${String(i).padStart(2, '0')}`,
+      amount: 1000 + i,
+    }))
+    const expenseTotals = incomeTotals.map((t, i) => ({
+      currency: t.currency,
+      amount: -(500 + i),
+    }))
+    const { widget } = await setup({ ...MONTH_FIXTURES, incomeTotals, expenseTotals })
+    const sent = await widget()
+    const state = JSON.parse(sent.payload.chat_data!)
+    expect(state.s.length).toBeLessThan(60) // trimmed, not capped upstream
+    expect(Buffer.byteLength(sent.payload.chat_data!, 'utf8')).toBeLessThanOrEqual(1024)
+  })
+
+  it('caps list names so long Firefly names cannot bust the state budget', async () => {
+    const { widget } = await setup({
+      ...MONTH_FIXTURES,
+      expenseByCategory: [{ name: 'N'.repeat(300), currency: 'EUR', amount: 100 }],
+    })
+    const sent = await widget()
+    const state = JSON.parse(sent.payload.chat_data!)
+    expect(state.c[0]![0]).toHaveLength(24)
+    expect(Buffer.byteLength(sent.payload.chat_data!, 'utf8')).toBeLessThanOrEqual(1024)
+  })
+
+  it('refuses to send a widget whose html busts the size budget (huge fireflyUrl)', async () => {
+    // random hex ≈ incompressible under zlib-9: a 10 KB URL clears the raw
+    // budget but busts the 4096 B compressed one
+    const fireflyUrl = `https://ff.example.com/${randomBytes(5200).toString('hex')}`
+    const { bot } = createTestBot({
+      settings: { ...CONFIGURED, fireflyUrl },
+      firefly: createTestFireflyService(MONTH_FIXTURES),
+    })
+    const api = setupMockApi(bot)
+    await initializeBot(bot)
+    await bot.handleUpdate(generateMessageUpdate('/widget', { isCommand: true }))
+    const methods = api.getOutgoingRequests().map((r) => r.method)
+    expect(methods).not.toContain('sendWidget')
+    expect(methods).toContain('sendMessage') // errorOccurred reply, not a Telegram rejection
+  })
+
+  it('answers a widget query even when the failure predates the reports feature', async () => {
+    // errorHandler is the last line of defense for the 15 s answer rule —
+    // unit-drive it with a widget_query update that blew up mid-middleware
+    const answers: { method: string; payload: unknown }[] = []
+    const replies: string[] = []
+    const fakeCtx = {
+      update: generateWidgetQueryUpdate('v:monthly@2026-01'),
+      api: {
+        raw: {
+          answerWidgetQuery: async (p: unknown) => {
+            answers.push({ method: 'answerWidgetQuery', payload: p })
+            return { ok: true }
+          },
+        },
+      },
+      logger: { error: () => {}, warn: () => {}, debug: () => {} },
+      reply: async (text: string) => {
+        replies.push(text)
+        return {}
+      },
+      i18n: { t: (key: string) => `t:${key}` },
+    }
+    await errorHandler({ ctx: fakeCtx, error: new Error('redis down') } as unknown as BotError<Context>)
+    expect(answers).toHaveLength(1)
+    expect((answers[0]!.payload as { data?: string }).data).toContain('"e"')
+    expect(replies).toEqual(['t:common.errorOccurred'])
   })
 })

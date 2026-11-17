@@ -6,14 +6,17 @@ import zlib from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '#root/bot/i18n.js'
 import type { WidgetUiLabels } from '#root/bot/features/reports/report.widget.html.js'
-import { buildReportsWidgetHtml } from '#root/bot/features/reports/report.widget.html.js'
+import {
+  buildReportsWidgetHtml,
+  stripViewEmoji,
+} from '#root/bot/features/reports/report.widget.html.js'
 
 const labels: WidgetUiLabels = {
   tb: [
-    ['monthly', i18n.t('en', 'labels.VIEW_MONTHLY').replace(/^\S+\s/, '')],
-    ['trend', i18n.t('en', 'labels.VIEW_TREND').replace(/^\S+\s/, '')],
-    ['budgets', i18n.t('en', 'labels.VIEW_BUDGETS').replace(/^\S+\s/, '')],
-    ['networth', i18n.t('en', 'labels.VIEW_NET_WORTH').replace(/^\S+\s/, '')],
+    ['monthly', stripViewEmoji(i18n.t('en', 'labels.VIEW_MONTHLY'))],
+    ['trend', stripViewEmoji(i18n.t('en', 'labels.VIEW_TREND'))],
+    ['budgets', stripViewEmoji(i18n.t('en', 'labels.VIEW_BUDGETS'))],
+    ['networth', stripViewEmoji(i18n.t('en', 'labels.VIEW_NET_WORTH'))],
   ],
   i: i18n.t('en', 'tables.income'),
   e: i18n.t('en', 'tables.expense'),
@@ -38,10 +41,26 @@ describe('reports widget html', () => {
     expect(html).toContain('TelegramWidget')
     expect(html).toContain('W.request(')
     expect(html).toContain('chatDataChanged')
-    // instant first paint from chatData, then refresh on screen
-    expect(html.indexOf('S={s:JSON.parse(W.chatData')).toBeLessThan(
-      html.indexOf('if(!W.isPreview)req'),
+    // instant first paint from chatData (guarded parse — malformed state must
+    // degrade to the empty view, not kill the script), then refresh on screen
+    expect(html.indexOf('S={s:q,bu:0')).toBeLessThan(html.indexOf('if(!W.isPreview)req'))
+    expect(html).toContain('try{q=JSON.parse(W.chatData')
+  })
+
+  it('styles over-budget bars via a compound selector that actually matches', () => {
+    // bud() puts both classes on the SAME element — a `.ov .ba i` descendant
+    // selector can never match it and the overspend signal was lost
+    expect(html).toContain('.ba.ov i{')
+    expect(html).not.toContain('.ov .ba i')
+  })
+
+  it('cannot be broken out of by a </script> in the embedded URL', () => {
+    const hostile = buildReportsWidgetHtml(
+      labels,
+      'https://ff.example.com/</script><script>alert(1)</script>',
     )
+    expect(hostile).not.toContain('</script><script')
+    expect(hostile).toContain('\\u003c') // JSON-valid escape, no early tag end
   })
 
   it('uses only sandbox-allowed markup', () => {

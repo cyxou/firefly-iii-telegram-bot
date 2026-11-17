@@ -11,6 +11,30 @@
 //   - locale strings and the Firefly web URL are baked at send time (each
 //     user gets their own message; the HTML itself stays locale-free)
 
+import zlib from 'node:zlib'
+
+// JSON embedded inside a <script> element must not contain a literal `<`:
+// a stored `</script>` in the payload (fireflyUrl is user-controlled) would
+// terminate the element and inject markup. `<` is valid in both JSON
+// and JS strings, so the client-side parse is unaffected.
+const inlineJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c')
+
+/**
+ * Tab labels reuse the menu's `emoji + space` prefix; the widget strips the
+ * emoji to save bytes. No emoji prefix → label unchanged (locale-safe).
+ */
+export function stripViewEmoji(label: string): string {
+  return label.replace(/^\p{Extended_Pictographic}(?:\uFE0F)?\s*/u, '')
+}
+
+/** Telegram's send-time size checks (INPUT_MEDIA_WIDGET_TOO_LARGE otherwise). */
+export function assertWidgetHtmlFits(html: string): void {
+  const bytes = Buffer.from(html, 'utf8')
+  if (bytes.length > 32768 || zlib.deflateSync(bytes, { level: 9 }).length > 4096) {
+    throw new Error('reports widget html exceeds Telegram size limits')
+  }
+}
+
 /** UI strings baked into the HTML at send time. */
 export interface WidgetUiLabels {
   /** Tab bar: [view id, label] in display order. */
@@ -37,7 +61,7 @@ h3{margin:0 0 8px;font-size:1.05em}
 .rw b{white-space:nowrap}.mu{color:var(--tg-theme-hint-color)}
 .ba{height:7px;border-radius:4px;background:var(--tg-theme-secondary-bg-color);margin:1px 0 7px;overflow:hidden}
 .ba i{display:block;height:100%;border-radius:4px;background:var(--tg-theme-link-color)}
-.ov .ba i{background:var(--tg-theme-destructive-text-color)}
+.ba.ov i{background:var(--tg-theme-destructive-text-color)}
 svg{display:block;width:100%;height:110px}
 .lb{display:flex}.lb span{flex:1;text-align:center;font-size:.75em}
 .ft{display:flex;align-items:center;gap:8px;margin-top:10px}
@@ -48,7 +72,7 @@ svg{display:block;width:100%;height:110px}
 <h3 id="ti"></h3><div id="vw"></div>
 <div class="ft"><button id="rf">↻</button><button id="ln">🔗</button><span class="mu" id="st" style="font-size:.85em"></span></div>
 <script>
-var W=TelegramWidget,L=${JSON.stringify(l)},U=${JSON.stringify(fireflyUrl)},S
+var W=TelegramWidget,L=${inlineJson(l)},U=${inlineJson(fireflyUrl)},S
 function el(i){return document.getElementById(i)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function num(x){var s=Math.abs(x).toFixed(2).replace(/\\.?0+$/,'');return(x<0?'−':'')+s}
@@ -81,10 +105,11 @@ if(!o){el('vw').innerHTML='<div class=mu>'+L.em+'</div>';el('ti').textContent=''
 var bs=el('tb').children;for(var i=0;i<bs.length;i++)bs[i].className=bs[i].getAttribute('data-v')==o.v?'on':''
 el('mo').textContent=o.d;el('ti').textContent=o.T
 el('vw').innerHTML=o.v=='monthly'?mon(o):o.v=='trend'?trd(o):o.v=='budgets'?bud(o):net(o)}
-function req(v,d){if(S.bu||!v)return;S.bu=1;st('…')
+function req(v,d){if(!v)return;if(S.bu){S.p=[v,d];return}S.bu=1;st('…')
 W.request('v:'+v+'@'+d).then(function(a){S.bu=0;var o;try{o=JSON.parse(a.result||'{}')}catch(e){o={}}
-if(o.e){st(L.er);return}if(!S.s||o.r>=(S.s.r||0)){S.s=o;draw();st(new Date().toTimeString().slice(0,5))}},
-function(){S.bu=0;st(L.er)})}
+if(o.e)st(L.er);else if(!S.s||o.r>=(S.s.r||0)){S.s=o;draw();st(new Date().toTimeString().slice(0,5))}
+pump()},function(){S.bu=0;st(L.er);pump()})}
+function pump(){if(!S.p)return;var q=S.p;S.p=null;req(q[0],q[1])}
 function go(v,d){hap();req(v,d||cm())}
 L.tb.forEach(function(p){var b=document.createElement('button');b.textContent=p[1];b.setAttribute('data-v',p[0]);el('tb').appendChild(b)})
 el('tb').addEventListener('click',function(e){var v=e.target.getAttribute&&e.target.getAttribute('data-v');if(v)go(v,S.s&&S.s.d)})
@@ -94,7 +119,7 @@ el('rf').onclick=function(){go(S.s?S.s.v:'monthly',S.s?S.s.d:cm())}
 el('ln').onclick=function(){if(U&&U.slice(0,8)=='https://')W.openLink(U)}
 W.onEvent('chatDataChanged',function(){var o;try{o=JSON.parse(W.chatData||'null')}catch(e){o=null}
 if(o&&(!S.s||o.r>=(S.s.r||0))){S.s=o;draw()}})
-S={s:JSON.parse(W.chatData||'null'),bu:0}
+var q=null;try{q=JSON.parse(W.chatData||'null')}catch(e){}S={s:q,bu:0,p:null}
 draw()
 // fresh data when the widget comes on screen (private-chat background request;
 // the app holds it until the widget is visible)
