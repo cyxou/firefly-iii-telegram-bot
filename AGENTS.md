@@ -29,6 +29,13 @@ point `FIREFLY_URL` at `http://localhost:<FF_PORT>` (delete or update
 never `REDIS_PORT`). APP_KEY is committed, so stacks share it; optionally
 drop a dump into `seed/` (see seed/README.md) to start populated.
 
+This stack replaced an older MariaDB one (which used a different APP_KEY): a
+dev DB created before the switch is orphaned in
+`firefly-iii-telegram-bot_firefly_iii_db` — `docker volume rm` it if unwanted.
+Compose normalizes the project name (lowercased, characters it rejects are
+stripped), so worktree basenames differing only in case or punctuation map to
+the same stack; `docker compose ls` lists live projects.
+
 Dependency refreshes: use the `/update-deps` skill (`.claude/skills/update-deps/`)
 — it encodes the pin exceptions, overrides mechanics, and CI-gate landmines.
 

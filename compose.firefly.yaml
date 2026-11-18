@@ -3,6 +3,7 @@
 # Worktree-safe: no container_name, all host ports via env vars (FF_PORT,
 # REDIS_PORT) so stacks in parallel git worktrees don't collide. Volumes and
 # networks are namespaced by the compose project name (= directory basename).
+# Host ports bind to 127.0.0.1 only: these are unauthenticated dev services.
 services:
   app:
     image: fireflyiii/core:version-6.7.9
@@ -28,7 +29,7 @@ services:
     networks:
       - firefly_iii
     ports:
-      - ${FF_PORT:-8888}:8080
+      - 127.0.0.1:${FF_PORT:-8888}:8080
     depends_on:
       db:
         condition: service_healthy
@@ -52,6 +53,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+      # seed restores can outlast 5s x 10 retries; init scripts run only on
+      # first volume creation, so an up aborted mid-restore would leave a
+      # silently partial DB (a retry skips the restore entirely).
+      start_period: 5m
     networks:
       - firefly_iii
 
@@ -60,7 +65,7 @@ services:
     restart: unless-stopped
     # no volume on purpose: sessions are ephemeral (24h TTL) — a wipe is harmless
     ports:
-      - ${REDIS_PORT:-6379}:6379
+      - 127.0.0.1:${REDIS_PORT:-6379}:6379
     healthcheck:
       test: [CMD, redis-cli, ping]
       interval: 5s
