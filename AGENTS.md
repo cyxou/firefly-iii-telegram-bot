@@ -13,8 +13,28 @@ bunx vitest run            # Unit + integration tests (no external services need
 docker compose -f compose.tests.yaml up -d   # ephemeral Redis for e2e
 bun run test:e2e           # e2e (real Redis, Telegram still mocked)
 bun run codegen            # Regenerate Firefly client into src/lib/firefly/generated
-docker compose -f compose.firefly.yaml up -d        # DEV local Firefly III + MariaDB
+docker compose -f compose.firefly.yaml up -d        # DEV Firefly III + Postgres + Redis (optional dump auto-restore: seed/README.md)
 ```
+
+### Worktree dev stacks
+
+`compose.firefly.yaml` is worktree-safe: volumes/networks are isolated by the
+compose project name (directory basename), host ports come from `FF_PORT` /
+`REDIS_PORT` (defaults 8888/6379) read from `.env` via compose interpolation.
+In a new worktree: `cp <main-repo>/.env .env`, then set `FF_PORT`/`REDIS_PORT`
+to free ports (check `ss -ltn`; avoid 6380 — compose.tests.yaml publishes it),
+point `FIREFLY_URL` at `http://localhost:<FF_PORT>` (delete or update
+`FIREFLY_API_URL` if the copied .env sets it — it takes precedence), and set
+`REDIS_URL=redis://localhost:<REDIS_PORT>` (the bot reads only `REDIS_URL`,
+never `REDIS_PORT`). APP_KEY is committed, so stacks share it; optionally
+drop a dump into `seed/` (see seed/README.md) to start populated.
+
+This stack replaced an older MariaDB one (which used a different APP_KEY): a
+dev DB created before the switch is orphaned in
+`firefly-iii-telegram-bot_firefly_iii_db` — `docker volume rm` it if unwanted.
+Compose normalizes the project name (lowercased, characters it rejects are
+stripped), so worktree basenames differing only in case or punctuation map to
+the same stack; `docker compose ls` lists live projects.
 
 Dependency refreshes: use the `/update-deps` skill (`.claude/skills/update-deps/`)
 — it encodes the pin exceptions, overrides mechanics, and CI-gate landmines.

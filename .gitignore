@@ -7,7 +7,6 @@
 /Session.vim
 /dist/
 /node_modules/
-/dist/
 .openapi-generator
 .env
 /sessions/
@@ -32,3 +31,8 @@ data/
 
 # Superpowers session artifacts (plans/specs stay local, not shipped)
 docs/superpowers/
+# local-only DB dumps for the dev stack (see seed/README.md).
+# Everything but the README: the postgres entrypoint auto-loads *.sql, *.xz,
+# *.zst, *.tar*, *.sh too — not just *.sql.gz.
+seed/*
+!seed/README.md

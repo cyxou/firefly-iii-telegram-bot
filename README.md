@@ -158,11 +158,11 @@ DISABLE_UNAUTHORIZED_USER_LOG=true
 bun install           # install dependencies
 bun run dev           # run with watch-reload
 bunx tsc --noEmit     # typecheck
-bun run lint          # ESLint (bun run fix to auto-fix)
+bun run lint          # oxlint (bun run fix to lint-fix + format)
 bunx vitest run       # unit + integration tests
 docker compose -f compose.tests.yaml up -d   # ephemeral Redis for e2e
 bun run test:e2e      # e2e (real Redis, Telegram still mocked)
-docker compose -f compose.firefly.yaml up -d        # local Firefly III + MariaDB (dev)
+docker compose -f compose.firefly.yaml up -d        # local Firefly III + Postgres + Redis (dev)
 ```
 
 To build docker images you would need to install additional tools and packages.
