@@ -32,3 +32,5 @@ data/
 
 # Superpowers session artifacts (plans/specs stay local, not shipped)
 docs/superpowers/
+# local-only DB dumps for the dev stack (see seed/README.md)
+seed/*.sql.gz
