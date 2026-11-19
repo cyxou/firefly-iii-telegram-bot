@@ -116,7 +116,7 @@ el('tb').addEventListener('click',function(e){var v=e.target.getAttribute&&e.tar
 el('pv').onclick=function(){if(S.s)go(S.s.v,nm(S.s.d,-1))}
 el('nx').onclick=function(){if(S.s)go(S.s.v,nm(S.s.d,1))}
 el('rf').onclick=function(){go(S.s?S.s.v:'monthly',S.s?S.s.d:cm())}
-el('ln').onclick=function(){if(U&&U.slice(0,8)=='https://')W.openLink(U)}
+el('ln').onclick=function(){if(U&&U.slice(0,8)=='https://'&&U.length<257)W.openLink(U)}
 W.onEvent('chatDataChanged',function(){var o;try{o=JSON.parse(W.chatData||'null')}catch(e){o=null}
 if(o&&(!S.s||o.r>=(S.s.r||0))){S.s=o;draw()}})
 var q=null;try{q=JSON.parse(W.chatData||'null')}catch(e){}S={s:q,bu:0,p:null}
