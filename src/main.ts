@@ -33,13 +33,21 @@ async function main() {
     })
   }
 
-  const bot = createBot(config.botToken, {
-    config,
-    logger,
-    settingsStore: createFileSettingsStore('data/settings.json'),
-    firefly: createFireflyService,
-    sessionStorage: createSessionStorage(),
-  })
+  const bot = createBot(
+    config.botToken,
+    {
+      config,
+      logger,
+      settingsStore: createFileSettingsStore('data/settings.json'),
+      firefly: createFireflyService,
+      sessionStorage: createSessionStorage(),
+    },
+    // TELEGRAM_ENV=test targets api.telegram.org/bot<token>/test/* — the Bot
+    // API test server, where every bot may send widgets (production gates
+    // them behind a rollout; see core.telegram.org/bots/widgets#availability).
+    // Needs a token issued by @BotFather on the test server.
+    process.env.TELEGRAM_ENV === 'test' ? { client: { environment: 'test' } } : undefined,
+  )
 
   let runner: RunnerHandle | undefined
   onShutdown(async () => {

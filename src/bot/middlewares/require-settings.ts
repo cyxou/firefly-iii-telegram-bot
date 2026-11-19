@@ -1,6 +1,7 @@
 import type { Middleware } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { createMainKeyboard } from '#root/bot/helpers/keyboard.js'
+import { widgetQueryOf } from '#root/bot/helpers/widget-api.js'
 
 // Gate for every Firefly-dependent feature. Mounted ONCE in createBot, after
 // the start+settings features (which must stay reachable unconfigured) and
@@ -8,9 +9,12 @@ import { createMainKeyboard } from '#root/bot/helpers/keyboard.js'
 // fixes v1's duplicate-requireSettings bug (spec "Bugs folded into the port" #2).
 // Callback queries pass through (v1 semantics): menus only ever rendered for
 // configured users, so a stale keyboard fails into the error boundary like v1.
+// Widget queries too (Bot API 10.4): they must be ANSWERED within 15 s no
+// matter what — the handler answers {e:'settings'} instead of leaving the
+// widget to time out.
 export function requireSettings(): Middleware<Context> {
   return async (ctx, next) => {
-    if (ctx.callbackQuery) return next()
+    if (ctx.callbackQuery || widgetQueryOf(ctx.update)) return next()
     if (!ctx.settings?.fireflyUrl) {
       return ctx.reply(ctx.i18n.t('mdlwr.noFireflyURLFound'), {
         parse_mode: 'Markdown',
