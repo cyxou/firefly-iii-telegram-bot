@@ -34,6 +34,7 @@ labels:
   TO_WITHDRAWALS: 📤 A gastos
   TO_DEPOSITS: 📥 Nuevo depósito
   TO_TRANSFERS: ↔️ Nueva transferencia
+  SKIP_SOURCE_ACCOUNT: 💵 Omitir (cuenta de efectivo)
   SHOW_DEPOSITS: 📥 Depósito
   SHOW_TRANSFERS: ↔️ Transferencias
   SHOW_WITHDRAWALS: 📤 Gastos

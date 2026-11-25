@@ -19,7 +19,7 @@ export interface TxnDraft {
   amount: string
   date: string // ISO — captured from the text message that started the flow
   description: string
-  sourceAccount?: TxnAccount
+  sourceAccount?: TxnAccount | null
   destAccount?: TxnAccount | null
   categoryId?: string | null
   foreignAmount?: string

@@ -64,6 +64,26 @@ describe('deposit flow', () => {
       .at(-1)!
     expect((edit.payload as any).text).toContain('Employer → Checking')
   })
+
+  it('skip source (UI parity): no revenue accounts, source_id omitted — Firefly assigns its cash account', async () => {
+    // the manual-revenue-accounts-only dead end: nothing to pick but Skip
+    const noRevenue = ACCOUNTS.filter((a) => a.id !== '4')
+    const { api, click, sendText, firefly } = await setup(noRevenue)
+    await sendText('100')
+    await click('📥 New deposit')
+    await click('💵 Skip (cash account)')
+    await click('Checking')
+    const created = await firefly.listTransactions('deposit' as never, '2000-01-01', '2999-12-31')
+    const split = created[0]!.attributes.transactions![0]!
+    expect(split.type).toBe('deposit')
+    expect(split.source_id).toBeUndefined() // omitted → Firefly defaults server-side
+    expect(split.destination_id).toBe('1')
+    const edit = api
+      .getOutgoingRequests()
+      .filter((r) => r.method === 'editMessageText')
+      .at(-1)!
+    expect((edit.payload as any).text).toContain('Checking')
+  })
 })
 
 describe('transfer flow', () => {

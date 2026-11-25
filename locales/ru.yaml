@@ -34,6 +34,7 @@ labels:
   TO_WITHDRAWALS: 📤 К расходам
   TO_DEPOSITS: 📥 Новый доход
   TO_TRANSFERS: ↔️ Новый перевод
+  SKIP_SOURCE_ACCOUNT: 💵 Пропустить (наличные)
   SHOW_DEPOSITS: 📥 Доходы
   SHOW_TRANSFERS: ↔️ Переводы
   SHOW_WITHDRAWALS: 📤 Расходы

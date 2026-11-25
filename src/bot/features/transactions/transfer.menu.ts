@@ -48,6 +48,20 @@ export const newDepositMenu = new Menu<Context>('new-deposit')
     })
     return range
   })
+  // UI parity: the web UI accepts a deposit with no source and Firefly assigns
+  // its built-in cash account — without this, zero revenue accounts is a dead end.
+  // Plain button: no nav injection, the target menu is passed explicitly
+  // (txnForeignMenu precedent).
+  .text((c) => c.i18n.t('labels.SKIP_SOURCE_ACCOUNT'), async (c) => {
+    const flow = c.session.txnFlow
+    if (!flow) return staleFlowExit(c)
+    flow.draft.sourceAccount = null // clears the slow-flow default asset account
+    return c.editMessageText(
+      c.i18n.t('transactions.add.selectDestAccount', { amount: flow.draft.amount }),
+      { parse_mode: 'Markdown', reply_markup: newDepositTargetMenu },
+    )
+  })
+  .row()
   .back('🔙') // v1 parity: re-renders the picker keyboard, text unchanged
 
 export const newDepositTargetMenu = new Menu<Context>('new-deposit-target')

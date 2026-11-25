@@ -69,7 +69,7 @@ export function buildSplit(draft: TxnDraft, type?: TransactionTypeProperty): Tra
     type: trType,
     date: draft.date,
     description: draft.description || 'N/A',
-    source_id: draft.sourceAccount?.id ?? '',
+    source_id: draft.sourceAccount?.id, // absent → Firefly assigns its cash account (UI parity)
     amount: draft.amount,
     category_id: draft.categoryId || '', // v1 sent '' — Firefly treats as absent
     destination_id: draft.destAccount?.id,
