@@ -36,11 +36,9 @@ async function finishTextEdit(ctx: Context, updated: TransactionRead) {
 }
 
 // The prompt can outlive its transaction: Firefly's web-UI convert deletes +
-// recreates with a new id, and a straight delete removes it. A 404 here used
-// to throw with editFlow still set — and this router sits ABOVE the add/hears
+// recreates with a new id, and a straight delete removes it. A 404 used to
+// throw with editFlow still set — and this router sits ABOVE the add/hears
 // text handlers, so the dead flow permanently claimed ALL text input.
-// ResourceNotFoundError (permanent) drops the flow; transient errors rethrow
-// and leave it retryable.
 async function dropStaleEditFlow(ctx: Context): Promise<void> {
   const flow = ctx.session.editFlow!
   ctx.session.editFlow = undefined
@@ -53,16 +51,23 @@ async function dropStaleEditFlow(ctx: Context): Promise<void> {
   )
 }
 
-editRouter.route('amount', async (ctx) => {
+// editRouter.route with one shared catch: ResourceNotFoundError (permanent)
+// drops the flow; transient errors rethrow and leave it retryable.
+function editRoute(step: string, handler: (ctx: Context) => Promise<unknown>) {
+  return editRouter.route(step, async (ctx) => {
+    try {
+      return await handler(ctx)
+    } catch (err) {
+      if (err instanceof ResourceNotFoundError) return dropStaleEditFlow(ctx)
+      throw err
+    }
+  })
+}
+
+editRoute('amount', async (ctx) => {
   const flow = ctx.session.editFlow!
-  let current: string
-  try {
-    current = (await ctx.firefly.getTransaction(flow.transactionId)).attributes.transactions![0]!
-      .amount
-  } catch (err) {
-    if (err instanceof ResourceNotFoundError) return dropStaleEditFlow(ctx)
-    throw err
-  }
+  const current = (await ctx.firefly.getTransaction(flow.transactionId)).attributes
+    .transactions![0]!.amount
   // v1: '+50'/'-20' composes with the current amount; garbage → retry in-flow
   const amount = parseAmountInput(ctx.msg?.text ?? '', current)
   if (!amount) return ctx.reply(ctx.i18n.t('transactions.edit.badAmountTyped'))
@@ -72,17 +77,11 @@ editRouter.route('amount', async (ctx) => {
   return finishTextEdit(ctx, updated)
 })
 
-editRouter.route('description', async (ctx) => {
+editRoute('description', async (ctx) => {
   const flow = ctx.session.editFlow!
   const description = (ctx.msg?.text ?? '').trim()
   if (!description) return ctx.reply(ctx.i18n.t('transactions.edit.badDescriptionTyped'))
-  let updated: TransactionRead
-  try {
-    updated = await applyTransactionUpdate(ctx, flow.transactionId, { description })
-  } catch (err) {
-    if (err instanceof ResourceNotFoundError) return dropStaleEditFlow(ctx)
-    throw err
-  }
+  const updated = await applyTransactionUpdate(ctx, flow.transactionId, { description })
   return finishTextEdit(ctx, updated)
 })
 
