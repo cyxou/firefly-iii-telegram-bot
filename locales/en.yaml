@@ -34,6 +34,7 @@ labels:
   TO_WITHDRAWALS: 📤 To withdrawals
   TO_DEPOSITS: 📥 New deposit
   TO_TRANSFERS: ↔️ New transfer
+  SKIP_SOURCE_ACCOUNT: 💵 Skip (cash account)
   SHOW_DEPOSITS: 📥 Deposits
   SHOW_TRANSFERS: ↔️ Transfers
   SHOW_WITHDRAWALS: 📤 Withdrawals

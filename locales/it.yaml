@@ -34,6 +34,7 @@ labels:
   TO_WITHDRAWALS: 📤 Nuovo prelievo
   TO_DEPOSITS: 📥 Nuovo deposito
   TO_TRANSFERS: ↔️ Nuovo trasferimento
+  SKIP_SOURCE_ACCOUNT: 💵 Salta (conto contanti)
   SHOW_DEPOSITS: 📥 Depositi
   SHOW_TRANSFERS: ↔️ Trasferimenti
   SHOW_WITHDRAWALS: 📤 Prelievi
