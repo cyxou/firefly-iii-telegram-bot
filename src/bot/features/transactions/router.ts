@@ -2,6 +2,7 @@ import type { Context } from '#root/bot/context.js'
 import type { TransactionRead } from '#root/lib/firefly/service.js'
 import { Router } from '@grammyjs/router'
 import { parseAmountInput } from '#root/bot/helpers/amount.js'
+import { ResourceNotFoundError } from '#root/lib/errors.js'
 import { buildSplit } from './create.js'
 import { applyTransactionUpdate } from './edit.menu.js'
 import { showRecord } from './record.js'
@@ -34,7 +35,36 @@ async function finishTextEdit(ctx: Context, updated: TransactionRead) {
   return showRecord(ctx, updated, false) // fresh reply (foreign-amount precedent)
 }
 
-editRouter.route('amount', async (ctx) => {
+// The prompt can outlive its transaction: Firefly's web-UI convert deletes +
+// recreates with a new id, and a straight delete removes it. A 404 used to
+// throw with editFlow still set — and this router sits ABOVE the add/hears
+// text handlers, so the dead flow permanently claimed ALL text input.
+async function dropStaleEditFlow(ctx: Context): Promise<void> {
+  const flow = ctx.session.editFlow!
+  ctx.session.editFlow = undefined
+  if (flow.promptMessage)
+    await ctx.api
+      .deleteMessage(flow.promptMessage.chatId, flow.promptMessage.messageId)
+      .catch(() => {}) // stale prompt may already be gone
+  await ctx.reply(
+    ctx.i18n.t('transactions.edit.noSuchTransactionAnymore', { id: flow.transactionId }),
+  )
+}
+
+// editRouter.route with one shared catch: ResourceNotFoundError (permanent)
+// drops the flow; transient errors rethrow and leave it retryable.
+function editRoute(step: string, handler: (ctx: Context) => Promise<unknown>) {
+  return editRouter.route(step, async (ctx) => {
+    try {
+      return await handler(ctx)
+    } catch (err) {
+      if (err instanceof ResourceNotFoundError) return dropStaleEditFlow(ctx)
+      throw err
+    }
+  })
+}
+
+editRoute('amount', async (ctx) => {
   const flow = ctx.session.editFlow!
   const current = (await ctx.firefly.getTransaction(flow.transactionId)).attributes
     .transactions![0]!.amount
@@ -47,7 +77,7 @@ editRouter.route('amount', async (ctx) => {
   return finishTextEdit(ctx, updated)
 })
 
-editRouter.route('description', async (ctx) => {
+editRoute('description', async (ctx) => {
   const flow = ctx.session.editFlow!
   const description = (ctx.msg?.text ?? '').trim()
   if (!description) return ctx.reply(ctx.i18n.t('transactions.edit.badDescriptionTyped'))

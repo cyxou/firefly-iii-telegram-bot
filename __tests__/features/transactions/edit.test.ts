@@ -250,6 +250,33 @@ describe('edit amount/description text flows', () => {
     expect(split.description).toBe('Beer')
   })
 
+  // Live incident (2026-11-25): edit prompt open, transaction deleted via the
+  // Firefly UI (its convert also deletes + recreates with a new id). The routed
+  // text 404s and used to leave editFlow set — poisoning ALL later text input.
+  it.each([
+    ['💸 Amount', '30'],
+    ['📝 Description', 'Beer'],
+  ])(
+    '%s prompt + web-UI delete: named error, flow self-clears, next text is a fresh add',
+    async (btn, input) => {
+      const { api, click, send, firefly } = await setupEdit()
+      await send('Groceries 25')
+      await click('✏️ Edit')
+      await click(btn)
+      await firefly.deleteTransaction('200') // gone via the Firefly UI mid-prompt
+      await send(input)
+      const err = api
+        .getOutgoingRequests()
+        .filter((r) => r.method === 'sendMessage')
+        .at(-1)!
+      expect((err.payload as any).text).toContain('does not exist anymore')
+      await send('Cinema 9')
+      const all = await firefly.listTransactions('withdrawal' as never, '2000-01-01', '2999-12-31')
+      expect(all).toHaveLength(1)
+      expect(all[0]!.attributes.transactions![0]!.description).toBe('Cinema')
+    },
+  )
+
   it('🔙 on the prompt cancels: editFlow cleared, record re-rendered, next text is a NEW add', async () => {
     const { api, click, send, firefly } = await setupEdit()
     await send('Groceries 25')
